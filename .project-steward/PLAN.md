@@ -14,7 +14,9 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
       (0.2.1, ADR 0007 — from field report)
 - [x] Plugin payload isolated in plugin/ — installs no longer ship
       .project-steward//tests/.github (0.2.2, ADR 0008 — from field report)
-- [ ] Run CI on a real GitHub repo (3-OS matrix incl. Python 3.7 jobs)
+- [x] Run CI on a real GitHub repo (3-OS matrix incl. Python 3.7 jobs)
+      — 13/13 runnable jobs green at d27ad32; macOS/3.7 dropped, runner
+      retired (ADR 0009)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 

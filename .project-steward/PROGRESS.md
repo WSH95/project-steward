@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T18:36:18Z — cli
+Published to GitHub (d27ad32 pushed, user-approved); marketplace re-registered from git@github.com SSH source; 0.2.2 installed from GitHub, cache verified payload-only at d27ad32. CI: 13/13 runnable jobs green incl. both 3.7 floors; macOS/3.7 dropped (macos-13 runner retired, ADR 0009); 3 wedged runs cancelled
+
 ### 2026-07-04T18:18:09Z — cli
 0.2.2: plugin payload isolated under plugin/ (ADR 0008) — installs no longer ship .project-steward//tests/.github; marketplace sources ./plugin; dev harness re-pointed; 43 tests + doctor + validate green
 

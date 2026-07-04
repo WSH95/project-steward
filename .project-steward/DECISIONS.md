@@ -108,3 +108,19 @@ installs still copy untracked junk inside `plugin/` (e.g. `__pycache__`);
 git-based installs ship tracked files only. Also approved: bare-name
 `claude plugin update` doesn't resolve — use
 `project-steward@project-steward-marketplace`.
+
+## 0009 — 2026-07-04 — CI drops macOS/3.7: the runner no longer exists
+
+**Context**: First real CI runs (repo published to GitHub today) showed
+every run wedged in "queued": 13/14 jobs pass in ~1 minute, but
+`test (macos-13, 3.7)` waits forever — GitHub retired the macos-13
+hosted runner (the last x64 macOS image), and arm64 images ship no
+CPython 3.7 builds. Observed on three consecutive runs (two queued
+4h40m+).
+**Decision**: Remove the macOS/3.7 matrix entry. The 3.7 floor stays
+CI-enforced on ubuntu-22.04 and windows-latest (both green, including
+against the plugin/ layout at d27ad32); macOS coverage continues at
+3.8–3.13. Revisit only if a self-hosted x64 mac appears.
+**Consequences**: macOS+3.7 is best-effort (stdlib-only code, low risk).
+Watch ubuntu-22.04's own retirement date — when it goes, the 3.7 floor
+loses its last Linux runner and the floor itself should be re-debated.

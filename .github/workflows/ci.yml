@@ -14,11 +14,11 @@ jobs:
         python: ["3.8", "3.10", "3.12", "3.13"]
         include:
           # Python 3.7 floor: only runners that still provide 3.7 builds.
+          # macOS is untestable at 3.7 since GitHub retired the last x64
+          # image (macos-13); arm64 images ship no CPython 3.7 builds.
           - os: ubuntu-22.04
             python: "3.7"
           - os: windows-latest
-            python: "3.7"
-          - os: macos-13
             python: "3.7"
         exclude:
           # macos-latest (arm64) has no CPython 3.8 build.
