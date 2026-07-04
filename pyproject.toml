@@ -9,7 +9,7 @@ description = "Cross-agent project stewardship: durable repo-resident project me
 readme = "README.md"
 requires-python = ">=3.7"
 license = { text = "MIT" }
-authors = [{ name = "Wang" }]
+authors = [{ name = "Shuhan Wang" }]
 keywords = ["agents", "claude-code", "codex", "project-management", "handoff", "agents-md"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -38,8 +38,8 @@ project-steward = "project_steward.cli:main"
 projectforge = "project_steward.legacy_alias:main"
 
 [project.urls]
-Homepage = "https://github.com/USER/project-steward"
-Changelog = "https://github.com/USER/project-steward/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/WSH95/project-steward"
+Changelog = "https://github.com/WSH95/project-steward/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]

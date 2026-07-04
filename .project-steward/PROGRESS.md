@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T13:45:00Z — claude (wrap)
+Session wrapped: fix rounds 7396b66 + a06d206 committed; user set real
+author + repo URLs (github.com/WSH95/project-steward) across
+plugin.json / marketplace.json / pyproject.toml; plugin reloaded
+cleanly. Next: push and watch the 3-OS CI matrix.
+
 ### 2026-07-04T13:17:00Z — claude (portability audit + fixes)
 3-agent audit + line verification: 11 confirmed findings fixed — resume
 false-crash signal (claim-before-detect), wrap-detector overreach
