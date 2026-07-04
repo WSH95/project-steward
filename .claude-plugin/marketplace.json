@@ -5,12 +5,12 @@
   },
   "metadata": {
     "description": "Marketplace for the Project Steward plugin",
-    "version": "0.2.1"
+    "version": "0.2.2"
   },
   "plugins": [
     {
       "name": "project-steward",
-      "source": "./",
+      "source": "./plugin",
       "description": "Cross-agent project stewardship toolkit (init, progress, handoff/resume, backend broker)."
     }
   ]

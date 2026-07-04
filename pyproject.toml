@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-steward"
-version = "0.2.1"
+version = "0.2.2"
 description = "Cross-agent project stewardship: durable repo-resident project memory, handoff/resume, and progress tracking for Claude Code, Codex, and other coding agents."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -42,7 +42,7 @@ Homepage = "https://github.com/WSH95/project-steward"
 Changelog = "https://github.com/WSH95/project-steward/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["plugin/src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

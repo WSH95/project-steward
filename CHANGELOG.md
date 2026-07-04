@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2 — 2026-07-04
+
+### Changed
+- **Plugin payload moved to `plugin/`** (marketplace sources now point at
+  `./plugin`). Installing the plugin previously copied the entire repo —
+  including this project's own `.project-steward/` state (with gitignored
+  `runtime/` session forensics on directory-source installs), `tests/`,
+  and `.github/` — because Claude Code has no ignore mechanism and always
+  copies the whole plugin source directory (ADR 0008). Only
+  `skills/ commands/ hooks/ src/ templates/ references/` + manifests ship
+  now. No behavior change; hook shim and template lookup are
+  relative-path safe. Dev-harness paths (pyproject, tests, doctor --self,
+  CI, docs) updated accordingly.
+
 ## 0.2.1 — 2026-07-04
 
 ### Fixed

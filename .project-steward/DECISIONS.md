@@ -84,3 +84,27 @@ files the user must approve.
 **Consequences**: The approved text is exactly what `--yes` writes
 (kills draft/write divergence); `tests/test_skill_text.py` pins the
 load-bearing phrases so edits cannot silently drop the gate.
+
+## 0008 — 2026-07-04 — Plugin payload lives in plugin/; self-hosting state never ships
+
+**Context**: Installing the plugin copied the whole repo into the user's
+plugin cache — including `.project-steward/` (even gitignored `runtime/`
+session forensics, since directory-source installs copy the raw working
+tree), `tests/`, `.github/`, and the repo's own AGENTS.md. Claude Code
+has no ignore/allowlist mechanism (docs verified 2026-07-04); the copy
+unit is always the plugin source directory, and the supported idiom is a
+subdirectory source.
+**Decision**: The installable payload (`skills/ commands/ hooks/ src/
+templates/ references/` + `.claude-plugin/plugin.json` +
+`.codex-plugin/`) lives under `plugin/`; both marketplace catalogs stay
+at repo root and point `source` at `./plugin`. Development artifacts and
+self-hosting state stay at repo root and never ship. The payload moves
+as one unit — the hook shim and `_templates_root()` resolve paths
+relative to their own files, so intra-payload geometry is preserved.
+**Consequences**: pyproject `packages.find.where`, tests, doctor --self,
+CI, and docs reference `plugin/…` paths. AGENTS.md commands-block edit
+approved by user (this session). Residual: local *directory-source*
+installs still copy untracked junk inside `plugin/` (e.g. `__pycache__`);
+git-based installs ship tracked files only. Also approved: bare-name
+`claude plugin update` doesn't resolve — use
+`project-steward@project-steward-marketplace`.

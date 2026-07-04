@@ -9,7 +9,7 @@ def _flat(rel):
 
 
 def test_init_skill_approval_gate_shows_dry_run_draft():
-    skill = _flat("skills/project-init/SKILL.md")
+    skill = _flat("plugin/skills/project-init/SKILL.md")
     assert "--dry-run" in skill
     assert "not review surfaces" in skill
     assert "verbatim in the visible conversation" in skill
@@ -18,7 +18,7 @@ def test_init_skill_approval_gate_shows_dry_run_draft():
 
 
 def test_init_command_mirrors_the_gate():
-    cmd = _flat("commands/init.md")
+    cmd = _flat("plugin/commands/init.md")
     assert "--dry-run" in cmd
     assert "BEFORE asking approval" in cmd
     assert "not review surfaces" in cmd

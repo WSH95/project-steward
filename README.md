@@ -8,7 +8,7 @@ a crash. Agents are execution surfaces; native session histories are
 never the source of truth.
 
 Formerly **Projectforge** (v0.1). See
-[references/migration-from-projectforge.md](references/migration-from-projectforge.md).
+[plugin/references/migration-from-projectforge.md](plugin/references/migration-from-projectforge.md).
 
 ## What problem this solves
 
@@ -22,19 +22,23 @@ lifecycle hooks.
 ## Layout
 
 ```
-skills/            5 portable Agent Skills (identical files work in
+plugin/            the installable payload — ONLY this subtree ships when
+                   the plugin is installed (marketplace source "./plugin")
+  skills/          5 portable Agent Skills (identical files work in
                    Claude Code and Codex): project-init, session-resume,
                    session-handoff, progress-tracking, backend-broker
-src/project_steward/   Python 3.7+ stdlib-only core: CLI + hook dispatcher
-hooks/             hooks.json (Claude Code, auto-loaded by the plugin)
+  src/project_steward/   Python 3.7+ stdlib-only core: CLI + hook dispatcher
+  hooks/           hooks.json (Claude Code, auto-loaded by the plugin)
                    codex.hooks.json (copy to <repo>/.codex/hooks.json)
-commands/          /project-steward:init|resume|wrap|checkpoint|audit|backend
-codex/             INSTALL.md + self-contained steward-* prompts
-templates/         AGENTS.md, CLAUDE.md adapter, and 11 state templates
-references/        session-protocol, security-model, backend-selection,
+  commands/        /project-steward:init|resume|wrap|checkpoint|audit|backend
+  templates/       AGENTS.md, CLAUDE.md adapter, and 11 state templates
+  references/      session-protocol, security-model, backend-selection,
                    cross-platform, self-hosting, migration docs
-.claude-plugin/ .codex-plugin/ .agents/plugins/   plugin packaging
-tests/  .github/workflows/ci.yml   33 unit tests; Ubuntu/Windows/macOS CI
+  .claude-plugin/ .codex-plugin/   plugin manifests
+codex/             INSTALL.md + self-contained steward-* prompts
+.claude-plugin/ .agents/plugins/   marketplace catalogs (repo root)
+tests/  .github/workflows/ci.yml   unit tests; Ubuntu/Windows/macOS CI
+.project-steward/  this repo's own state (self-hosting) — never ships
 ```
 
 Inside a managed project it creates `AGENTS.md` (canonical), `CLAUDE.md`
@@ -119,7 +123,7 @@ plain English; `backend adopt <name>` is approval-gated and rewrites only
 the AGENTS.md task-backend block. One system owns fine-grained tasks at a
 time — PLAN.md degrades to milestones + a pointer. Installs are assisted,
 never silent. Linear/Jira are honest stubs. Details:
-[references/backend-selection.md](references/backend-selection.md).
+[plugin/references/backend-selection.md](plugin/references/backend-selection.md).
 
 ## Cross-platform
 
@@ -133,7 +137,7 @@ may also lack `python3` until the Xcode Command Line Tools are present).
 Writes are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS
 matrix including Python 3.7 jobs. Details and the deliberate 3.7-floor
 compromises:
-[references/cross-platform.md](references/cross-platform.md).
+[plugin/references/cross-platform.md](plugin/references/cross-platform.md).
 
 ## Security, git policy, hook trust
 
@@ -144,7 +148,7 @@ explicit approval. The CLI **never pushes**; commits happen only via
 `wrap --commit` under a permitting `commit_policy`. Hooks always exit 0,
 touch no network, and are ~250 auditable lines — review them before
 trusting, like any hook. Details:
-[references/security-model.md](references/security-model.md).
+[plugin/references/security-model.md](plugin/references/security-model.md).
 
 ## Self-hosting
 
@@ -153,7 +157,7 @@ and `.project-steward/` (real plan, handoff, decisions — including where
 this design deviates from its external review and why). Future agents:
 start with `.project-steward/HANDOFF.md` and `project-steward doctor
 --self`. Details:
-[references/self-hosting.md](references/self-hosting.md).
+[plugin/references/self-hosting.md](plugin/references/self-hosting.md).
 
 ## Composition
 

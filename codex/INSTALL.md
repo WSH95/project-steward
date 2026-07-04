@@ -28,7 +28,7 @@ Install by copying:
 
 ```
 mkdir -p ~/.agents/skills
-cp -r skills/* ~/.agents/skills/
+cp -r plugin/skills/* ~/.agents/skills/
 ```
 
 Check with `/skills` inside Codex; invoke explicitly (`$project-init`) or
@@ -36,7 +36,7 @@ let Codex trigger them implicitly from the descriptions.
 
 ## 3. Plugin route (bundles skills in one step)
 
-This repo ships `.codex-plugin/plugin.json` plus
+This repo ships `plugin/.codex-plugin/plugin.json` plus
 `.agents/plugins/marketplace.json`, so it can be added as a plugin
 marketplace:
 

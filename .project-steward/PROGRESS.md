@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T18:18:09Z — cli
+0.2.2: plugin payload isolated under plugin/ (ADR 0008) — installs no longer ship .project-steward//tests/.github; marketplace sources ./plugin; dev harness re-pointed; 43 tests + doctor + validate green
+
 ### 2026-07-04T17:42:27Z — cli
 0.2.1: init approval gate made mechanical (dry-run draft pasted in visible reply before approval; ADR 0007) after field report of sight-unseen approval; +2 regression tests (43 green with PYTHONPATH; test_cli_version_runs env-dependent pre-existing)
 

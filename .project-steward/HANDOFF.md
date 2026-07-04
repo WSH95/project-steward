@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-07-04T17:42:27Z
+updated_at: 2026-07-04T18:18:09Z
 updated_by: cli
 session_status: closed
 branch: main
-last_commit: 4290a62
+last_commit: b683877
 ---
 # Handoff
 
@@ -50,11 +50,14 @@ green under TZ=UTC and TZ=America/New_York; doctor --self 0 failures
 
 ## Key files
 
-- `src/project_steward/hooks.py` — all lifecycle behavior (both agents).
-- `src/project_steward/sessions.py` — recap/crash-detection/wrap core.
-- `hooks/hooks.json`, `hooks/codex.hooks.json` — the only files exposed
-  to agent-platform API drift.
-- `references/session-protocol.md` — the contract everything implements.
+- `plugin/src/project_steward/hooks.py` — all lifecycle behavior (both
+  agents).
+- `plugin/src/project_steward/sessions.py` — recap/crash-detection/wrap
+  core.
+- `plugin/hooks/hooks.json`, `plugin/hooks/codex.hooks.json` — the only
+  files exposed to agent-platform API drift.
+- `plugin/references/session-protocol.md` — the contract everything
+  implements. (Payload moved to plugin/ in 0.2.2, ADR 0008.)
 
 ## Tried and rejected
 
