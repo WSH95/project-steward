@@ -66,3 +66,21 @@ are preserved (tests assert preservation).
 **Consequences**: Migrated files may legitimately still say
 "Projectforge" in prose; PROGRESS.md's migration entry explains the
 rename.
+
+## 0007 — 2026-07-04 — Approval gates must show the artifact in the visible transcript
+
+**Context**: A field report: `/project-steward:init` asked "Approve this
+AGENTS.md draft and the accompanying files?" without the draft ever
+being shown. The skill said "show the complete draft", but nothing
+forced it into the user-visible reply — an agent can compose the draft
+in hidden thinking and jump straight to an AskUserQuestion dialog, and
+the `--yes` apply path (Bash) renders no diff UI as a fallback.
+**Decision**: Approval gates are mechanical, not exhortative: preview
+with the CLI (`init --dry-run` prints the file plan + full diffs), paste
+the artifact verbatim into the visible reply, and only then ask.
+Thinking, subagent transcripts, question dialogs, and collapsed tool
+output are not review surfaces. Applies to any future gate that writes
+files the user must approve.
+**Consequences**: The approved text is exactly what `--yes` writes
+(kills draft/write divergence); `tests/test_skill_text.py` pins the
+load-bearing phrases so edits cannot silently drop the gate.

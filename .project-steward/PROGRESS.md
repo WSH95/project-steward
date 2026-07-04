@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T17:42:27Z — cli
+0.2.1: init approval gate made mechanical (dry-run draft pasted in visible reply before approval; ADR 0007) after field report of sight-unseen approval; +2 regression tests (43 green with PYTHONPATH; test_cli_version_runs env-dependent pre-existing)
+
+### 2026-07-04T16:55:02Z — cli
+Machine-local fix: re-pointed Claude Code marketplace from stale ~/Downloads copy to this repo, reinstalled plugin (cache now at 4290a62); answered plugin-update + real-world-usage questions; no repo changes
+
 ### 2026-07-04T13:45:00Z — claude (wrap)
 Session wrapped: fix rounds 7396b66 + a06d206 committed; user set real
 author + repo URLs (github.com/WSH95/project-steward) across

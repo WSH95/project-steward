@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1 — 2026-07-04
+
+### Fixed
+- Init approval gate could ask "Approve this AGENTS.md draft?" without
+  the draft ever appearing on screen (field report). The project-init
+  skill and `/project-steward:init` command now make the gate mechanical:
+  run `project-steward init … --dry-run` (prints the file plan plus full
+  AGENTS.md/CLAUDE.md/.gitignore diffs, writes nothing), paste the draft
+  verbatim into the visible reply, and only then ask for approval —
+  dialogs, hidden thinking, subagent transcripts, and collapsed tool
+  output are not review surfaces (ADR 0007). This also guarantees the
+  approved text is exactly what `--yes` writes. Regression test:
+  `tests/test_skill_text.py`.
+
 ## 0.2.0 — 2026-07-04
 
 Renamed **Projectforge → Project Steward** (product "Project Steward",

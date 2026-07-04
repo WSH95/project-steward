@@ -53,20 +53,29 @@ Never guess an unanswered load-bearing question — record it in
 
 ## Phase 3 — Generate (approval gated)
 
-1. Draft the full `AGENTS.md` (canonical, < 150 lines: overview, source
-   of truth, conventions, git policy — plus the three managed blocks:
-   `commands`, `task-backend`, `agent-session-protocol`).
-2. Show the complete draft (or diff, if the file exists) and get explicit
-   approval.
-3. Apply with the CLI so blocks and state files are written
-   deterministically and idempotently:
+1. Map the interview answers onto init flags and preview without writing:
    `project-steward init --project-name "..." --one-liner "..."
    --primary-language "..." --build-command "..." --test-command "..."
-   --lint-command "..." --backend markdown --first-milestone "..." --yes`
-   (without the CLI: create the files manually from `templates/`,
-   preserving any existing user content and editing only inside managed
-   blocks). Then edit the generated `.project-steward/PROJECT.md` and
-   `PLAN.md` with the interview's real content.
+   --lint-command "..." --backend markdown --first-milestone "..."
+   --dry-run` — this prints the create/update/keep file plan plus full
+   diffs for `AGENTS.md`, `CLAUDE.md`, and `.gitignore`, and writes
+   nothing. (Without the CLI: compose the same draft yourself from
+   `templates/`, preserving any existing user content and editing only
+   inside managed blocks.) Keep AGENTS.md canonical and < 150 lines:
+   overview, source of truth, conventions, git policy — plus the three
+   managed blocks: `commands`, `task-backend`, `agent-session-protocol`.
+2. Paste the complete AGENTS.md draft (fenced; or diff, if the file
+   exists) and the file plan into your reply — the user-visible message
+   text — BEFORE asking anything. Thinking, subagent transcripts,
+   AskUserQuestion dialogs, and collapsed tool output are not review
+   surfaces: if the draft does not appear verbatim in the visible
+   conversation, you may not ask for approval.
+3. Get explicit approval (AskUserQuestion is fine for the question
+   itself), then apply by re-running the same flags with `--dry-run`
+   replaced by `--yes`, so blocks and state files are written
+   deterministically and idempotently. Then edit the generated
+   `.project-steward/PROJECT.md` and `PLAN.md` with the interview's real
+   content.
 4. `CLAUDE.md` must stay a thin adapter that imports `@AGENTS.md`
    (Claude Code does not read AGENTS.md natively).
 
