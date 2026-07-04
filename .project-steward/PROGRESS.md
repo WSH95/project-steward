@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T18:49:14Z — cli
+Distribution session: 0.2.1 init-gate fix (ADR 0007), 0.2.2 payload isolation in plugin/ (ADR 0008), published to GitHub, marketplace switched to git SSH source, 0.2.2 installed+verified from GitHub, first fully green CI (ADR 0009 dropped retired macOS/3.7 runner)
+
+### 2026-07-04T18:40:54Z — cli
+GitHub distribution live: c20f0ea pushed, CI run 28715861017 fully green (13 jobs, 3 OS, 3.7-3.13), 0.2.2 installed from git SSH source and cache-verified; memory notes updated. Steward files re-dirtied by this checkpoint — fold into next commit
+
 ### 2026-07-04T18:36:18Z — cli
 Published to GitHub (d27ad32 pushed, user-approved); marketplace re-registered from git@github.com SSH source; 0.2.2 installed from GitHub, cache verified payload-only at d27ad32. CI: 13/13 runnable jobs green incl. both 3.7 floors; macOS/3.7 dropped (macos-13 runner retired, ADR 0009); 3 wedged runs cancelled
 
