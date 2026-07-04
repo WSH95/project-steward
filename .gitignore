@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# PROJECT-STEWARD:BEGIN runtime-state
+.project-steward/runtime/
+.project-steward/tmp/
+.project-steward/migration-backup-projectforge/
+# PROJECT-STEWARD:END runtime-state

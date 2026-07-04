@@ -1,0 +1,17 @@
+{
+  "name": "project-steward-marketplace",
+  "owner": {
+    "name": "Wang"
+  },
+  "metadata": {
+    "description": "Marketplace for the Project Steward plugin",
+    "version": "0.2.0"
+  },
+  "plugins": [
+    {
+      "name": "project-steward",
+      "source": "./",
+      "description": "Cross-agent project stewardship toolkit (init, progress, handoff/resume, backend broker)."
+    }
+  ]
+}
