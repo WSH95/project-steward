@@ -9,6 +9,5 @@
   "license": "MIT",
   "keywords": ["project-management", "handoff", "resume", "agents-md", "codex", "progress"],
   "commands": "./commands",
-  "skills": "./skills",
-  "hooks": "./hooks/hooks.json"
+  "skills": "./skills"
 }

@@ -89,6 +89,7 @@ def test_wrap_language_detector(git_repo, capsys, monkeypatch):
 
 def test_hooks_never_fail(tmp_path, capsys, monkeypatch):
     # Not a steward project, garbage stdin: still exit 0, no output.
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "stdin", io.StringIO("not json"))
     rc = hooks.main(["stop", "--agent", "claude"])
     assert rc == 0 and capsys.readouterr().out == ""

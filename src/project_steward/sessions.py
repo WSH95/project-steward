@@ -8,6 +8,7 @@ and wrap-up.
 """
 from __future__ import annotations
 
+import calendar
 import os
 import socket
 import time
@@ -140,7 +141,7 @@ def _activity_lines_newer_than(root, epoch):
             ts = line.split("\t", 1)[0]
             try:
                 lt = time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
-                if time.mktime(lt) - time.timezone > epoch:
+                if calendar.timegm(lt) > epoch:
                     count += 1
             except ValueError:
                 continue

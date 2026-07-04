@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 
 from project_steward import doctor
 from project_steward.cli import main as cli_main
@@ -45,7 +46,7 @@ def test_cli_init_and_status(git_repo, capsys):
 
 def test_cli_version_runs():
     proc = subprocess.run(
-        ["python", "-m", "project_steward", "--version"],
+        [sys.executable, "-m", "project_steward", "--version"],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     assert proc.returncode == 0
     assert b"project-steward" in proc.stdout
