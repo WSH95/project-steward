@@ -87,6 +87,31 @@ def test_wrap_language_detector(git_repo, capsys, monkeypatch):
     assert out == {}
 
 
+def test_wrap_detector_ignores_harness_text_and_prose(git_repo, capsys,
+                                                      monkeypatch):
+    _init(git_repo)
+    blob = ("<task-notification>agent finished; it rewrote the handoff "
+            "and wants to wrap up</task-notification>")
+    rc, out = _run_hook(["user-prompt-submit", "--agent", "claude"],
+                        {"cwd": str(git_repo), "prompt": blob}, capsys,
+                        monkeypatch)
+    assert rc == 0 and out == {}
+    rc, out = _run_hook(["user-prompt-submit", "--agent", "claude"],
+                        {"cwd": str(git_repo),
+                         "prompt": "the handoff template needs edits"},
+                        capsys, monkeypatch)
+    assert rc == 0 and out == {}
+
+
+def test_hook_tolerates_non_string_cwd(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    monkeypatch.chdir(git_repo)
+    rc, out = _run_hook(["session-start", "--agent", "claude"],
+                        {"cwd": 123}, capsys, monkeypatch)
+    assert rc == 0
+    assert "session recap" in out["hookSpecificOutput"]["additionalContext"]
+
+
 def test_hooks_never_fail(tmp_path, capsys, monkeypatch):
     # Not a steward project, garbage stdin: still exit 0, no output.
     monkeypatch.chdir(tmp_path)

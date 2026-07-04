@@ -2,6 +2,22 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-04T13:17:00Z — claude (portability audit + fixes)
+3-agent audit + line verification: 11 confirmed findings fixed — resume
+false-crash signal (claim-before-detect), wrap-detector overreach
+(bare "handoff" + harness-injected text), tomlmini/tomllib escape
+divergence, atomic-write fsync + Windows replace retry, migrate prose
+rewrite (ADR 0006) + commit staging + config escaping, non-string cwd
+drop, doctor PATH/placeholder-URL checks, secret-scan placeholder
+downgrade, Windows install docs. Declined with reasons: Codex event
+set (ADR 0004), ±1s activity fuzz, plugin shipping own state dir.
+41 tests green under TZ=UTC and America/New_York; doctor --self 0
+failures (2 intended warns).
+
+### 2026-07-04T12:41:00Z — claude (auto-checkpoint)
+[auto-checkpoint] Fix session state saved: commit 7396b66 landed;
+HANDOFF refreshed; awaiting user /reload-plugins verification.
+
 ### 2026-07-04T12:36:00Z — claude (fix session)
 Plugin manifest: dropped duplicate hooks ref (hooks/hooks.json is
 auto-loaded; manifest.hooks is for additional files only) — clears the

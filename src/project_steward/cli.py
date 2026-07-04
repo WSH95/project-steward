@@ -149,7 +149,7 @@ def cmd_resume(args):
     if not is_steward_project(root):
         return cmd_status(args)
     previous, _record = sessions.claim_session(root, args.agent)
-    recap = sessions.build_recap(root)
+    recap = sessions.build_recap(root, runtime_record=previous)
     if args.json:
         recap["previous_runtime_claim"] = previous
         _print(recap, True)
@@ -239,7 +239,7 @@ def cmd_migrate(args):
     if not report.get("ok"):
         _print("error: %s" % report.get("error"), False)
         return 1
-    _print("Migrated: %s" % ", ".join(report["moved"]) or "(nothing to move)",
+    _print("Migrated: %s" % (", ".join(report["moved"]) or "(nothing to move)"),
            False)
     for note in report["notes"]:
         _print("note: %s" % note, False)
@@ -247,7 +247,8 @@ def cmd_migrate(args):
         _print("\nAGENTS.md changes:\n%s" % report["agents_diff"], False)
     _print("Suggested commit: %s" % gitutil.suggest_commit_command(
         root, "chore(steward): migrate Projectforge state to Project Steward",
-        ["AGENTS.md", ".gitignore"]), False)
+        [".project-steward", ".projectforge", "AGENTS.md", ".gitignore"]),
+        False)
     return 0
 
 

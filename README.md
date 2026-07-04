@@ -46,7 +46,8 @@ gitignored `runtime/` for device-local session claims and forensics.
 
 ## Install
 
-**CLI (all platforms; required for hooks):**
+**CLI (required for hooks on native Windows; recommended elsewhere — on
+POSIX hosts the plugin's hooks fall back to a bundled python3 shim):**
 
 ```
 pipx install project-steward        # or: pip install .   (from a checkout)
@@ -124,10 +125,14 @@ never silent. Linear/Jira are honest stubs. Details:
 
 Ubuntu, Windows, and macOS are first-class: the core is Python 3.7+
 standard library only (pathlib/subprocess/json; `tomllib` on 3.11+ with a
-bundled flat-TOML fallback below), hooks invoke the `project-steward`
-console script (no bash, no `${VAR}` shell expansion), writes are atomic
-and UTF-8/`\n`-normalized, and CI runs a 3-OS matrix including Python 3.7
-jobs. Details and the deliberate 3.7-floor compromises:
+bundled flat-TOML fallback below that decodes strings identically), hooks
+prefer the `project-steward` console script and fall back to a bundled
+`python3` shim — the fallback's `${CLAUDE_PLUGIN_ROOT}` expansion is
+POSIX-only, so **native Windows needs the CLI installed** (a fresh macOS
+may also lack `python3` until the Xcode Command Line Tools are present).
+Writes are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS
+matrix including Python 3.7 jobs. Details and the deliberate 3.7-floor
+compromises:
 [references/cross-platform.md](references/cross-platform.md).
 
 ## Security, git policy, hook trust

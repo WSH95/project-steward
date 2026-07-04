@@ -29,11 +29,16 @@ WRAP_PHRASES = [
     "wrap up", "wrapping up", "wrap this up", "pause here", "pausing",
     "stopping for", "stop for today", "stop for now", "end the session",
     "end session", "ending the session", "call it a day", "sign off",
-    "signing off", "hand off", "handoff", "switch to codex",
+    "signing off", "hand off", "switch to codex",
     "switch to claude", "switching to", "continue tomorrow",
     "pick this up later", "that's all for", "done for today", "i'm leaving",
     "have to go", "gotta go",
 ]
+
+# Prompts containing these are harness-injected (task notifications,
+# reminders, local-command echoes), not the user speaking.
+HARNESS_MARKERS = ("<task-notification>", "<system-reminder>",
+                   "<local-command", "<command-name>")
 
 
 def _read_stdin_json():
@@ -76,7 +81,7 @@ def _handle_session_start(root, agent, payload):
             ))
         return
     previous, _record = sessions.claim_session(root, agent)
-    recap = sessions.build_recap(root)
+    recap = sessions.build_recap(root, runtime_record=previous)
     text = sessions.format_recap(recap)
     if previous.get("status") == "active" and previous.get("host"):
         text += (
@@ -110,6 +115,8 @@ def _handle_user_prompt_submit(root, agent, payload):
     if not is_steward_project(root):
         return
     prompt = (payload.get("prompt") or "").lower()
+    if any(marker in prompt for marker in HARNESS_MARKERS):
+        return
     if any(phrase in prompt for phrase in WRAP_PHRASES):
         _emit(_additional_context(
             "UserPromptSubmit",
@@ -212,7 +219,8 @@ def main(argv=None):
             agent = argv[idx + 1]
     try:
         payload = _read_stdin_json()
-        root = find_project_root(payload.get("cwd"))
+        cwd = payload.get("cwd")
+        root = find_project_root(cwd if isinstance(cwd, str) and cwd else None)
         handler = HANDLERS.get(event)
         if handler is not None:
             handler(root, agent, payload)

@@ -73,7 +73,8 @@ def render_config_toml(legacy_values):
             if isinstance(value, int):
                 lines.append("%s = %d" % (key, value))
             else:
-                lines.append('%s = "%s"' % (key, value))
+                escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+                lines.append('%s = "%s"' % (key, escaped))
         lines.append("")
     return "\n".join(lines)
 
@@ -133,7 +134,6 @@ def migrate(root, project_name=""):
         if src.is_file() and not dst.exists():
             text = src.read_text(encoding="utf-8", errors="replace")
             text = convert_legacy_markers(text)
-            text = text.replace("Projectforge", "Project Steward")
             text = text.replace(".projectforge/", ".project-steward/")
             write_text_atomic(dst, text)
             report["moved"].append(name)

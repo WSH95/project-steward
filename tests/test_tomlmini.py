@@ -1,6 +1,6 @@
 import pytest
 
-from project_steward.tomlmini import TomlMiniError, loads
+from project_steward.tomlmini import TomlMiniError, load_toml_text, loads
 
 
 def test_sections_values_comments():
@@ -30,3 +30,20 @@ def test_errors():
         loads("bad line without equals")
     with pytest.raises(TomlMiniError):
         loads('k = [1, 2]')
+
+
+def test_basic_string_escapes_match_tomllib():
+    assert loads('k = "a\\tb"')["k"] == "a\tb"
+    assert loads('k = "say \\"hi\\""')["k"] == 'say "hi"'
+    assert loads('k = "\\u0041Z"')["k"] == "AZ"
+    with pytest.raises(TomlMiniError):
+        loads('k = "C:\\Users\\bob"')
+
+
+def test_windows_paths_use_literal_strings_on_all_pythons():
+    # load_toml_text picks tomllib on 3.11+ and the mini reader below;
+    # these inputs must behave identically on both.
+    with pytest.raises(ValueError):
+        load_toml_text('k = "C:\\Users\\bob"')
+    assert load_toml_text("k = 'C:\\Users\\bob'")["k"] == "C:\\Users\\bob"
+    assert load_toml_text('k = "a\\tb"')["k"] == "a\tb"

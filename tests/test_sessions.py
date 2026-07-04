@@ -36,6 +36,15 @@ def test_crash_detection_from_activity_and_runtime(git_repo):
     assert any("AFTER the last HANDOFF.md" in s for s in signals)
 
 
+def test_clean_resume_reports_no_false_crash(git_repo):
+    _init(git_repo)
+    sessions.claim_session(git_repo, "test")
+    sessions.wrap(git_repo, "clean end", "test")
+    previous, _record = sessions.claim_session(git_repo, "test")
+    recap = sessions.build_recap(git_repo, runtime_record=previous)
+    assert not any("active session" in s for s in recap["crash_signals"])
+
+
 def test_wrap_closes_and_flags_unmentioned_dirty(git_repo):
     _init(git_repo)
     sessions.claim_session(git_repo, "test")

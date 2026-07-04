@@ -163,8 +163,13 @@ def handoff_meta(root):
     return meta, body, mtime
 
 
-def detect_crash_signals(root):
-    """Independent signals that the previous session ended abnormally."""
+def detect_crash_signals(root, runtime_record=None):
+    """Independent signals that the previous session ended abnormally.
+
+    Callers that have already claimed this session must pass the
+    pre-claim record as ``runtime_record`` — otherwise the fresh claim
+    itself reads as a crash marker.
+    """
     signals = []
     meta, body, handoff_mtime = handoff_meta(root)
 
@@ -174,7 +179,8 @@ def detect_crash_signals(root):
             "previous session never wrapped."
         )
 
-    runtime = load_runtime_session(root)
+    runtime = (load_runtime_session(root) if runtime_record is None
+               else runtime_record)
     if runtime.get("status") == "active":
         signals.append(
             "Local runtime marker shows an active session on this device "
@@ -256,8 +262,12 @@ def _open_questions(root):
         return 0
 
 
-def build_recap(root):
-    """Structured recap for session start. Read-only."""
+def build_recap(root, runtime_record=None):
+    """Structured recap for session start. Read-only.
+
+    ``runtime_record`` is forwarded to ``detect_crash_signals`` (pass the
+    pre-claim record after ``claim_session``).
+    """
     meta, body, _ = handoff_meta(root)
     milestone, open_tasks = _plan_current(root)
     section = _extract_section(body, "## Next steps")
@@ -281,7 +291,7 @@ def build_recap(root):
         "latest_progress": _progress_head(root),
         "open_questions": _open_questions(root),
         "next_steps_excerpt": section[:600],
-        "crash_signals": detect_crash_signals(root),
+        "crash_signals": detect_crash_signals(root, runtime_record),
     }
     return recap
 

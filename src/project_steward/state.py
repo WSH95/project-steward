@@ -7,6 +7,7 @@ import datetime
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from . import __version__
@@ -43,7 +44,18 @@ def write_text_atomic(path, text):
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
-        os.replace(tmp, str(path))
+            fh.flush()
+            os.fsync(fh.fileno())
+        for attempt in range(3):
+            try:
+                os.replace(tmp, str(path))
+                break
+            except PermissionError:
+                # Windows: destination briefly locked by an editor,
+                # antivirus, or sync client.
+                if attempt == 2:
+                    raise
+                time.sleep(0.1)
     finally:
         if os.path.exists(tmp):
             try:

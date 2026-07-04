@@ -1,5 +1,6 @@
 from project_steward.managed_blocks import find_legacy_blocks
-from project_steward.migrate import migrate, parse_legacy_config
+from project_steward.migrate import (migrate, parse_legacy_config,
+                                     render_config_toml)
 from project_steward.paths import state_dir
 from project_steward.tomlmini import loads
 
@@ -33,8 +34,9 @@ def test_full_migration(git_repo):
     assert not (git_repo / ".projectforge").exists()
     assert (sdir / "migration-backup-projectforge" / "PLAN.md").is_file()
     plan = (sdir / "PLAN.md").read_text(encoding="utf-8")
-    assert "Project Steward" in plan and ".project-steward/" in plan
-    assert "Projectforge" not in plan
+    assert ".project-steward/" in plan
+    assert ".projectforge/" not in plan
+    assert "Projectforge" in plan  # product names in user prose survive
     cfg = loads((sdir / "config.toml").read_text(encoding="utf-8"))
     assert cfg["session"]["auto_handoff_mode"] == "remind"
     assert cfg["session"]["auto_handoff_cooldown_min"] == 30
@@ -52,3 +54,8 @@ def test_full_migration(git_repo):
 def test_parse_legacy_config():
     values = parse_legacy_config('# c\nA=1\nB="two"\n\nbad\n')
     assert values == {"A": "1", "B": "two"}
+
+
+def test_render_config_escapes_quotes_and_backslashes():
+    text = render_config_toml({"COMMIT_POLICY": 'a"b\\c'})
+    assert loads(text)["git"]["commit_policy"] == 'a"b\\c'

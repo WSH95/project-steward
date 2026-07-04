@@ -6,6 +6,7 @@ Exit code is 1 only when at least one check FAILS.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -40,12 +41,17 @@ def run_checks(root, self_mode=False):
            OK if gitutil.git_available(root) else FAIL,
            "git available", "" if gitutil.git_available(root) else
            "git not found on PATH")
-    _check(results,
-           OK if shutil.which("project-steward") else WARN,
+    cli_on_path = bool(shutil.which("project-steward"))
+    if os.name == "nt":
+        cli_missing_msg = ("plugin hooks cannot run on native Windows "
+                           "without the CLI — install with pipx/pip")
+    else:
+        cli_missing_msg = ("plugin hook events fall back to the bundled "
+                           "python3 shim; install with pipx/pip for CLI "
+                           "commands and faster hooks")
+    _check(results, OK if cli_on_path else WARN,
            "project-steward on PATH",
-           "" if shutil.which("project-steward") else
-           "hooks configured as `project-steward hook ...` will not run; "
-           "install with pipx/pip or use the bundled script fallback")
+           "" if cli_on_path else cli_missing_msg)
 
     # Project state ---------------------------------------------------------
     if not is_steward_project(root):
@@ -144,10 +150,14 @@ def run_checks(root, self_mode=False):
                     origin=".project-steward/%s" % name)
             except OSError:
                 pass
-    _check(results, OK if not findings else FAIL,
+    hard = [f for f in findings if not f.get("placeholder")]
+    _check(results, OK if not findings else (FAIL if hard else WARN),
            "no secrets in committed steward files",
            "" if not findings else "; ".join(
-               "%s in %s" % (f["label"], f["origin"]) for f in findings[:5]))
+               "%s in %s%s" % (f["label"], f["origin"],
+                               " (placeholder?)" if f.get("placeholder")
+                               else "")
+               for f in findings[:5]))
 
     if has_legacy_state(root):
         _check(results, WARN, "legacy state",
@@ -198,6 +208,19 @@ def _self_checks(root):
     _check(results, OK if not unresolved else WARN,
            "self: no unresolved placeholders",
            "" if not unresolved else ", ".join(unresolved))
+    stale_urls = []
+    for rel in (".claude-plugin/plugin.json", "pyproject.toml"):
+        path = root / rel
+        try:
+            if "github.com/USER/" in path.read_text(encoding="utf-8"):
+                stale_urls.append(rel)
+        except OSError:
+            pass
+    _check(results, OK if not stale_urls else WARN,
+           "self: repo URLs set",
+           "" if not stale_urls else
+           "placeholder github.com/USER/ in %s — replace before publishing"
+           % ", ".join(stale_urls))
     try:
         import project_steward  # noqa: F401
         _check(results, OK, "self: package imports",

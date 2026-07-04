@@ -53,3 +53,16 @@ PLAN.md pointer rule); deep per-backend automation stays with the
 backends themselves. Linear/Jira are honest stubs.
 **Consequences**: Small, testable broker (~250 lines) that never
 installs or switches silently.
+
+## 0006 — 2026-07-04 — Migration never rewrites product names in user prose
+
+**Context**: `migrate` ran a blanket Projectforge→Project Steward
+replacement over every moved state file, contradicting the module's own
+documented contract; the portability audit confirmed it corrupts
+user-authored history (e.g. a DECISIONS entry comparing tools).
+**Decision**: Migration converts managed-block markers and
+`.projectforge/` path references only; product-name mentions in prose
+are preserved (tests assert preservation).
+**Consequences**: Migrated files may legitimately still say
+"Projectforge" in prose; PROGRESS.md's migration entry explains the
+rename.

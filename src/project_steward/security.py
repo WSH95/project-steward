@@ -15,6 +15,13 @@ SECRET_PATTERNS = [
      "hard-coded credential assignment"),
 ]
 
+# Only the generic assignment pattern above may be downgraded when the
+# value is an obvious placeholder; structured tokens (AKIA/ghp_/...) never.
+_DOWNGRADABLE_LABEL = "hard-coded credential assignment"
+PLACEHOLDER_HINT_RE = re.compile(
+    r"(?i)(changeme|placeholder|example|sample|dummy|redacted|"
+    r"your[-_]|x{4,}|\$\{|<[^>]+>)")
+
 RISKY_COMMAND_PATTERNS = [
     (re.compile(r"\brm\s+-[rRf]{2,}\s+(/|~|\$HOME)"), "broad recursive deletion"),
     (re.compile(r"curl[^|\n]*\|\s*(ba)?sh"), "pipe remote script to shell"),
@@ -42,6 +49,8 @@ def scan_text_for_secrets(text, origin=""):
                 "origin": origin,
                 "label": label,
                 "sample": snippet[:6] + "..." if len(snippet) > 9 else "***",
+                "placeholder": (label == _DOWNGRADABLE_LABEL
+                                and bool(PLACEHOLDER_HINT_RE.search(snippet))),
             })
     return findings
 
