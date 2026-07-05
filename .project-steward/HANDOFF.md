@@ -1,64 +1,59 @@
 ---
-updated_at: 2026-07-05T13:31:52Z
+updated_at: 2026-07-05T13:41:29Z
 updated_by: cli
 session_status: closed
 branch: main
-last_commit: 29f0038
+last_commit: 60be5c6
 ---
 # Handoff
 
 ## Now
 
-v0.2.2, published and distributed. Three commits this session, all pushed
-to github.com/WSH95/project-steward (private, main @ c20f0ea):
-b683877 made the init approval gate mechanical — `init --dry-run`, paste
-the full AGENTS.md draft in the visible reply, only then ask (ADR 0007,
-regression-pinned by tests/test_skill_text.py); d27ad32 isolated the
-installable payload under `plugin/` so installs stop shipping
-`.project-steward/`/tests/.github (ADR 0008 — Claude Code has no ignore
-mechanism, subdir source is the idiom); c20f0ea dropped the CI
-macOS/3.7 job because GitHub retired the macos-13 runner (ADR 0009).
-First fully green CI run: 28715861017 (13 jobs, 3 OS, Python 3.7–3.13,
-including editable install of the plugin/ layout). On this machine the
-plugin is installed at user scope from the git SSH source
-(`git@github.com:WSH95/project-steward.git`), cache verified
-payload-only at d27ad32. 43 tests green locally (via
-`PYTHONPATH=plugin/src`; the package is NOT pip-installed here —
-test_cli_version_runs fails under bare `python3 -m pytest`, expected).
+v0.2.3, released and distributed (2026-07-05). Two commits this session,
+pushed to main @ 60be5c6: 29f0038 stopped docs advertising the
+nonexistent PyPI install (ADR 0010 — not published; name unclaimed);
+60be5c6 fixed the field-reported packaging bug — templates now live
+INSIDE the package (`plugin/src/project_steward/templates/`, declared
+package data), missing templates raise TemplateError (CLI exits 2)
+instead of silently scaffolding stubs, doctor gained a templates
+self-check, CI gained a non-editable `pip install .` + init front-matter
+regression job, and the recap's open-task count is scoped to the named
+milestone's PLAN.md section (ADR 0011). CI run 28742494281: 14/14 jobs
+green. Distribution on this machine: plugin updated 0.2.2→0.2.3
+(restart Claude Code to apply to hooks), CLI pipx-installed 0.2.3 from
+the git+ssh source (`pipx reinstall project-steward` after each release
+— pipx does not auto-detect git updates). Acceptance verified in three
+clean installs (local checkout venv, GitHub-source venv, pipx): init
+writes real front matter, resume reports a real handoff. 46 tests green
+via `PYTHONPATH=plugin/src python3 -m pytest`; `rm -r hooks/` crutch
+cleanup done.
 
 ## In flight
 
-- (none — only this wrap's own steward-file updates are uncommitted;
-  the wrap commit includes them)
-- Untracked `hooks/` at repo root: a session-local delegate created
-  because the running session's hooks predated the plugin/ move. NOT
-  committed, must not be. Delete after Claude Code restarts:
-  `rm -r hooks/`.
+- (none — only this checkpoint's steward-file updates are uncommitted)
 
 ## Next steps
 
-1. After restart: `rm -r hooks/` (the untracked crutch), then confirm
-   the restarted session shows the steward recap (hooks now run from the
-   GitHub-sourced 0.2.2 cache).
+1. Restart Claude Code so plugin 0.2.3 hooks take effect; confirm the
+   steward recap still appears (and shows M1's scoped task count).
 2. Field-test in a scratch repo: `/project-steward:init` end-to-end —
    the agent must paste the full dry-run AGENTS.md draft BEFORE asking
    approval (ADR 0007 regression); then kill the terminal mid-session
    and reopen — a crashed session must show "ABNORMAL TERMINATION
    SUSPECTED", a cleanly wrapped one must NOT.
-3. Release flow from now on: bump version in
-   `plugin/.claude-plugin/plugin.json` + `plugin/.codex-plugin/plugin.json`
-   + `.claude-plugin/marketplace.json` + `pyproject.toml` +
-   `plugin/src/project_steward/__init__.py`, commit, push (explicit user
-   approval required), then
+3. Release flow: bump version in the five sites (plugin.json ×2,
+   marketplace.json, pyproject.toml, __init__.py), commit, push (explicit
+   user approval), then
    `claude plugin update project-steward@project-steward-marketplace`
-   (bare-name update does NOT resolve). `claude plugin tag` can create
+   AND `pipx reinstall project-steward`. `claude plugin tag` can create
    release tags.
 4. Decide whether to make the GitHub repo public (installs then work
-   without SSH auth: `/plugin marketplace add WSH95/project-steward`).
+   without SSH auth) — and with it, whether to publish to PyPI
+   (ADR 0010 / QUESTIONS.md).
 5. Resolve QUESTIONS.md items (backend installer commands; Codex
    plugin-bundled hooks maturity; Codex PostToolUse matcher syntax;
-   auto_handoff_min_edits default; NEW — does Codex's plugin route
-   support subdir sources per ADR 0008? verify before recommending it).
+   auto_handoff_min_edits default; Codex subdir plugin sources per
+   ADR 0008; PyPI publish timing).
 
 ## Blockers
 

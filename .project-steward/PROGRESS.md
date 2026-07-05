@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-05T13:41:29Z — cli
+0.2.3 released: templates ship inside the package (silent stub-scaffold bug from field report fixed, TemplateError hard-fail, CI packaged-install job, recap count scoped); PyPI install docs corrected (ADR 0010); pushed @ 60be5c6, CI 14/14 green, plugin+pipx redistributed from GitHub
+
+### 2026-07-05T13:36:42Z — cli
+[auto-checkpoint] 0.2.3 released: commit 60be5c6 pushed, CI 14/14 green incl. new packaged-install job; plugin updated + pipx reinstalled from GitHub; acceptance verified in 3 clean installs; HANDOFF body refreshed
+
 ### 2026-07-05T13:31:52Z — cli
 0.2.3: templates moved into the package (pip installs shipped none — silent stub scaffolds, field report); TemplateError hard-fail; doctor templates self-check; CI non-editable install job; recap open-task count scoped to named milestone (ADR 0011)
 
