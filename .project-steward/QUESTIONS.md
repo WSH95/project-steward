@@ -14,6 +14,10 @@ guess. Check off with the answer inline once resolved.
 - [ ] Codex `PostToolUse` hook `matcher: "*"`: confirm the matcher syntax
   (wildcard vs regex vs omit-for-match-all) at the ADR-0004 quarterly
   re-verification of https://developers.openai.com/codex/hooks.
+- [ ] Publish to PyPI once/if the repo goes public? Name unclaimed as of
+  2026-07-05 (index 404). Decide together with the repo-visibility
+  question (HANDOFF next steps); see ADR 0010 — until then docs must not
+  advertise a PyPI install.
 - [ ] Does Codex's plugin route support subdirectory plugin sources
   (`.agents/plugins/marketplace.json` source.path "./plugin", set by ADR
   0008)? https://developers.openai.com/codex/plugins doesn't say

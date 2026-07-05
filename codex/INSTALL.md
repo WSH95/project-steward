@@ -8,7 +8,10 @@ hooks — https://developers.openai.com/codex/hooks
 ## 1. CLI (recommended everywhere)
 
 ```
-pipx install project-steward     # or: pip install project-steward
+# Not yet on PyPI — install from a checkout:
+pipx install .                   # or: pip install .
+# or, with repo access, straight from GitHub:
+pipx install git+ssh://git@github.com/WSH95/project-steward.git
 project-steward --version
 ```
 

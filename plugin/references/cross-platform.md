@@ -38,5 +38,5 @@ the AGENTS.md protocol + prompts + manual CLI carry the behavior there.
 - Claude Code hook execution on native Windows has shell quirks; the
   console-script command avoids `${VAR}` expansion entirely.
 - `git` must be on PATH (Git for Windows is fine; Git Bash NOT required).
-- PowerShell examples: `pipx install project-steward`;
-  `project-steward resume`; paths may use either separator.
+- PowerShell examples: `pipx install .` (from a checkout — not yet on
+  PyPI); `project-steward resume`; paths may use either separator.

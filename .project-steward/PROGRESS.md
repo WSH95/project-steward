@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-05T13:08:57Z — cli
+pipx-from-PyPI failure diagnosed (package never published, name unclaimed); ADR 0010: defer PyPI, docs rewritten to checkout/git installs (README x2, codex/INSTALL.md, cross-platform.md); CLI installed via pipx from git+ssh (0.2.2, doctor green); hooks/ crutch removed; 43 tests green
+
 ### 2026-07-04T18:49:14Z — cli
 Distribution session: 0.2.1 init-gate fix (ADR 0007), 0.2.2 payload isolation in plugin/ (ADR 0008), published to GitHub, marketplace switched to git SSH source, 0.2.2 installed+verified from GitHub, first fully green CI (ADR 0009 dropped retired macOS/3.7 runner)
 

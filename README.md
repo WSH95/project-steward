@@ -54,7 +54,10 @@ gitignored `runtime/` for device-local session claims and forensics.
 POSIX hosts the plugin's hooks fall back to a bundled python3 shim):**
 
 ```
-pipx install project-steward        # or: pip install .   (from a checkout)
+# Not yet on PyPI — install from a checkout:
+pipx install .                      # or: pip install .
+# or, with repo access, straight from GitHub:
+pipx install git+ssh://git@github.com/WSH95/project-steward.git
 ```
 
 **Claude Code (plugin: skills + commands + hooks in one step):**
@@ -170,8 +173,9 @@ standard is the canonical instruction carrier.
 
 ## Troubleshooting
 
-- **Hooks do nothing** → `project-steward` not on PATH (`pipx install
-  project-steward`), or on Codex the `codex_hooks` flag is off / you are
+- **Hooks do nothing** → `project-steward` not on PATH (install from a
+  checkout: `pipx install .` — not yet on PyPI), or on Codex the
+  `codex_hooks` flag is off / you are
   on Windows (hooks disabled upstream — the AGENTS.md protocol still
   works). `project-steward doctor` reports this.
 - **"Not a Project Steward project"** → run `init`, or `--root` points

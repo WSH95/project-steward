@@ -124,3 +124,27 @@ against the plugin/ layout at d27ad32); macOS coverage continues at
 **Consequences**: macOS+3.7 is best-effort (stdlib-only code, low risk).
 Watch ubuntu-22.04's own retirement date — when it goes, the 3.7 floor
 loses its last Linux runner and the floor itself should be re-debated.
+
+## 0010 — 2026-07-05 — PyPI publishing deferred; docs must not advertise unpublished channels
+
+**Context**: `pipx install project-steward` fails with "no matching
+distribution" — the package has never been uploaded to PyPI (index
+returns 404; the name is unclaimed as of 2026-07-05). Yet README (Install
++ Troubleshooting), codex/INSTALL.md, and
+plugin/references/cross-platform.md all instructed users to run exactly
+that command. Publishing now would also make the source public (sdist)
+while the GitHub repo is still private, and the README's Homepage link
+would 404 for outsiders — entangled with the open repo-visibility
+question (HANDOFF next steps).
+**Decision**: Do not publish to PyPI yet. All install docs describe only
+channels that actually work today: `pipx install .` / `pip install .`
+from a checkout, or `pipx install git+ssh://…` with repo access. General
+rule: docs never advertise an install channel before it exists. Revisit
+publishing together with the make-repo-public decision (tracked in
+QUESTIONS.md).
+**Consequences**: Four doc locations rewritten (CHANGELOG.md's historical
+packaging note left untouched). On this machine the CLI is now installed
+via `pipx install git+ssh://git@github.com/WSH95/project-steward.git`
+(0.2.2); after future releases it needs `pipx reinstall project-steward`
+— pipx does not auto-detect git updates. When PyPI publishing happens,
+revert the doc wording and claim the name promptly.
