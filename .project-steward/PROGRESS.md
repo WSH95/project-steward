@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-05T13:31:52Z — cli
+0.2.3: templates moved into the package (pip installs shipped none — silent stub scaffolds, field report); TemplateError hard-fail; doctor templates self-check; CI non-editable install job; recap open-task count scoped to named milestone (ADR 0011)
+
 ### 2026-07-05T13:08:57Z — cli
 pipx-from-PyPI failure diagnosed (package never published, name unclaimed); ADR 0010: defer PyPI, docs rewritten to checkout/git installs (README x2, codex/INSTALL.md, cross-platform.md); CLI installed via pipx from git+ssh (0.2.2, doctor green); hooks/ crutch removed; 43 tests green
 

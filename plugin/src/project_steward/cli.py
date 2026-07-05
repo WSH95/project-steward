@@ -403,7 +403,11 @@ def main(argv=None):
     if not getattr(args, "command", None):
         parser.print_help()
         return 0
-    return args.func(args)
+    try:
+        return args.func(args)
+    except scaffold.TemplateError as exc:
+        sys.stderr.write("error: %s\n" % exc)
+        return 2
 
 
 if __name__ == "__main__":

@@ -44,3 +44,24 @@ jobs:
         shell: bash
       - name: Self doctor
         run: project-steward doctor --self
+
+  # Editable installs keep the repo layout and masked the 0.2.2 bug where
+  # wheels shipped no templates and init silently wrote stub state files.
+  packaged-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Non-editable install
+        run: python -m pip install .
+      - name: init produces real state files, not stubs
+        run: |
+          cd "${{ runner.temp }}"
+          mkdir fresh-project && cd fresh-project
+          git init -q
+          project-steward init --yes --project-name t --backend markdown
+          head -3 .project-steward/HANDOFF.md
+          head -1 .project-steward/HANDOFF.md | grep -qx -- "---"
+          grep -q "session_status: closed" .project-steward/HANDOFF.md

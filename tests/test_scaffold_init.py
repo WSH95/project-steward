@@ -1,5 +1,8 @@
+import pytest
+
+from project_steward import scaffold
 from project_steward.paths import state_dir
-from project_steward.scaffold import apply_plan, plan_files
+from project_steward.scaffold import TemplateError, apply_plan, plan_files
 
 
 def test_init_scaffold_creates_everything(git_repo):
@@ -34,3 +37,18 @@ def test_reinit_preserves_user_content(git_repo):
     apply_plan(git_repo, plan2, mapping2)
     assert "USER SENTINEL LINE" in agents_path.read_text(encoding="utf-8")
     assert handoff.read_text(encoding="utf-8") == "custom handoff"  # skip
+
+
+def test_templates_live_inside_the_package():
+    # Regression: templates outside the package never ship in wheels.
+    root = scaffold._templates_root()
+    assert root is not None
+    assert root.parent.name == "project_steward"
+
+
+def test_missing_templates_hard_error(git_repo, monkeypatch):
+    # Regression: a template-less install must fail loud, not scaffold stubs.
+    monkeypatch.setattr(scaffold, "_templates_root", lambda: None)
+    with pytest.raises(TemplateError) as exc:
+        plan_files(git_repo, {"project_name": "Demo"})
+    assert ".template" in str(exc.value)

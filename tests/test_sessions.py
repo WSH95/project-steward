@@ -23,6 +23,18 @@ def test_resume_never_dirties_committed_files(git_repo):
     assert (runtime_dir(git_repo) / "session.json").is_file()
 
 
+def test_plan_open_tasks_scoped_to_first_milestone(git_repo):
+    _init(git_repo)
+    (state_dir(git_repo) / "PLAN.md").write_text(
+        "# Plan\n\n"
+        "## M1: done milestone\n\n- [x] shipped\n- [x] also shipped\n\n"
+        "## Later\n\n- [ ] someday\n- [ ] maybe\n- [ ] eventually\n",
+        encoding="utf-8")
+    milestone, open_tasks = sessions._plan_current(git_repo)
+    assert milestone == "M1: done milestone"
+    assert open_tasks == 0
+
+
 def test_crash_detection_from_activity_and_runtime(git_repo):
     _init(git_repo)
     sessions.claim_session(git_repo, "test")

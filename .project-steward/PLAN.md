@@ -17,6 +17,9 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Run CI on a real GitHub repo (3-OS matrix incl. Python 3.7 jobs)
       — 13/13 runnable jobs green at d27ad32; macOS/3.7 dropped, runner
       retired (ADR 0009)
+- [x] Ship templates inside the package + hard-error on missing; CI
+      non-editable install job; recap task count scoped to the named
+      milestone (0.2.3, ADR 0011 — from field report)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 

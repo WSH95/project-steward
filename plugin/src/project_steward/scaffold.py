@@ -18,9 +18,18 @@ from .state import (default_state, utcnow_iso, write_json_atomic,
                     write_text_atomic)
 
 
+class TemplateError(RuntimeError):
+    """A required scaffold template is missing — the install is broken."""
+
+
 def _templates_root():
-    # Repo/plugin layout: <root>/src/project_steward/scaffold.py -> <root>/templates
     here = Path(__file__).resolve()
+    # Templates ship inside the package; works for pip installs, the
+    # plugin cache, and the repo checkout alike.
+    packaged = here.parent / "templates"
+    if packaged.is_dir():
+        return packaged
+    # Fallback for pre-0.2.3 layouts: <root>/templates next to src/.
     for base in [here.parent.parent.parent, here.parent.parent]:
         candidate = base / "templates"
         if candidate.is_dir():
@@ -40,6 +49,17 @@ def _read_template(name):
         if candidate.is_file():
             return candidate.read_text(encoding="utf-8")
     return None
+
+
+def _require_template(name):
+    text = _read_template(name)
+    if text is None:
+        raise TemplateError(
+            "template %r not found (templates root: %s). The installed "
+            "project-steward package is missing its templates/ data — "
+            "reinstall from a complete source instead of proceeding with "
+            "degraded state files." % (name, _templates_root() or "<none>"))
+    return text
 
 
 DEFAULT_ANSWERS = {
@@ -154,9 +174,7 @@ def plan_files(root, answers=None):
         if target.exists():
             result[rel] = ("skip", None, "")
             continue
-        template = _read_template(name + ".template")
-        if template is None:
-            template = "# %s\n" % name
+        template = _require_template(name + ".template")
         text = render(template, mapping)
         result[rel] = ("create", text, "")
 
@@ -166,7 +184,7 @@ def plan_files(root, answers=None):
         old = agents_path.read_text(encoding="utf-8")
         new = old
     else:
-        template = _read_template("AGENTS.md.template") or "# $project_name\n"
+        template = _require_template("AGENTS.md.template")
         old, new = "", render(template, mapping)
     new = upsert_block(new, "commands", commands_block(mapping))
     new = upsert_block(new, "task-backend", task_backend_block(mapping))
@@ -192,7 +210,7 @@ def plan_files(root, answers=None):
             result["CLAUDE.md"] = ("update", new,
                                    unified_diff(old, new, "CLAUDE.md"))
     else:
-        template = _read_template("CLAUDE.md.template") or "@AGENTS.md\n"
+        template = _require_template("CLAUDE.md.template")
         text = render(template, mapping)
         result["CLAUDE.md"] = ("create", text, "")
 

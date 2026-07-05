@@ -148,3 +148,29 @@ via `pipx install git+ssh://git@github.com/WSH95/project-steward.git`
 (0.2.2); after future releases it needs `pipx reinstall project-steward`
 — pipx does not auto-detect git updates. When PyPI publishing happens,
 revert the doc wording and claim the name promptly.
+
+## 0011 — 2026-07-05 — Templates live inside the package; missing templates fail loud
+
+**Context**: Field report (paperforge): pip-installed CLIs scaffolded
+one-line stub state files — HANDOFF.md literally `# HANDOFF.md` — and
+`resume` showed "unknown by unknown". Templates lived at
+`plugin/templates/`, outside `plugin/src/project_steward/`, with no
+package-data declaration, so wheels shipped none; `_templates_root()`
+walked up from `__file__` expecting the repo layout and found nothing
+under site-packages; scaffold.py then silently substituted stubs in
+three places. CI installed only editably (`pip install -e`), which keeps
+the repo layout and masked all of it.
+**Decision**: Templates move into the package
+(`plugin/src/project_steward/templates/`, declared via
+`[tool.setuptools.package-data]`) and resolve `__file__`-relative —
+one path valid in repo checkout, plugin cache, and site-packages alike
+(3.7-safe; no importlib.resources). A missing template raises
+`TemplateError` (CLI exits 2); silent degradation of state files is
+forbidden — it contradicts the project's own durability guarantees.
+Doctor gains "self: templates ship inside the package"; CI gains a
+non-editable-install job asserting `init` writes real front matter.
+**Consequences**: The plugin payload still contains the templates (they
+remain under `plugin/`); the walk-up lookup stays only as a fallback for
+pre-0.2.3 layouts. Released as 0.2.3. General packaging rule going
+forward: every install channel (editable, wheel, plugin cache) must be
+exercised by CI or doctor before release.

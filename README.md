@@ -28,10 +28,11 @@ plugin/            the installable payload — ONLY this subtree ships when
                    Claude Code and Codex): project-init, session-resume,
                    session-handoff, progress-tracking, backend-broker
   src/project_steward/   Python 3.7+ stdlib-only core: CLI + hook dispatcher
+    templates/     AGENTS.md, CLAUDE.md adapter, and 11 state templates
+                   (inside the package so pip installs ship them)
   hooks/           hooks.json (Claude Code, auto-loaded by the plugin)
                    codex.hooks.json (copy to <repo>/.codex/hooks.json)
   commands/        /project-steward:init|resume|wrap|checkpoint|audit|backend
-  templates/       AGENTS.md, CLAUDE.md adapter, and 11 state templates
   references/      session-protocol, security-model, backend-selection,
                    cross-platform, self-hosting, migration docs
   .claude-plugin/ .codex-plugin/   plugin manifests

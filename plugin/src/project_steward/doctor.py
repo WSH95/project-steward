@@ -223,6 +223,24 @@ def _self_checks(root):
            "" if not stale_urls else
            "placeholder github.com/USER/ in %s — replace before publishing"
            % ", ".join(stale_urls))
+    from .paths import DURABLE_FILES
+    from .scaffold import _templates_root
+    troot = _templates_root()
+    missing = []
+    if troot is None or troot.parent.name != "project_steward":
+        _check(results, FAIL, "self: templates ship inside the package",
+               "resolved to %s" % (troot or "<none>"))
+    else:
+        for name in ("AGENTS.md.template", "CLAUDE.md.template"):
+            if not (troot / name).is_file():
+                missing.append(name)
+        for name in DURABLE_FILES:
+            if not (troot / "project-steward" / (name + ".template")).is_file():
+                missing.append(name + ".template")
+        _check(results, OK if not missing else FAIL,
+               "self: templates ship inside the package",
+               "%d template(s)" % (len(DURABLE_FILES) + 2) if not missing
+               else "missing: %s" % ", ".join(missing))
     try:
         import project_steward  # noqa: F401
         _check(results, OK, "self: package imports",

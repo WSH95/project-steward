@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.3 — 2026-07-05
+
+### Fixed
+- **pip-installed CLIs silently scaffolded stub state files** (field
+  report): templates lived at `plugin/templates/`, outside the package,
+  so wheels shipped none; `init` then fell back — without any warning —
+  to one-line stubs (`# HANDOFF.md`, no front matter) and `resume`
+  reported "unknown by unknown". Templates now live inside the package
+  (`project_steward/templates/`, declared as package data) and resolve
+  `__file__`-relative in every layout; a missing template is now a hard
+  `TemplateError` (CLI exits 2) instead of silent degradation
+  (ADR 0011). New CI job installs NON-editably and asserts `init`
+  output has real front matter — editable installs had masked the bug.
+- Session-start recap counted unchecked `- [ ]` boxes from *all* PLAN.md
+  sections into the first milestone's "open task(s)" figure; the count
+  is now scoped to the named milestone's own section.
+
 ## 0.2.2 — 2026-07-04
 
 ### Changed

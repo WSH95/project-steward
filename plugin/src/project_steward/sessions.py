@@ -232,10 +232,15 @@ def _plan_current(root):
         return "", 0
     current = ""
     open_tasks = 0
+    in_current = False
     for line in lines:
-        if line.startswith("## ") and not current:
-            current = line[3:].strip()
-        if line.strip().startswith("- [ ]"):
+        if line.startswith("## "):
+            if not current:
+                current = line[3:].strip()
+                in_current = True
+            else:
+                in_current = False
+        elif in_current and line.strip().startswith("- [ ]"):
             open_tasks += 1
     return current, open_tasks
 
