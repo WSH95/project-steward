@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T11:41:44Z — cli
+Implemented Claude plugin bundled launcher optimization; verified tests, doctor, payload build, and plugin validation.
+
 ### 2026-07-08T03:57:15Z — codex
 [auto-checkpoint] agent-plugins PR #1 is open for Project Steward 0.3.0; local steward publication commit ed214cc is pending push.
 

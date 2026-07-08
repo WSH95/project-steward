@@ -85,6 +85,7 @@ def _build_claude(out, meta):
     _copy_tree(SOURCE / "skills", plugin / "skills")
     _copy_tree(SOURCE / "references", plugin / "references")
     _copy_tree(SOURCE / "src", plugin / "src")
+    _copy_tree(SOURCE / "claude" / "bin", plugin / "bin")
     _copy_tree(SOURCE / "claude" / "commands", plugin / "commands")
     _copy_tree(SOURCE / "claude" / "hooks", plugin / "hooks")
 

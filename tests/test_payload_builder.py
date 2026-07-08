@@ -1,3 +1,4 @@
+import os
 import json
 import subprocess
 import sys
@@ -44,6 +45,24 @@ def test_builder_emits_extractable_claude_and_codex_payloads(tmp_path):
     assert (claude_plugin / "commands" / "init.md").is_file()
     assert (claude_plugin / "hooks" / "hooks.json").is_file()
     assert not (claude_plugin / "hooks" / "codex.hooks.json").exists()
+    assert not (
+        claude_plugin / "hooks" / "scripts" / "project_steward_hook.py"
+    ).exists()
+    launcher = claude_plugin / "bin" / "project-steward"
+    assert launcher.is_file()
+    assert "project_steward.cli" in launcher.read_text(encoding="utf-8")
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    proc = subprocess.run(
+        [sys.executable, str(launcher), "--version"],
+        cwd=str(ROOT),
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    assert proc.returncode == 0, proc.stdout
+    assert "project-steward" in proc.stdout
     assert (claude_plugin / "src" / "project_steward" / "cli.py").is_file()
 
     claude_marketplace = _json(claude / ".claude-plugin" / "marketplace.json")

@@ -1,66 +1,56 @@
 ---
-updated_at: 2026-07-08T03:57:15Z
-updated_by: codex
+updated_at: 2026-07-08T11:41:44Z
+updated_by: cli
 session_status: closed
 branch: main
-last_commit: ed214cc
+last_commit: 9075193
 ---
 # Handoff
 
 ## Now
 
-Codex hook schema fix is implemented as Project Steward 0.3.0 and has
-been published to the `WSH95/agent-plugins` repo by PR:
-https://github.com/WSH95/agent-plugins/pull/1. The PR branch is
-`publish/project-steward-plugin-0.3.0` at target commit `eb2daf4`,
-against `main`.
+Claude plugin runtime packaging has been optimized for Project Steward
+0.3.0. The generated Claude payload now ships a plugin-local
+`bin/project-steward` pure-Python launcher, hook commands prefer that
+launcher before falling back to an installed CLI, Windows hooks have
+explicit `commandWindows` variants, and the old POSIX-only hook shim is
+removed from generated payloads.
 
-The canonical Codex hook template no longer has a top-level
-`description`, self-doctor now rejects extra root keys in
-`plugin-src/codex/hooks/hooks.json`, and tests pin both source and
-generated hook root shape. Live `/home/wsh/.codex/hooks.json` was also
-cleaned so Codex CLI startup no longer reports the hook parse warning.
-
-This source repo remains the canonical Project Steward development repo
-and is on `main`. Source `origin/main` already points at `a470e90`
-(`fix(codex): enforce strict hook schema`) as of this session; local
-`main` also has unpushed steward publication record commit `ed214cc`.
-This auto-checkpoint dirtied `.project-steward/` files.
+Docs, metadata, `doctor`, payload builder, changelog, and regression tests
+were updated to describe and enforce the new launcher behavior. Full
+verification passed: pytest, compileall, `doctor --self`, payload build,
+Codex plugin validation, `git diff --check`, and built Claude launcher
+smoke test.
 
 ## In flight
 
-- `/tmp/agent-plugins` is on branch
-  `publish/project-steward-plugin-0.3.0`, tracking the pushed remote
-  branch and clean after PR creation.
-- Source repo has uncommitted auto-checkpoint updates under
-  `.project-steward/`.
-- `gh repo view WSH95/project-steward` reported the source repo is still
-  PRIVATE during this session. The user said they will open-source it at
-  `https://github.com/WSH95/project-steward.git`, but that has not
-  happened yet as of the check.
-- Distribution follow-up remains complete: `WSH95/agent-plugins` is
-  public/MIT and synced at commit `fe6ae8d`; `WSH95/agent-skills` is
-  public/MIT and intentionally contains only `LICENSE` and `README.md`.
+- Local semantic commit for this implementation is the only remaining
+  step in this turn.
+- `dist/project-steward/` was rebuilt for validation and remains
+  gitignored/generated.
 
 ## Next steps
 
-1. Review/merge https://github.com/WSH95/agent-plugins/pull/1 when ready.
-2. Do not push or merge further changes without explicit approval.
-3. When `project-steward` is made public, update install docs that still
+1. Commit the launcher optimization with `.project-steward/` checkpoint
+   updates included.
+2. Do not push or publish further changes without explicit approval.
+3. If publishing this optimization, rebuild payloads from `plugin-src/`
+   and open/update the agent-plugins PR rather than copying files by hand.
+4. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
-4. When a standalone skill should be published, add a deliberate
+5. When a standalone skill should be published, add a deliberate
    `agent-artifacts.json` skill entry targeting
    `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
    upload skills ad hoc.
-5. If the AGENTS.md guardrail is explicitly relaxed, update the remaining
+6. If the AGENTS.md guardrail is explicitly relaxed, update the remaining
    non-managed prose reference from
    `plugin/references/cross-platform.md` to
    `plugin-src/references/cross-platform.md`.
 
 ## Blockers
 
-- None for the distribution repo work.
+- None for this implementation.
 - Local `python` points to an interpreter too old for
   `from __future__ import annotations`; use `python3` here.
 
@@ -71,6 +61,8 @@ This auto-checkpoint dirtied `.project-steward/` files.
   and shared metadata.
 - `tools/build_plugin_payloads.py` — generates extractable Claude and
   Codex payloads from `plugin-src/`.
+- `plugin-src/claude/bin/project-steward` — plugin-local Claude launcher
+  into bundled `src/`.
 - `tools/publish_agent_artifact_pr.py` — project-local PR publishing
   script for generated agent artifacts.
 - `agent-artifacts.json` — local publish manifest; currently only the

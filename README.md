@@ -28,7 +28,7 @@ plugin-src/        canonical source for plugin development
                    cross-platform, self-hosting, migration docs
   src/project_steward/   Python 3.7+ stdlib-only CLI + hook dispatcher
     templates/     AGENTS.md, CLAUDE.md adapter, and 11 state templates
-  claude/          Claude Code commands + auto-loaded hook config
+  claude/          Claude Code commands + bin launcher + hook config
   codex/           optional Codex prompts + manual Codex hook config
   metadata.json    shared plugin/marketplace metadata
 agent-artifacts.json       publish target metadata for generated artifacts
@@ -53,8 +53,9 @@ gitignored `runtime/` for device-local session claims and forensics.
 
 ## Install
 
-**CLI (required for hooks on native Windows; recommended elsewhere — on
-POSIX hosts the plugin's hooks fall back to a bundled python3 shim):**
+**CLI (recommended for terminal use and required for Codex hooks; Claude
+Code plugin hooks use a bundled pure-Python launcher when Python is
+available, then fall back to this installed CLI):**
 
 ```
 # Not yet on PyPI — install from a checkout:
@@ -163,13 +164,13 @@ never silent. Linear/Jira are honest stubs. Details:
 
 Ubuntu, Windows, and macOS are first-class: the core is Python 3.7+
 standard library only (pathlib/subprocess/json; `tomllib` on 3.11+ with a
-bundled flat-TOML fallback below that decodes strings identically), hooks
-prefer the `project-steward` console script and fall back to a bundled
-`python3` shim — the fallback's `${CLAUDE_PLUGIN_ROOT}` expansion is
-POSIX-only, so **native Windows needs the CLI installed** (a fresh macOS
-may also lack `python3` until the Xcode Command Line Tools are present).
-Writes are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS
-matrix including Python 3.7 jobs. Details and the deliberate 3.7-floor
+bundled flat-TOML fallback below that decodes strings identically). Claude
+Code plugin hooks prefer the bundled pure-Python `bin/project-steward`
+launcher, using POSIX and Windows command variants, then fall back to an
+installed `project-steward` console script; Codex hooks still use the
+console script because Codex does not install the Claude payload. Writes
+are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS matrix
+including Python 3.7 jobs. Details and the deliberate 3.7-floor
 compromises:
 [plugin-src/references/cross-platform.md](plugin-src/references/cross-platform.md).
 
@@ -204,16 +205,17 @@ standard is the canonical instruction carrier.
 
 ## Troubleshooting
 
-- **Hooks do nothing** → `project-steward` not on PATH (install from a
-  checkout: `pipx install .` — not yet on PyPI), or on Codex hooks are
-  disabled by `features.hooks = false`, not trusted in `/hooks`, or
-  unavailable in that client. The AGENTS.md protocol still works.
-  `project-steward doctor` reports CLI availability.
+- **Hooks do nothing** → Claude Code needs Python available to run the
+  bundled launcher, or the installed `project-steward` CLI as fallback.
+  Codex hooks need `project-steward` on PATH, `features.hooks = true`,
+  and trust in `/hooks`; some clients do not support hooks. The AGENTS.md
+  protocol still works. `project-steward doctor` reports CLI availability.
 - **"Not a Project Steward project"** → run `init`, or `--root` points
   elsewhere.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.
-- **Windows + Claude Code fallback command fails** → expected; the
-  `${CLAUDE_PLUGIN_ROOT}` shim is POSIX-only. Install the CLI.
+- **Windows hook command fails** → make sure the Python Launcher (`py -3`)
+  or `python` is available, or install the CLI from a checkout with
+  `pipx install .` (not yet on PyPI).
 - **Stop guard too eager/quiet** → tune `[session]` in
   `.project-steward/config.toml` (`block`/`remind`/`off`, cooldown,
   min edits).

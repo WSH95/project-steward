@@ -1,11 +1,15 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 from project_steward import doctor
 from project_steward.cli import main as cli_main
 from project_steward.scaffold import apply_plan, plan_files
 from project_steward.survey import survey
+
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_survey_detects_commands_and_questions(git_repo):
@@ -58,6 +62,26 @@ def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
         and "unexpected root key(s): description" in r["detail"]
         for r in results
     )
+
+
+def test_claude_hooks_use_bundled_launcher_with_windows_variant():
+    hooks = json.loads(
+        (ROOT / "plugin-src" / "claude" / "hooks" / "hooks.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    for groups in hooks["hooks"].values():
+        for group in groups:
+            for handler in group["hooks"]:
+                command = handler["command"]
+                windows = handler["commandWindows"]
+                assert "${CLAUDE_PLUGIN_ROOT}/bin/project-steward" in command
+                assert "project_steward_hook.py" not in command
+                assert "${CLAUDE_PLUGIN_ROOT}\\bin\\project-steward" in windows
+                assert "py -3" in windows
+                assert "python " in windows
+                assert "project_steward_hook.py" not in windows
 
 
 def test_cli_init_and_status(git_repo, capsys):

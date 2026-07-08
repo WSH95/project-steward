@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-07-08
+
+### Changed
+- Claude Code plugin hooks now run through a plugin-local pure-Python
+  `bin/project-steward` launcher before falling back to an installed CLI,
+  with explicit POSIX and Windows command variants. The old POSIX-only
+  hook shim is no longer shipped in generated payloads.
+
 ## 0.2.3 — 2026-07-05
 
 ### Fixed
