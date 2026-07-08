@@ -6,6 +6,12 @@ guess. Check off with the answer inline once resolved.
 - [ ] Do the pinned backend install commands (backlog.md, task-master-ai,
   spec-kit uvx) still match upstream READMEs? Verify before recommending
   installs to users.
+- [ ] Codex hooks docs (re-fetched 2026-07-08) now list 10 events (adds
+  PostCompact, SubagentStart/Stop, PermissionRequest vs ADR 0004's five)
+  plus `commandWindows` and per-OS managed dirs — ADR 0004's "disabled
+  on Windows" snapshot is stale. At the next ADR-0004 re-verification,
+  decide whether M2 "Windows-native Codex hook support" and PostCompact
+  wiring (dispatcher already handles `post-compact`) are actionable.
 - [x] Codex plugin-bundled hooks: stable enough to prefer over manual
   `.codex/hooks.json`? Answer 2026-07-07: no for v0.2.x. Current Codex
   can discover plugin-bundled hooks, including default `hooks/hooks.json`,

@@ -77,6 +77,16 @@ def test_claude_hooks_use_cross_platform_wrapper():
     if os.name != "nt":
         assert os.access(str(wrapper), os.X_OK)
 
+    # Batch cascade must use run-time idioms: cmd.exe expands %ERRORLEVEL%
+    # inside a parenthesized block at parse time, and chaining into a
+    # .cmd shim without `call` never returns to the wrapper.
+    batch = wrapper.read_text(encoding="utf-8").split("CMDBLOCK")[1]
+    assert 'call py -3 "%~dp0..\\bin\\project-steward" %*' in batch
+    assert 'call python "%~dp0..\\bin\\project-steward" %*' in batch
+    assert "call project-steward %*" in batch
+    assert "if not errorlevel 1 exit /b 0" in batch
+    assert "if %ERRORLEVEL% equ 0 exit /b 0" not in batch
+
     for groups in hooks["hooks"].values():
         for group in groups:
             for handler in group["hooks"]:

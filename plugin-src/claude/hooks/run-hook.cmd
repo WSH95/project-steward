@@ -11,20 +11,24 @@ REM ..\bin\project-steward, then fall back to an installed project-steward
 REM console script. Hooks must never break the agent loop: with no Python
 REM and no CLI available, exit 0 silently.
 
+REM `call` returns from .cmd/.bat shims (plain invocation never comes
+REM back); `if not errorlevel 1` reads the exit code at run time —
+REM %ERRORLEVEL% inside a parenthesized block expands at parse time.
+
 where py >nul 2>nul
 if %ERRORLEVEL% equ 0 (
-    py -3 "%~dp0..\bin\project-steward" %*
-    if %ERRORLEVEL% equ 0 exit /b 0
+    call py -3 "%~dp0..\bin\project-steward" %*
+    if not errorlevel 1 exit /b 0
 )
 where python >nul 2>nul
 if %ERRORLEVEL% equ 0 (
-    python "%~dp0..\bin\project-steward" %*
-    if %ERRORLEVEL% equ 0 exit /b 0
+    call python "%~dp0..\bin\project-steward" %*
+    if not errorlevel 1 exit /b 0
 )
 where project-steward >nul 2>nul
 if %ERRORLEVEL% equ 0 (
-    project-steward %*
-    if %ERRORLEVEL% equ 0 exit /b 0
+    call project-steward %*
+    if not errorlevel 1 exit /b 0
 )
 exit /b 0
 CMDBLOCK

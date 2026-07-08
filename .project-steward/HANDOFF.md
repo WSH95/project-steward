@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-07-08T15:40:36Z
-updated_by: codex
+updated_at: 2026-07-08T16:04:06Z
+updated_by: claude
 session_status: closed
 branch: main
-last_commit: current local commit after this handoff
+last_commit: 1ae1e99
 ---
 # Handoff
 
@@ -37,7 +37,11 @@ isolated Codex install/prompt-input smoke, and `git diff --check`.
 ## Next steps
 
 1. Do not push or publish further changes without explicit approval.
-2. Review/merge https://github.com/WSH95/agent-plugins/pull/2 when ready.
+2. On approval, release 0.3.1: push main, then open a NEW agent-plugins
+   PR via `tools/publish_agent_artifact_pr.py` (PR #2 merged
+   2026-07-08T11:55Z and carries the 0.3.0-era payload whose Windows
+   hooks are broken); after merge, `claude plugin update
+   project-steward@agent-plugins` and `pipx reinstall project-steward`.
 3. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
@@ -45,9 +49,6 @@ isolated Codex install/prompt-input smoke, and `git diff --check`.
    `agent-artifacts.json` skill entry targeting
    `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
    upload skills ad hoc.
-5. Rebuild and publish a new agent-plugins payload only after the user
-   decides that this 0.3.1 hardening should supersede the existing PR #2
-   payload.
 
 ## Blockers
 
