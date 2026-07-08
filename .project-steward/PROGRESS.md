@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T11:53:02Z — cli
+Published Project Steward Claude launcher payload to agent-plugins PR #2 from source commit 7bf67c3.
+
 ### 2026-07-08T11:41:44Z — cli
 Implemented Claude plugin bundled launcher optimization; verified tests, doctor, payload build, and plugin validation.
 

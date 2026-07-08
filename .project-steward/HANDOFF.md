@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-07-08T11:41:44Z
+updated_at: 2026-07-08T11:53:03Z
 updated_by: cli
 session_status: closed
 branch: main
-last_commit: 9075193
+last_commit: 7bf67c3
 ---
 # Handoff
 
@@ -22,20 +22,26 @@ verification passed: pytest, compileall, `doctor --self`, payload build,
 Codex plugin validation, `git diff --check`, and built Claude launcher
 smoke test.
 
+The source implementation is committed as `7bf67c3`
+(`feat(claude): bundle plugin launcher for hooks`). The user-level pipx
+CLI was force-reinstalled from this checkout and reports
+`project-steward 0.3.0`. The generated plugin payload was published to
+`WSH95/agent-plugins` as PR #2:
+https://github.com/WSH95/agent-plugins/pull/2
+
 ## In flight
 
-- Local semantic commit for this implementation is the only remaining
-  step in this turn.
+- Local stewardship publication record needs a commit after this handoff
+  refresh.
 - `dist/project-steward/` was rebuilt for validation and remains
   gitignored/generated.
 
 ## Next steps
 
-1. Commit the launcher optimization with `.project-steward/` checkpoint
-   updates included.
+1. Commit this publication checkpoint with `.project-steward/` updates
+   included.
 2. Do not push or publish further changes without explicit approval.
-3. If publishing this optimization, rebuild payloads from `plugin-src/`
-   and open/update the agent-plugins PR rather than copying files by hand.
+3. Review/merge https://github.com/WSH95/agent-plugins/pull/2 when ready.
 4. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
