@@ -23,6 +23,9 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Replace duplicated Claude/Codex payload source trees with
       canonical `plugin-src/` + generated extraction payloads
       (ADR 0013)
+- [x] Add agent artifact maintenance skill + project-local PR publish
+      script for agent-skills/agent-plugins workflows
+      (ADR 0016)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 

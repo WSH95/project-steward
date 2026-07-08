@@ -1,39 +1,40 @@
 ---
-updated_at: 2026-07-08T00:50:19Z
+updated_at: 2026-07-08T01:23:46Z
 updated_by: codex
 session_status: closed
 branch: main
-last_commit: 33c1be1
+last_commit: b99966c
 ---
 # Handoff
 
 ## Now
 
-Development-layout refactor was committed and pushed at `33c1be1`.
-Follow-up cleanup is implemented and verified: the payload builder no
-longer copies Codex hook config into the generated Claude Code plugin.
-Claude output contains only Claude hooks; Codex hook config remains in
-the Codex extraction tree at `dist/project-steward/codex/hooks/hooks.json`.
+Agent artifact maintenance skill work is in progress on top of
+`b99966c`. The new skill lives at
+`plugin-src/skills/agent-artifact-maintainer/` and teaches agents to keep
+skill/plugin development repos organized, maintain generated dist
+scripts, and publish artifacts to review PRs in agent-skills or
+agent-plugins repos. This repo now also has `agent-artifacts.json` and
+`tools/publish_agent_artifact_pr.py` as the project-local publishing
+implementation.
 
 ## In flight
 
-- If resuming before this cleanup is committed, expect changes in
-  `tools/build_plugin_payloads.py`, `tests/test_payload_builder.py`, and
-  `.project-steward/`; otherwise `main` may be ahead of `origin/main`.
-- Regression test red/green was performed for the Claude payload no
-  longer containing `hooks/codex.hooks.json`; full verification is green.
+- Uncommitted changes are expected in the new skill, publish script,
+  `agent-artifacts.json`, tests, README, and `.project-steward/`.
+- TDD red/green was performed for the new skill contract and publish
+  script dry-run behavior; focused and full tests pass.
 - AGENTS.md still contains one stale non-managed prose reference to
   `plugin/references/cross-platform.md`; it was left untouched because
   the project guardrail says AGENTS.md edits stay inside managed blocks.
 
 ## Next steps
 
-1. If this cleanup is committed but not pushed, push only with explicit
-   user approval.
-2. When preparing the external agent-plugins repo, copy
-   `dist/project-steward/claude/` for Claude Code and
-   `dist/project-steward/codex/` for Codex.
-3. If the AGENTS.md guardrail is relaxed later, update the remaining
+1. Re-run final verification if additional edits happen.
+2. Commit with a Conventional Commit, e.g.
+   `feat(skills): add agent artifact maintainer`.
+3. Push only with explicit user approval.
+4. If the AGENTS.md guardrail is relaxed later, update the remaining
    non-managed prose reference from `plugin/references/cross-platform.md`
    to `plugin-src/references/cross-platform.md`.
 
@@ -50,8 +51,14 @@ the Codex extraction tree at `dist/project-steward/codex/hooks/hooks.json`.
   and shared metadata.
 - `tools/build_plugin_payloads.py` — generates extractable Claude and
   Codex payloads from `plugin-src/`.
+- `tools/publish_agent_artifact_pr.py` — project-local PR publishing
+  script for generated agent artifacts.
+- `agent-artifacts.json` — local publish manifest; target repo is blank
+  until first publish.
 - `tests/test_payload_builder.py` — pins extraction layout and Codex
   command-like companions.
+- `tests/test_agent_artifact_maintainer.py` — pins the new skill
+  contract and publish-script dry-run behavior.
 - `plugin-src/src/project_steward/hooks.py` and
   `plugin-src/src/project_steward/sessions.py` — lifecycle behavior core.
 - `.project-steward/DECISIONS.md` ADR 0013 — source-of-truth decision
@@ -74,7 +81,8 @@ the Codex extraction tree at `dist/project-steward/codex/hooks/hooks.json`.
   directories; they were deliberately replaced by generated payloads.
 - Codex prompt files are optional command-like companions only; Codex
   skills remain the supported plugin UX.
-- Current follow-up validation: focused red/green payload-builder test,
-  51-test suite, `python3` compileall, self doctor 34 checks / 0
-  failures, payload build, generated Codex plugin validator, and
-  `git diff --check`.
+- Current validation: focused red/green tests, 57-test suite, skill
+  quick_validate, payload build, publish dry-run, generated Codex plugin
+  validator, self doctor, `python3` compileall, and `git diff --check`.
+- Do not run `tools/publish_agent_artifact_pr.py` without `--dry-run`
+  until the target repo and copied output are reviewed.

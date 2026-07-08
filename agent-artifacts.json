@@ -1,0 +1,13 @@
+{
+  "artifacts": [
+    {
+      "name": "project-steward-plugin",
+      "kind": "plugin",
+      "build_command": "python3 tools/build_plugin_payloads.py --clean --out dist/project-steward",
+      "source_path": "dist/project-steward",
+      "target_repo": "",
+      "target_path": "project-steward",
+      "base_branch": "main"
+    }
+  ]
+}

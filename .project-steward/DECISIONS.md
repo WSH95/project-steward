@@ -247,3 +247,17 @@ payload contains only Claude Code hooks.
 **Consequences**: Extraction folders are platform-specific and easier to
 reason about. Codex hooks remain a manual companion file unless/until
 plugin-bundled Codex hooks are field-tested separately.
+
+## 0016 — 2026-07-08 — Agent artifact maintenance becomes a Project Steward skill
+
+**Context**: The user wants future agents to preserve clean development
+layouts for skill/plugin repos, proactively create build/dist scripts,
+and publish generated artifacts to review PRs in `agent-skills` or
+`agent-plugins` repositories.
+**Decision**: Add `agent-artifact-maintainer` as a portable Project
+Steward skill under `plugin-src/skills/`, plus this repo's
+`agent-artifacts.json` and `tools/publish_agent_artifact_pr.py` as the
+reference project-local PR publishing implementation.
+**Consequences**: Project Steward now ships six skills. Artifact
+publishing is dry-run capable, asks for missing target repos on first
+use, opens PRs with `gh`, and never merges them.

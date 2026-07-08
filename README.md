@@ -23,7 +23,7 @@ lifecycle hooks.
 
 ```
 plugin-src/        canonical source for plugin development
-  skills/          5 portable Agent Skills (Claude Code + Codex)
+  skills/          6 portable Agent Skills (Claude Code + Codex)
   references/      session-protocol, security-model, backend-selection,
                    cross-platform, self-hosting, migration docs
   src/project_steward/   Python 3.7+ stdlib-only CLI + hook dispatcher
@@ -31,7 +31,10 @@ plugin-src/        canonical source for plugin development
   claude/          Claude Code commands + auto-loaded hook config
   codex/           optional Codex prompts + manual Codex hook config
   metadata.json    shared plugin/marketplace metadata
-tools/build_plugin_payloads.py
+agent-artifacts.json       publish target metadata (target repo filled on first publish)
+tools/
+  build_plugin_payloads.py
+  publish_agent_artifact_pr.py
 dist/project-steward/     generated extraction output (gitignored)
   claude/          Claude marketplace + plugins/project-steward payload
   codex/           Codex marketplace + plugins/project-steward payload,
@@ -63,7 +66,7 @@ pipx install git+ssh://git@github.com/WSH95/project-steward.git
 **Build extractable plugin payloads from this development repo:**
 
 ```
-python tools/build_plugin_payloads.py --clean --out dist/project-steward
+python3 tools/build_plugin_payloads.py --clean --out dist/project-steward
 ```
 
 **Claude Code (generated plugin: skills + commands + hooks in one step):**
@@ -82,6 +85,18 @@ hooks use `features.hooks` and remain a manual `hooks.json` install.
 **Generic agents:** any tool that reads `AGENTS.md` gets the session
 protocol from its managed block; any tool that runs shell commands can
 use the CLI directly.
+
+**Publish a review PR to an agent-plugins repo:**
+
+```
+python3 tools/publish_agent_artifact_pr.py \
+  --artifact project-steward-plugin \
+  --target-repo git@github.com:USER/agent-plugins.git \
+  --dry-run
+```
+
+Remove `--dry-run` only after reviewing the copied output. The script
+opens a PR and never merges it.
 
 ## Quickstart flow
 

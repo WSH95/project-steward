@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T01:23:46Z — codex
+Added `agent-artifact-maintainer` skill plan implementation in progress:
+new skill scaffold/content, layout reference, `agent-artifacts.json`, and
+project-local `tools/publish_agent_artifact_pr.py`. TDD red/green
+focused tests now pass; full verification passing locally.
+
 ### 2026-07-08T00:50:19Z — codex
 Claude payload cleanup: removed the confusing generated
 `hooks/codex.hooks.json` copy from the Claude Code plugin output; Codex
