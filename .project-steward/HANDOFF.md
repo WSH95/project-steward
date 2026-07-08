@@ -1,43 +1,35 @@
 ---
-updated_at: 2026-07-08T00:12:43Z
+updated_at: 2026-07-08T00:50:19Z
 updated_by: codex
 session_status: closed
 branch: main
-last_commit: 3f11ead
+last_commit: 33c1be1
 ---
 # Handoff
 
 ## Now
 
-Development-layout refactor is implemented, freshly verified, and being
-committed/pushed at the user's request. Canonical plugin authoring now
-lives under `plugin-src/`; clean extraction payloads are generated with
-`python3 tools/build_plugin_payloads.py --clean --out
-dist/project-steward`. The old checked-in payload source directories
-(`plugin/`, `plugins/project-steward/`, root `.agents/plugins/`, root
-`.claude-plugin/`, and `codex/prompts/`) were removed from the
-development tree. `dist/` is gitignored and contains the latest generated
-Claude and Codex output for local inspection/extraction. AGENTS.md's
-managed commands block was updated after explicit user approval; ADR 0014
-records the high-risk-file edit.
+Development-layout refactor was committed and pushed at `33c1be1`.
+Follow-up cleanup is implemented and verified: the payload builder no
+longer copies Codex hook config into the generated Claude Code plugin.
+Claude output contains only Claude hooks; Codex hook config remains in
+the Codex extraction tree at `dist/project-steward/codex/hooks/hooks.json`.
 
 ## In flight
 
-- Commit/push workflow for the source-layout refactor is in progress in
-  this session. If resuming mid-flight, run `git status --short --branch`
-  and push `main` if it is ahead of `origin/main`.
-- Before staging, `git status` showed many deletes under the old payload
-  paths and untracked `plugin-src/`/`tools/` additions. This was expected
-  until staging; the sandbox could not use `git mv` because `.git/index.lock`
-  was read-only, so Git had not yet recognized renames in status output.
+- If resuming before this cleanup is committed, expect changes in
+  `tools/build_plugin_payloads.py`, `tests/test_payload_builder.py`, and
+  `.project-steward/`; otherwise `main` may be ahead of `origin/main`.
+- Regression test red/green was performed for the Claude payload no
+  longer containing `hooks/codex.hooks.json`; full verification is green.
 - AGENTS.md still contains one stale non-managed prose reference to
   `plugin/references/cross-platform.md`; it was left untouched because
   the project guardrail says AGENTS.md edits stay inside managed blocks.
 
 ## Next steps
 
-1. If this handoff is read before the user-requested push completes,
-   finish the push from `main` after confirming tests remain green.
+1. If this cleanup is committed but not pushed, push only with explicit
+   user approval.
 2. When preparing the external agent-plugins repo, copy
    `dist/project-steward/claude/` for Claude Code and
    `dist/project-steward/codex/` for Codex.
@@ -82,8 +74,7 @@ records the high-risk-file edit.
   directories; they were deliberately replaced by generated payloads.
 - Codex prompt files are optional command-like companions only; Codex
   skills remain the supported plugin UX.
-- Fresh pre-commit validation passed locally: 51 tests, payload build,
-  generated Codex plugin validator, self doctor, `python3` compileall,
-  and `git diff --check`. Earlier smoke coverage also included
-  non-editable packaged install + init and isolated Codex
-  marketplace/plugin add + prompt-input.
+- Current follow-up validation: focused red/green payload-builder test,
+  51-test suite, `python3` compileall, self doctor 34 checks / 0
+  failures, payload build, generated Codex plugin validator, and
+  `git diff --check`.

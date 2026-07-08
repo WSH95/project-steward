@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T00:50:19Z — codex
+Claude payload cleanup: removed the confusing generated
+`hooks/codex.hooks.json` copy from the Claude Code plugin output; Codex
+hook config now remains only in the Codex extraction tree. ADR 0015
+recorded. TDD: focused payload-builder test failed red, then passed
+after the builder change. Verification: 51 tests, `python3` compileall,
+self doctor 34 checks / 0 failures, payload build, generated Codex
+plugin validator, and `git diff --check`.
+
 ### 2026-07-08T00:12:43Z — codex
 User requested recent-commit summary and push. Pre-commit verification
 passed for the development-layout refactor: 51 tests, `python3`

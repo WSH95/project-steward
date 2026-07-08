@@ -43,7 +43,7 @@ def test_builder_emits_extractable_claude_and_codex_payloads(tmp_path):
     assert claude_manifest["skills"] == "./skills"
     assert (claude_plugin / "commands" / "init.md").is_file()
     assert (claude_plugin / "hooks" / "hooks.json").is_file()
-    assert (claude_plugin / "hooks" / "codex.hooks.json").is_file()
+    assert not (claude_plugin / "hooks" / "codex.hooks.json").exists()
     assert (claude_plugin / "src" / "project_steward" / "cli.py").is_file()
 
     claude_marketplace = _json(claude / ".claude-plugin" / "marketplace.json")

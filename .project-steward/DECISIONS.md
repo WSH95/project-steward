@@ -233,3 +233,17 @@ command.
 **Consequences**: Future agents have the right verification and payload
 build commands without relying on stale `plugin/` paths. Non-managed
 AGENTS.md prose remains untouched.
+
+## 0015 — 2026-07-08 — Codex hook config stays out of the Claude payload
+
+**Context**: The generated Claude Code plugin included
+`hooks/codex.hooks.json` as a convenience copy of the Codex manual hook
+config. Claude Code does not need it, Codex does not discover it from the
+Claude plugin folder, and the extra file made the extracted payload
+layout confusing.
+**Decision**: Generate Codex hook config only under the Codex extraction
+tree (`dist/project-steward/codex/hooks/hooks.json`). The Claude plugin
+payload contains only Claude Code hooks.
+**Consequences**: Extraction folders are platform-specific and easier to
+reason about. Codex hooks remain a manual companion file unless/until
+plugin-bundled Codex hooks are field-tested separately.

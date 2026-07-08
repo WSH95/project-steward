@@ -87,10 +87,6 @@ def _build_claude(out, meta):
     _copy_tree(SOURCE / "src", plugin / "src")
     _copy_tree(SOURCE / "claude" / "commands", plugin / "commands")
     _copy_tree(SOURCE / "claude" / "hooks", plugin / "hooks")
-    _copy_file(
-        SOURCE / "codex" / "hooks" / "hooks.json",
-        plugin / "hooks" / "codex.hooks.json",
-    )
 
     manifest = _base_fields(meta, meta["claude_description"])
     manifest["commands"] = "./commands"
