@@ -88,6 +88,7 @@ def test_builder_outputs_codex_command_like_companions(tmp_path):
         path.name for path in (codex / "prompts").glob("*.md")
     } == expected_prompts
     assert (codex / "hooks" / "hooks.json").is_file()
+    assert set(_json(codex / "hooks" / "hooks.json")) == {"hooks"}
     assert "project-steward hook stop --agent codex" in (
         codex / "hooks" / "hooks.json"
     ).read_text(encoding="utf-8")

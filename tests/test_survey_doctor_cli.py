@@ -33,6 +33,33 @@ def test_doctor_ok_after_init_and_fails_on_secret(git_repo):
     assert any("secrets" in r["name"] for r in fails)
 
 
+def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
+    (tmp_path / "plugin-src" / "src" / "project_steward").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "claude" / "hooks").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "codex" / "hooks").mkdir(parents=True)
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "plugin-src" / "metadata.json").write_text(
+        '{"name": "project-steward"}\n', encoding="utf-8"
+    )
+    (tmp_path / "plugin-src" / "claude" / "hooks" / "hooks.json").write_text(
+        '{"description": "ok for Claude", "hooks": {}}\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "plugin-src" / "codex" / "hooks" / "hooks.json").write_text(
+        '{"description": "not accepted by Codex", "hooks": {}}\n',
+        encoding="utf-8",
+    )
+
+    results = doctor._self_checks(tmp_path)
+
+    assert any(
+        r["status"] == doctor.FAIL
+        and r["name"] == "self: plugin-src/codex/hooks/hooks.json schema"
+        and "unexpected root key(s): description" in r["detail"]
+        for r in results
+    )
+
+
 def test_cli_init_and_status(git_repo, capsys):
     rc = cli_main(["init", "--root", str(git_repo), "--project-name",
                    "Demo", "--yes"])

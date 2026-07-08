@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -31,3 +32,18 @@ def test_codex_install_docs_match_current_cli_and_hook_feature():
     assert "codex plugin install" not in joined
     assert "codex_hooks = true" not in joined
     assert "features.hooks" in joined
+
+
+def test_codex_hooks_json_uses_strict_root_schema():
+    hooks = json.loads(
+        (ROOT / "plugin-src" / "codex" / "hooks" / "hooks.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert set(hooks) == {"hooks"}
+    assert set(hooks["hooks"]) == {
+        "SessionStart",
+        "PostToolUse",
+        "UserPromptSubmit",
+        "Stop",
+    }

@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-07-08T03:14:19Z
+updated_at: 2026-07-08T03:40:31Z
 updated_by: codex
 session_status: closed
 branch: main
@@ -9,34 +9,33 @@ last_commit: HEAD
 
 ## Now
 
-Distribution follow-up is complete. `WSH95/agent-plugins` is public,
-MIT-licensed, and synced at commit `fe6ae8d`; it contains the generated
-Project Steward plugin under `project-steward/`, root Claude Code/Codex
-marketplace metadata, and an agent-neutral README. `WSH95/agent-skills`
-is public, MIT-licensed, and synced at commit `da79b47`; it intentionally
-contains only `LICENSE` and a README template, with no skills uploaded.
+Codex hook schema fix is implemented and prepared as Project Steward
+0.3.0. The canonical Codex hook template no longer has a top-level
+`description`, self-doctor now rejects extra root keys in
+`plugin-src/codex/hooks/hooks.json`, and tests pin both source and
+generated hook root shape. Live `/home/wsh/.codex/hooks.json` was also
+cleaned so Codex CLI startup no longer reports the hook parse warning.
 
-This source repo remains the canonical Project Steward development repo.
-`agent-artifacts.json` targets `git@github.com:WSH95/agent-plugins.git`
-for the generated plugin payload. No `agent-skills` artifact entry exists
-yet because the user explicitly asked not to upload skills for now.
+This source repo remains the canonical Project Steward development repo
+and is on `main`. After the requested commit, it is expected to be ahead
+of `origin/main` by 2 commits and clean.
 
 ## In flight
 
-- Local source changes in this repo are Project Steward close-out
-  bookkeeping and source README maintenance only.
+- Current HEAD should contain the 0.3.0 Codex hook-schema fix once the
+  requested commit is made: hook template cleanup, doctor schema
+  enforcement, regression tests, version bump, and steward state updates.
 - `gh repo view WSH95/project-steward` reported the source repo is still
   PRIVATE during this session. The user said they will open-source it at
   `https://github.com/WSH95/project-steward.git`, but that has not
   happened yet as of the check.
-- The stale pre-session handoff pointed at `addfe39`; this handoff uses
-  `last_commit: HEAD` so a successor does not get a false "commits after
-  handoff" warning from the commit that contains the handoff itself.
+- Distribution follow-up remains complete: `WSH95/agent-plugins` is
+  public/MIT and synced at commit `fe6ae8d`; `WSH95/agent-skills` is
+  public/MIT and intentionally contains only `LICENSE` and `README.md`.
 
 ## Next steps
 
-1. If the user asks, push this source repo after verifying and committing
-   the close-out bookkeeping.
+1. Do not push without explicit approval.
 2. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
@@ -68,6 +67,9 @@ yet because the user explicitly asked not to upload skills for now.
   generated Project Steward plugin artifact is configured.
 - `tests/test_payload_builder.py` — pins extraction layout and Codex
   command-like companions.
+- `tests/test_codex_plugin.py` / `tests/test_survey_doctor_cli.py` —
+  pin Codex hook root schema and self-doctor rejection of invalid
+  metadata.
 - `tests/test_agent_artifact_maintainer.py` — pins the artifact
   maintainer skill contract and publish-script behavior.
 - `.project-steward/DECISIONS.md` ADR 0018 — root distribution repo

@@ -2,6 +2,22 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T03:40:31Z — codex
+Prepared 0.3.0 commit for the Codex hook schema fix: bumped
+`pyproject.toml`, `plugin-src/metadata.json`, and
+`project_steward.__version__` to `0.3.0`; payload rebuild completed with
+no tracked generated-file drift.
+
+### 2026-07-08T03:35:17Z — codex
+Fixed Codex `hooks.json` parse failure from strict root schema: removed
+the top-level `description` from canonical
+`plugin-src/codex/hooks/hooks.json`, updated live
+`/home/wsh/.codex/hooks.json`, and added test/self-doctor coverage that
+rejects extra Codex hook root keys. TDD red run failed on the bad
+`description`; after the fix, 59 tests, `python3` compileall, self
+doctor 35 checks / 0 failures, payload build, and `codex --version`
+passed without the hook parse warning.
+
 ### 2026-07-08T03:14:19Z — codex
 Closed distribution-repo follow-up: `WSH95/agent-plugins` now has root
 Claude Code/Codex marketplace manifests and an agent-neutral README,
