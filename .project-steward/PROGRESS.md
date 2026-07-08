@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T16:32:02Z — codex
+Pushed main through fc84687 and opened agent-plugins PR #5 for Project Steward 0.3.1 payload after release verification.
+
 ### 2026-07-08T16:04:06Z — claude
 Verified Codex commit 1ae1e99: docs/tests accurate (Codex commandWindows confirmed against live docs), fixed the dead Windows batch cascade (call + run-time errorlevel), pinned the idiom in tests, refreshed stale HANDOFF PR-2 lines, queued Codex-hooks-evolution question. 70 tests, doctor 36/0, wrapper smoke incl. cascade leg.
 

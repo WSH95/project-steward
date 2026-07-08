@@ -17,7 +17,18 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-07-08 (Claude/Codex `commandWindows` distinction
+Last verified: 2026-07-08 (0.3.1 release publication, Windows batch
+cascade hardening) — 70 tests via bare `python3 -m pytest -q`,
+compileall, self doctor (36 checks / 0 failures), payload build,
+`claude plugin validate --strict` (plugin + marketplace), generated
+Codex plugin validator, built wrapper smoke printed 0.3.1, `git diff
+--check`, isolated `CODEX_HOME=/tmp/project-steward-codex-publish.QrqsK4`
+marketplace add/plugin add/list plus `codex debug prompt-input`, current
+Codex manual spot-check for hooks/`commandWindows`, source push to
+`WSH95/project-steward` through `fc84687`, and `agent-plugins` PR #5:
+https://github.com/WSH95/agent-plugins/pull/5
+
+Previous entry: 2026-07-08 (Claude/Codex `commandWindows` distinction
 and wrapper fallback hardening, ADR 0020) — 70 tests via bare
 `python3 -m pytest -q`, compileall, self doctor (36 checks /
 0 failures), payload build, `claude plugin validate --strict` (plugin +
@@ -26,7 +37,7 @@ printed 0.3.1, `git diff --check`, and isolated
 `CODEX_HOME=/tmp/project-steward-codex-final.bnY6db` marketplace
 add/plugin add/list plus `codex debug prompt-input`.
 
-Previous entry: 2026-07-08 (0.3.1 polyglot hook wrapper, ADR 0019) — 66
+Earlier entry: 2026-07-08 (0.3.1 polyglot hook wrapper, ADR 0019) — 66
 tests via bare `python3 -m pytest -q`, self doctor (36 checks /
 0 failures, incl. the new Claude hooks schema check), compileall,
 payload build, `claude plugin validate --strict` (plugin + marketplace),

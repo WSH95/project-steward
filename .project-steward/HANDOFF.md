@@ -1,20 +1,21 @@
 ---
-updated_at: 2026-07-08T16:04:06Z
-updated_by: claude
+updated_at: 2026-07-08T16:32:02Z
+updated_by: codex
 session_status: closed
 branch: main
-last_commit: 1ae1e99
+last_commit: fc84687
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.3.1 has a committed Codex-side hardening pass after
-the Claude Code `commandWindows` review. The Claude hook wrapper
+Project Steward 0.3.1 is pushed to `origin/main` through source commit
+`fc84687`. The Claude hook wrapper
 `plugin-src/claude/hooks/run-hook.cmd` now tries every Python launcher
-leg before falling back to an installed `project-steward`, so one broken
-`python3`/`py` executable does not skip a working launcher. Failed
-fallbacks still exit 0 silently so hooks do not break the agent loop.
+leg before falling back to an installed `project-steward`, and the
+Windows batch branch uses `call` plus `if not errorlevel 1` so failed
+launcher legs actually cascade under `cmd.exe`. Failed fallbacks still
+exit 0 silently so hooks do not break the agent loop.
 
 Docs and decisions now separate the products accurately: Claude Code has
 no `commandWindows` hook field; Codex currently documents
@@ -22,30 +23,34 @@ no `commandWindows` hook field; Codex currently documents
 plugin path because the Codex companion invokes the installed CLI
 directly. ADR 0020 records that distinction.
 
-Regression tests were added for wrapper fallback behavior, release
-version consistency, and stale cross-agent wording. Verification passed:
-70 tests, compileall, `doctor --self`, payload build, Claude plugin and
-marketplace validation, Codex plugin validation, built wrapper smoke,
-isolated Codex install/prompt-input smoke, and `git diff --check`.
+Regression tests cover wrapper fallback behavior, Windows batch cascade
+idioms, release version consistency, and stale cross-agent wording.
+Verification passed: 70 tests, compileall, `doctor --self`, payload
+build, Claude plugin and marketplace validation, Codex plugin
+validation, built wrapper smoke, isolated Codex install/prompt-input
+smoke, current Codex manual spot-check, and `git diff --check`.
+
+Generated 0.3.1 plugin payload was submitted to `WSH95/agent-plugins` as
+PR #5: https://github.com/WSH95/agent-plugins/pull/5
 
 ## In flight
 
-- No active implementation work remains in this session.
+- No active source implementation work remains in this session.
+- `agent-plugins` PR #5 is open and awaits review/merge.
 - `dist/project-steward/` was rebuilt for validation and remains
   gitignored/generated.
 
 ## Next steps
 
-1. Do not push or publish further changes without explicit approval.
-2. On approval, release 0.3.1: push main, then open a NEW agent-plugins
-   PR via `tools/publish_agent_artifact_pr.py` (PR #2 merged
-   2026-07-08T11:55Z and carries the 0.3.0-era payload whose Windows
-   hooks are broken); after merge, `claude plugin update
-   project-steward@agent-plugins` and `pipx reinstall project-steward`.
-3. When `project-steward` is made public, update install docs that still
+1. Review/merge https://github.com/WSH95/agent-plugins/pull/5 when ready.
+2. After PR #5 merges, run `claude plugin update
+   project-steward@agent-plugins` and `pipx reinstall project-steward`
+   where this plugin/CLI should be updated.
+3. Do not push or publish further changes without explicit approval.
+4. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
-4. When a standalone skill should be published, add a deliberate
+5. When a standalone skill should be published, add a deliberate
    `agent-artifacts.json` skill entry targeting
    `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
    upload skills ad hoc.
