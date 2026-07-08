@@ -44,3 +44,13 @@ Publish-target manifest update (2026-07-08): 57 tests, `python3`
 compileall, self doctor, payload build, skill quick_validate, generated
 Codex plugin validator, publish dry-run to `/tmp/agent-plugins`, and
 `git diff --check` passed.
+
+Agent-plugins publish (2026-07-08): `python3
+tools/publish_agent_artifact_pr.py --artifact project-steward-plugin
+--target-checkout /tmp/agent-plugins --branch
+publish/project-steward-plugin-0.3.0 ... --non-interactive` rebuilt the
+payload, committed `eb2daf4` in `/tmp/agent-plugins`, pushed the branch,
+and created OPEN PR https://github.com/WSH95/agent-plugins/pull/1.
+Pre-publish checks: 59 tests, `python3` compileall, self doctor
+35 checks / 0 failures, generated Codex plugin validator, and payload
+diff showed expected 0.3.0/Codex hook-schema changes.

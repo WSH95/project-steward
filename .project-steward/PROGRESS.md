@@ -2,6 +2,18 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T03:55:43Z — codex
+Published generated Project Steward 0.3.0 plugin payload to
+`WSH95/agent-plugins` by PR:
+https://github.com/WSH95/agent-plugins/pull/1. Publisher rebuilt
+`dist/project-steward`, copied it to `/tmp/agent-plugins/project-steward`,
+committed target branch `publish/project-steward-plugin-0.3.0` at
+`eb2daf4`, pushed it, and created OPEN PR #1 against `main`.
+Pre-publish verification: 59 tests, `python3` compileall, generated
+Codex plugin validator, self doctor 35 checks / 0 failures, and payload
+diff against `/tmp/agent-plugins/project-steward` showed expected
+manifest, version, doctor, and Codex hook changes.
+
 ### 2026-07-08T03:40:31Z — codex
 Prepared 0.3.0 commit for the Codex hook schema fix: bumped
 `pyproject.toml`, `plugin-src/metadata.json`, and

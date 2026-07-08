@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-07-08T03:40:31Z
+updated_at: 2026-07-08T03:55:43Z
 updated_by: codex
 session_status: closed
 branch: main
@@ -9,22 +9,27 @@ last_commit: HEAD
 
 ## Now
 
-Codex hook schema fix is implemented and prepared as Project Steward
-0.3.0. The canonical Codex hook template no longer has a top-level
+Codex hook schema fix is implemented as Project Steward 0.3.0 and has
+been published to the `WSH95/agent-plugins` repo by PR:
+https://github.com/WSH95/agent-plugins/pull/1. The PR branch is
+`publish/project-steward-plugin-0.3.0` at target commit `eb2daf4`,
+against `main`.
+
+The canonical Codex hook template no longer has a top-level
 `description`, self-doctor now rejects extra root keys in
 `plugin-src/codex/hooks/hooks.json`, and tests pin both source and
 generated hook root shape. Live `/home/wsh/.codex/hooks.json` was also
 cleaned so Codex CLI startup no longer reports the hook parse warning.
 
 This source repo remains the canonical Project Steward development repo
-and is on `main`. After the requested commit, it is expected to be ahead
-of `origin/main` by 2 commits and clean.
+and is on `main`. Source `origin/main` already points at `a470e90`
+(`fix(codex): enforce strict hook schema`) as of this session.
 
 ## In flight
 
-- Current HEAD should contain the 0.3.0 Codex hook-schema fix once the
-  requested commit is made: hook template cleanup, doctor schema
-  enforcement, regression tests, version bump, and steward state updates.
+- `/tmp/agent-plugins` is on branch
+  `publish/project-steward-plugin-0.3.0`, tracking the pushed remote
+  branch and clean after PR creation.
 - `gh repo view WSH95/project-steward` reported the source repo is still
   PRIVATE during this session. The user said they will open-source it at
   `https://github.com/WSH95/project-steward.git`, but that has not
@@ -35,15 +40,16 @@ of `origin/main` by 2 commits and clean.
 
 ## Next steps
 
-1. Do not push without explicit approval.
-2. When `project-steward` is made public, update install docs that still
+1. Review/merge https://github.com/WSH95/agent-plugins/pull/1 when ready.
+2. Do not push or merge further changes without explicit approval.
+3. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
-3. When a standalone skill should be published, add a deliberate
+4. When a standalone skill should be published, add a deliberate
    `agent-artifacts.json` skill entry targeting
    `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
    upload skills ad hoc.
-4. If the AGENTS.md guardrail is explicitly relaxed, update the remaining
+5. If the AGENTS.md guardrail is explicitly relaxed, update the remaining
    non-managed prose reference from
    `plugin/references/cross-platform.md` to
    `plugin-src/references/cross-platform.md`.
