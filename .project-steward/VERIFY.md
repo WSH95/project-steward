@@ -24,3 +24,13 @@ also included non-editable packaged install + init and isolated Codex
 marketplace/plugin add + prompt-input. Note: local `python` points at an
 interpreter too old for `from __future__ import annotations`; use
 `python3` or a project-managed interpreter for syntax checks here.
+
+Distribution repo check (2026-07-08): `gh repo view WSH95/agent-plugins`
+reported visibility PUBLIC, license MIT, default branch `main`; target
+checkout `/tmp/agent-plugins` was clean after pushing Project Steward
+payload commit `c78ea23`.
+
+Publish-target manifest update (2026-07-08): 57 tests, `python3`
+compileall, self doctor, payload build, skill quick_validate, generated
+Codex plugin validator, publish dry-run to `/tmp/agent-plugins`, and
+`git diff --check` passed.

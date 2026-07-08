@@ -261,3 +261,16 @@ reference project-local PR publishing implementation.
 **Consequences**: Project Steward now ships six skills. Artifact
 publishing is dry-run capable, asks for missing target repos on first
 use, opens PRs with `gh`, and never merges them.
+
+## 0017 — 2026-07-08 — agent-plugins is the public plugin distribution repo
+
+**Context**: The user asked to create a public `agent-plugins` repository
+with MIT license and publish the generated Project Steward plugin there.
+**Decision**: Created `WSH95/agent-plugins` as a public GitHub repository
+with MIT license and root README. Published the generated
+`dist/project-steward` payload under `project-steward/` and recorded
+`git@github.com:WSH95/agent-plugins.git` in `agent-artifacts.json`.
+**Consequences**: Future Project Steward plugin publishes have a stable
+target repository. The generated payload in `agent-plugins` is install
+output; canonical development source remains in this repo under
+`plugin-src/`.

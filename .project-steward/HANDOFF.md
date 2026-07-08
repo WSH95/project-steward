@@ -1,40 +1,40 @@
 ---
-updated_at: 2026-07-08T01:23:46Z
+updated_at: 2026-07-08T01:56:43Z
 updated_by: codex
 session_status: closed
 branch: main
-last_commit: b99966c
+last_commit: addfe39
 ---
 # Handoff
 
 ## Now
 
-Agent artifact maintenance skill work is in progress on top of
-`b99966c`. The new skill lives at
-`plugin-src/skills/agent-artifact-maintainer/` and teaches agents to keep
-skill/plugin development repos organized, maintain generated dist
-scripts, and publish artifacts to review PRs in agent-skills or
-agent-plugins repos. This repo now also has `agent-artifacts.json` and
-`tools/publish_agent_artifact_pr.py` as the project-local publishing
-implementation.
+`agent-artifact-maintainer` is implemented and committed at `addfe39`.
+The public plugin distribution repository now exists at
+`https://github.com/WSH95/agent-plugins` with MIT license and README.
+Generated Project Steward plugin payload was published there under
+`project-steward/` and pushed as `c78ea23`. This repo's
+`agent-artifacts.json` now points at
+`git@github.com:WSH95/agent-plugins.git` for future publishes.
 
 ## In flight
 
-- Uncommitted changes are expected in the new skill, publish script,
-  `agent-artifacts.json`, tests, README, and `.project-steward/`.
-- TDD red/green was performed for the new skill contract and publish
-  script dry-run behavior; focused and full tests pass.
+- Uncommitted local changes are expected only for recording the
+  `agent-plugins` target repo in `agent-artifacts.json`, its test
+  expectation, and this Project Steward state update; verification is
+  complete.
+- Target repo state was verified with `gh repo view`: visibility PUBLIC,
+  license MIT, default branch `main`.
 - AGENTS.md still contains one stale non-managed prose reference to
   `plugin/references/cross-platform.md`; it was left untouched because
   the project guardrail says AGENTS.md edits stay inside managed blocks.
 
 ## Next steps
 
-1. Re-run final verification if additional edits happen.
-2. Commit with a Conventional Commit, e.g.
-   `feat(skills): add agent artifact maintainer`.
-3. Push only with explicit user approval.
-4. If the AGENTS.md guardrail is relaxed later, update the remaining
+1. Commit with a Conventional Commit, e.g.
+   `chore(publish): record agent-plugins target`.
+2. Push this source repo only with explicit user approval.
+3. If the AGENTS.md guardrail is relaxed later, update the remaining
    non-managed prose reference from `plugin/references/cross-platform.md`
    to `plugin-src/references/cross-platform.md`.
 
@@ -81,8 +81,12 @@ implementation.
   directories; they were deliberately replaced by generated payloads.
 - Codex prompt files are optional command-like companions only; Codex
   skills remain the supported plugin UX.
-- Current validation: focused red/green tests, 57-test suite, skill
-  quick_validate, payload build, publish dry-run, generated Codex plugin
-  validator, self doctor, `python3` compileall, and `git diff --check`.
+- Current `agent-plugins` validation: repo metadata verified public/MIT;
+  target checkout clean after push; copied Codex plugin validator passed
+  before commit.
+- Current source-repo validation for the manifest update: 57 tests,
+  `python3` compileall, self doctor, payload build, skill
+  quick_validate, generated Codex plugin validator, publish dry-run to
+  `/tmp/agent-plugins`, and `git diff --check`.
 - Do not run `tools/publish_agent_artifact_pr.py` without `--dry-run`
   until the target repo and copied output are reviewed.

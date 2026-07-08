@@ -55,7 +55,7 @@ def test_project_artifact_manifest_points_to_generated_payload():
     assert artifact["kind"] == "plugin"
     assert artifact["source_path"] == "dist/project-steward"
     assert artifact["target_path"] == "project-steward"
-    assert artifact["target_repo"] == ""
+    assert artifact["target_repo"] == "git@github.com:WSH95/agent-plugins.git"
     assert "tools/build_plugin_payloads.py" in artifact["build_command"]
 
 
