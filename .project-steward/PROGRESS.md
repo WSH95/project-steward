@@ -2,6 +2,16 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T03:14:19Z — codex
+Closed distribution-repo follow-up: `WSH95/agent-plugins` now has root
+Claude Code/Codex marketplace manifests and an agent-neutral README,
+pushed through commit `fe6ae8d`. Created public MIT repo
+`WSH95/agent-skills` with README template only, pushed through commit
+`da79b47`; no skills uploaded. Verified both distribution checkouts clean
+and synced. `gh repo view` confirmed `agent-skills` visibility PUBLIC,
+license MIT, default branch `main`; `project-steward` itself remains
+PRIVATE as of this check.
+
 ### 2026-07-08T01:56:43Z — codex
 Created public GitHub repo `WSH95/agent-plugins` with MIT license and
 README via `gh`; published generated Project Steward plugin payload under

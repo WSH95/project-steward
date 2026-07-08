@@ -31,7 +31,7 @@ plugin-src/        canonical source for plugin development
   claude/          Claude Code commands + auto-loaded hook config
   codex/           optional Codex prompts + manual Codex hook config
   metadata.json    shared plugin/marketplace metadata
-agent-artifacts.json       publish target metadata (target repo filled on first publish)
+agent-artifacts.json       publish target metadata for generated artifacts
 tools/
   build_plugin_payloads.py
   publish_agent_artifact_pr.py
@@ -86,17 +86,26 @@ hooks use `features.hooks` and remain a manual `hooks.json` install.
 protocol from its managed block; any tool that runs shell commands can
 use the CLI directly.
 
-**Publish a review PR to an agent-plugins repo:**
+**Publish a review PR to the agent-plugins repo:**
 
 ```
 python3 tools/publish_agent_artifact_pr.py \
   --artifact project-steward-plugin \
-  --target-repo git@github.com:USER/agent-plugins.git \
   --dry-run
 ```
 
 Remove `--dry-run` only after reviewing the copied output. The script
 opens a PR and never merges it.
+
+**Distribution repositories:**
+
+- `https://github.com/WSH95/agent-plugins` — public MIT repository for
+  generated plugin payloads. Project Steward is published there under
+  `project-steward/`; the root marketplace metadata lets users add the
+  repo directly as a Claude Code or Codex marketplace.
+- `https://github.com/WSH95/agent-skills` — public MIT repository for
+  future standalone skills. It currently contains only a README template
+  and license; no Project Steward skills are published there yet.
 
 ## Quickstart flow
 

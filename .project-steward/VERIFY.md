@@ -15,20 +15,27 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-07-08 (agent artifact maintainer) — 57 tests,
-payload build, agent-artifact-maintainer quick_validate, publish dry-run,
-generated Codex plugin schema validator, self doctor (34 checks),
-`python3` compileall, and `git diff --check` passed locally
-(`PYTHONPATH=plugin-src/src`, Python 3.8.10). Earlier smoke coverage
-also included non-editable packaged install + init and isolated Codex
-marketplace/plugin add + prompt-input. Note: local `python` points at an
-interpreter too old for `from __future__ import annotations`; use
-`python3` or a project-managed interpreter for syntax checks here.
+Last verified: 2026-07-08 (distribution close-out) — 57 tests,
+self doctor (34 checks / 0 failures), `python3` compileall, and
+`git diff --check` passed locally (`PYTHONPATH=plugin-src/src`,
+Python 3.8.10). Earlier smoke coverage also included payload build,
+agent-artifact-maintainer quick_validate, publish dry-run, generated
+Codex plugin schema validator, non-editable packaged install + init, and
+isolated Codex marketplace/plugin add + prompt-input. Note: local
+`python` points at an interpreter too old for
+`from __future__ import annotations`; use `python3` or a project-managed
+interpreter for syntax checks here.
 
 Distribution repo check (2026-07-08): `gh repo view WSH95/agent-plugins`
 reported visibility PUBLIC, license MIT, default branch `main`; target
 checkout `/tmp/agent-plugins` was clean after pushing Project Steward
 payload commit `c78ea23`.
+
+Distribution repo follow-up (2026-07-08): `/tmp/agent-plugins` clean and
+synced at `fe6ae8d` after README/root-marketplace updates; `/tmp/agent-skills`
+clean and synced at `da79b47` with only `LICENSE` and `README.md`.
+`gh repo view WSH95/agent-skills` reported visibility PUBLIC, license
+MIT, default branch `main`.
 
 Publish-target manifest update (2026-07-08): 57 tests, `python3`
 compileall, self doctor, payload build, skill quick_validate, generated

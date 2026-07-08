@@ -274,3 +274,23 @@ with MIT license and root README. Published the generated
 target repository. The generated payload in `agent-plugins` is install
 output; canonical development source remains in this repo under
 `plugin-src/`.
+
+## 0018 — 2026-07-08 — Distribution repos use root install entry points
+
+**Context**: The first `agent-plugins` README pointed users at
+per-plugin folders and implied plugin-local README/INSTALL files existed.
+The user clarified that distribution repos should expose clean root
+install entry points and that plugin folders are pure generated payloads.
+The user also asked for a matching `agent-skills` repository, without
+uploading skills yet.
+**Decision**: Updated `WSH95/agent-plugins` so the root repository is a
+Claude Code and Codex marketplace (`.claude-plugin/marketplace.json` and
+`.agents/plugins/marketplace.json`). Updated its README to install from
+the root marketplace and use agent-neutral examples. Created public
+`WSH95/agent-skills` with MIT license and a README template documenting
+`npx skills add https://github.com/WSH95/agent-skills` and
+`npx skills add WSH95/agent-skills@<skill-name>`.
+**Consequences**: Users can add the distribution repository itself
+instead of browsing generated payload internals. `agent-skills` is ready
+for future standalone skill publishes but intentionally contains no
+skills today.
