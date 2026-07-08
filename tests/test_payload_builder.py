@@ -45,9 +45,16 @@ def test_builder_emits_extractable_claude_and_codex_payloads(tmp_path):
     assert (claude_plugin / "commands" / "init.md").is_file()
     assert (claude_plugin / "hooks" / "hooks.json").is_file()
     assert not (claude_plugin / "hooks" / "codex.hooks.json").exists()
-    assert not (
-        claude_plugin / "hooks" / "scripts" / "project_steward_hook.py"
-    ).exists()
+    assert not (claude_plugin / "hooks" / "scripts").exists()
+    hooks_text = (claude_plugin / "hooks" / "hooks.json").read_text(
+        encoding="utf-8"
+    )
+    assert "commandWindows" not in hooks_text
+    assert "run-hook.cmd" in hooks_text
+    wrapper = claude_plugin / "hooks" / "run-hook.cmd"
+    assert wrapper.is_file()
+    if os.name != "nt":
+        assert os.access(str(wrapper), os.X_OK)
     launcher = claude_plugin / "bin" / "project-steward"
     assert launcher.is_file()
     assert "project_steward.cli" in launcher.read_text(encoding="utf-8")
@@ -111,6 +118,48 @@ def test_builder_outputs_codex_command_like_companions(tmp_path):
     assert "project-steward hook stop --agent codex" in (
         codex / "hooks" / "hooks.json"
     ).read_text(encoding="utf-8")
+
+
+def test_built_wrapper_invokes_bundled_launcher(tmp_path):
+    """The polyglot wrapper must reach the payload-local Python launcher.
+
+    Asserting the payload's own version string in the output proves the
+    bundled src/ ran (an installed console-script fallback could report a
+    different version; a silent no-python fallback would print nothing).
+    """
+    out = _run_builder(tmp_path)
+    plugin = out / "claude" / "plugins" / "project-steward"
+    wrapper = plugin / "hooks" / "run-hook.cmd"
+
+    version = ""
+    init_text = (plugin / "src" / "project_steward" / "__init__.py").read_text(
+        encoding="utf-8"
+    )
+    for line in init_text.splitlines():
+        if line.startswith("__version__"):
+            version = line.split('"')[1]
+            break
+    assert version
+
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    if os.name == "nt":
+        cmd = ["cmd", "/c", str(wrapper), "--version"]
+    else:
+        # Claude Code runs hook commands through a POSIX shell; a file
+        # without a shebang is interpreted as a shell script.
+        cmd = ["sh", str(wrapper), "--version"]
+    proc = subprocess.run(
+        cmd,
+        cwd=str(tmp_path),
+        env=env,
+        input="",
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    assert proc.returncode == 0, proc.stdout
+    assert "project-steward %s" % version in proc.stdout
 
 
 def test_builder_clean_replaces_previous_output(tmp_path):

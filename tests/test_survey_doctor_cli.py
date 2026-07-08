@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -64,24 +65,63 @@ def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
     )
 
 
-def test_claude_hooks_use_bundled_launcher_with_windows_variant():
+def test_claude_hooks_use_cross_platform_wrapper():
+    # Claude Code hooks have no per-OS command field (ADR 0019); every
+    # hook must go through the polyglot wrapper next to hooks.json.
+    hooks_dir = ROOT / "plugin-src" / "claude" / "hooks"
     hooks = json.loads(
-        (ROOT / "plugin-src" / "claude" / "hooks" / "hooks.json").read_text(
-            encoding="utf-8"
-        )
+        (hooks_dir / "hooks.json").read_text(encoding="utf-8")
     )
+    wrapper = hooks_dir / "run-hook.cmd"
+    assert wrapper.is_file()
+    if os.name != "nt":
+        assert os.access(str(wrapper), os.X_OK)
 
     for groups in hooks["hooks"].values():
         for group in groups:
             for handler in group["hooks"]:
+                assert set(handler) <= {"type", "command", "timeout"}
                 command = handler["command"]
-                windows = handler["commandWindows"]
-                assert "${CLAUDE_PLUGIN_ROOT}/bin/project-steward" in command
+                assert '"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd"' in command
+                assert "--agent claude" in command
+                assert "python3" not in command
                 assert "project_steward_hook.py" not in command
-                assert "${CLAUDE_PLUGIN_ROOT}\\bin\\project-steward" in windows
-                assert "py -3" in windows
-                assert "python " in windows
-                assert "project_steward_hook.py" not in windows
+
+
+def test_self_doctor_rejects_unknown_claude_hook_fields(tmp_path):
+    (tmp_path / "plugin-src" / "src" / "project_steward").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "claude" / "hooks").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "codex" / "hooks").mkdir(parents=True)
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "plugin-src" / "metadata.json").write_text(
+        '{"name": "project-steward"}\n', encoding="utf-8"
+    )
+    (tmp_path / "plugin-src" / "claude" / "hooks" / "hooks.json").write_text(
+        json.dumps({
+            "hooks": {
+                "Stop": [{"hooks": [{
+                    "type": "command",
+                    "command": ('"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd"'
+                                ' hook stop --agent claude'),
+                    "commandWindows": "py -3 something",
+                    "timeout": 15,
+                }]}],
+            },
+        }),
+        encoding="utf-8",
+    )
+    (tmp_path / "plugin-src" / "codex" / "hooks" / "hooks.json").write_text(
+        '{"hooks": {}}\n', encoding="utf-8"
+    )
+
+    results = doctor._self_checks(tmp_path)
+
+    assert any(
+        r["status"] == doctor.FAIL
+        and r["name"] == "self: plugin-src/claude/hooks/hooks.json schema"
+        and "commandWindows" in r["detail"]
+        for r in results
+    )
 
 
 def test_cli_init_and_status(git_repo, capsys):
@@ -96,8 +136,12 @@ def test_cli_init_and_status(git_repo, capsys):
 
 
 def test_cli_version_runs():
+    # Self-sufficient on a bare checkout: the subprocess needs the package
+    # on its own path (conftest's sys.path shim does not propagate).
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT / "plugin-src" / "src")
     proc = subprocess.run(
         [sys.executable, "-m", "project_steward", "--version"],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
     assert proc.returncode == 0
     assert b"project-steward" in proc.stdout

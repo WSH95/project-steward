@@ -3,19 +3,33 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `PYTHONPATH=plugin-src/src python3 -m pytest -q` | 59 passed |
+| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 66 passed |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
 | Payload build | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` | exits 0 |
 | Skill schema | `python3 /home/wsh/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugin-src/skills/agent-artifact-maintainer` | exits 0 |
 | Publish dry-run | `python3 tools/publish_agent_artifact_pr.py --artifact project-steward-plugin --target-repo git@github.com:WSH95/agent-plugins.git --dry-run --target-checkout /tmp/project-steward-artifact-publish-dry-run --non-interactive` | copies artifact; no commit/push/PR |
 | JSON configs | `python3 -m json.tool plugin-src/claude/hooks/hooks.json && python3 -m json.tool plugin-src/codex/hooks/hooks.json` | valid |
+| Claude manifests | `claude plugin validate dist/project-steward/claude/plugins/project-steward --strict && claude plugin validate dist/project-steward/claude --strict` | both pass (manifest-only: hooks.json schema is covered by `doctor --self`) |
+| Claude hook wrapper | `printf '' \| sh dist/project-steward/claude/plugins/project-steward/hooks/run-hook.cmd --version` | prints the payload's own version (bundled launcher ran, not a fallback) |
 | Codex plugin schema | `python3 /home/wsh/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py dist/project-steward/codex/plugins/project-steward` | exits 0 |
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl-home` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-07-08 (Codex hook schema fix, 0.3.0 bump) — 59 tests,
+Last verified: 2026-07-08 (0.3.1 polyglot hook wrapper, ADR 0019) — 66
+tests via bare `python3 -m pytest -q`, self doctor (36 checks /
+0 failures, incl. the new Claude hooks schema check), compileall,
+payload build, `claude plugin validate --strict` (plugin + marketplace),
+wrapper smoke on all three legs (bundled launcher printed 0.3.1;
+PATH-restricted fallback used the installed 0.3.0 CLI; no-Python run
+exited 0 silently), end-to-end SessionStart recap through the built
+wrapper in a scratch project, generated Codex plugin validator, Codex
+regression gate (`plugin-src/codex` + `hooks.py` diff empty; Codex
+payload tree diff vs pre-change build = version string + corrected
+shared cross-platform.md only), and `git diff --check`.
+
+Previous entry: 2026-07-08 (Codex hook schema fix, 0.3.0 bump) — 59 tests,
 self doctor (35 checks / 0 failures), `python3` compileall, payload
 build, `git diff --check`, and `codex --version` passed locally
 (`PYTHONPATH=plugin-src/src`, Python 3.8.10). `codex --version` no

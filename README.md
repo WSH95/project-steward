@@ -165,9 +165,11 @@ never silent. Linear/Jira are honest stubs. Details:
 Ubuntu, Windows, and macOS are first-class: the core is Python 3.7+
 standard library only (pathlib/subprocess/json; `tomllib` on 3.11+ with a
 bundled flat-TOML fallback below that decodes strings identically). Claude
-Code plugin hooks prefer the bundled pure-Python `bin/project-steward`
-launcher, using POSIX and Windows command variants, then fall back to an
-installed `project-steward` console script; Codex hooks still use the
+Code plugin hooks run one polyglot `hooks/run-hook.cmd` wrapper (a valid
+shell script and cmd.exe batch file at once — Claude Code hooks have no
+per-OS command field) that prefers the bundled pure-Python
+`bin/project-steward` launcher, then falls back to an installed
+`project-steward` console script; Codex hooks still use the
 console script because Codex does not install the Claude payload. Writes
 are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS matrix
 including Python 3.7 jobs. Details and the deliberate 3.7-floor
@@ -213,9 +215,10 @@ standard is the canonical instruction carrier.
 - **"Not a Project Steward project"** → run `init`, or `--root` points
   elsewhere.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.
-- **Windows hook command fails** → make sure the Python Launcher (`py -3`)
-  or `python` is available, or install the CLI from a checkout with
-  `pipx install .` (not yet on PyPI).
+- **Windows hooks do nothing** → the `run-hook.cmd` wrapper needs the
+  Python Launcher (`py -3`) or `python` on PATH, or the CLI installed
+  from a checkout with `pipx install .` (not yet on PyPI); it exits
+  silently when none exist.
 - **Stop guard too eager/quiet** → tune `[session]` in
   `.project-steward/config.toml` (`block`/`remind`/`off`, cooldown,
   min edits).

@@ -294,3 +294,39 @@ the root marketplace and use agent-neutral examples. Created public
 instead of browsing generated payload internals. `agent-skills` is ready
 for future standalone skill publishes but intentionally contains no
 skills today.
+
+## 0019 — 2026-07-08 — Claude hooks use one polyglot wrapper; per-OS command fields rejected
+
+**Context**: The 0.3.0 launcher optimization gave every Claude hook a
+`commandWindows` PowerShell variant. Claude Code's hook schema (verified
+against the official docs 2026-07-08) has no per-OS command field:
+unknown fields are ignored, and on Windows hooks run under Git Bash when
+present, else PowerShell — where the POSIX `a || b || true` command
+string is a parse error, so every hook event failed. ADR 0004 had
+already rejected `commandWindows` as undocumented on the Codex side; the
+fiction re-entered through the Claude payload, and CI's `json.tool`
+syntax check plus `claude plugin validate` (manifest-only) could not
+catch it. Official plugins solve Windows with a polyglot wrapper script
+instead.
+**Decision**: Every Claude hook invokes
+`"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" hook <event> --agent claude`
+— one file that is simultaneously a valid POSIX shell script and a
+cmd.exe batch file. It prefers the bundled `bin/project-steward`
+launcher (`python3`/`python`/`py` on POSIX, `py -3`/`python` on
+Windows), falls back to an installed `project-steward`, and exits 0 when
+neither exists. Unlike the superpowers wrapper, the batch branch calls
+Python directly, so Git Bash is genuinely not required. `doctor --self`
+now fails on unsupported fields in the Claude hooks file (allowlist:
+`type`, `command`, `timeout`) and the payload tests execute the built
+wrapper on all CI OSes. Per-OS command fields stay banned per ADR 0004's
+verified-docs-not-review-claims rule. Codex payloads are untouched: the
+wrapper ships only under `claude/`, and `plugin-src/codex/` plus the
+shared hook dispatcher are byte-identical in this change.
+**Consequences**: Windows works with or without Git Bash (needing only
+`py`/`python` or an installed CLI); 0.3.1 release; cross-platform.md,
+README, CHANGELOG, and tests corrected; regression guard lives in
+doctor + CI rather than docs alone. The stale non-managed AGENTS.md
+reference `plugin/references/cross-platform.md` →
+`plugin-src/references/cross-platform.md` was fixed in the same change
+with explicit user approval (2026-07-08), closing the prior handoff's
+step 6.

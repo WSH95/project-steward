@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T14:38:53Z — claude
+0.3.1: replaced fictional commandWindows Claude hook fields with cross-platform polyglot hooks/run-hook.cmd (ADR 0019); doctor now schema-checks Claude hooks; bare-checkout pytest fixed; AGENTS.md stale reference fixed with approval. 66 tests, doctor 36/0, wrapper smoke on all legs, Codex regression gate clean.
+
 ### 2026-07-08T11:53:02Z — cli
 Published Project Steward Claude launcher payload to agent-plugins PR #2 from source commit 7bf67c3.
 

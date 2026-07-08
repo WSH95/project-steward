@@ -35,7 +35,7 @@ Primary language/stack: Python 3.7+ (stdlib only).
 3. Preserve migration compatibility: `.projectforge/` detection, marker
    conversion, and the deprecated `projectforge` alias.
 4. Keep Ubuntu/Windows/macOS support and the Python 3.7 floor — stdlib
-   only, no Bash-only core behavior (see plugin/references/cross-platform.md).
+   only, no Bash-only core behavior (see plugin-src/references/cross-platform.md).
 5. Checkpoint PROGRESS.md/HANDOFF.md at semantic boundaries; propose
    Conventional Commits; never push without approval.
 
