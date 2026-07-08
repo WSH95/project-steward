@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 66 passed |
+| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 70 passed |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
 | Payload build | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` | exits 0 |
@@ -13,11 +13,20 @@
 | Claude manifests | `claude plugin validate dist/project-steward/claude/plugins/project-steward --strict && claude plugin validate dist/project-steward/claude --strict` | both pass (manifest-only: hooks.json schema is covered by `doctor --self`) |
 | Claude hook wrapper | `printf '' \| sh dist/project-steward/claude/plugins/project-steward/hooks/run-hook.cmd --version` | prints the payload's own version (bundled launcher ran, not a fallback) |
 | Codex plugin schema | `python3 /home/wsh/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py dist/project-steward/codex/plugins/project-steward` | exits 0 |
-| Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl-home` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
+| Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-07-08 (0.3.1 polyglot hook wrapper, ADR 0019) — 66
+Last verified: 2026-07-08 (Claude/Codex `commandWindows` distinction
+and wrapper fallback hardening, ADR 0020) — 70 tests via bare
+`python3 -m pytest -q`, compileall, self doctor (36 checks /
+0 failures), payload build, `claude plugin validate --strict` (plugin +
+marketplace), generated Codex plugin validator, built wrapper smoke
+printed 0.3.1, `git diff --check`, and isolated
+`CODEX_HOME=/tmp/project-steward-codex-final.bnY6db` marketplace
+add/plugin add/list plus `codex debug prompt-input`.
+
+Previous entry: 2026-07-08 (0.3.1 polyglot hook wrapper, ADR 0019) — 66
 tests via bare `python3 -m pytest -q`, self doctor (36 checks /
 0 failures, incl. the new Claude hooks schema check), compileall,
 payload build, `claude plugin validate --strict` (plugin + marketplace),
@@ -29,7 +38,7 @@ regression gate (`plugin-src/codex` + `hooks.py` diff empty; Codex
 payload tree diff vs pre-change build = version string + corrected
 shared cross-platform.md only), and `git diff --check`.
 
-Previous entry: 2026-07-08 (Codex hook schema fix, 0.3.0 bump) — 59 tests,
+Earlier entry: 2026-07-08 (Codex hook schema fix, 0.3.0 bump) — 59 tests,
 self doctor (35 checks / 0 failures), `python3` compileall, payload
 build, `git diff --check`, and `codex --version` passed locally
 (`PYTHONPATH=plugin-src/src`, Python 3.8.10). `codex --version` no

@@ -5,17 +5,18 @@
 ### Fixed
 - **0.3.0's Claude hook "Windows command variants" never worked**: the
   generated hooks carried a `commandWindows` field that does not exist
-  in Claude Code's hook schema (the same fiction ADR 0004 had already
-  rejected on the Codex side). Claude Code ignored it silently, and on
+  in Claude Code's hook schema. Claude Code ignored it silently, and on
   Windows without Git Bash the POSIX command string hit a PowerShell
-  parse error on every hook event. Every Claude hook now runs one
-  polyglot `hooks/run-hook.cmd` wrapper — a valid POSIX shell script and
-  cmd.exe batch file at once — that prefers the bundled launcher via
-  `python3`/`python`/`py` (POSIX) or `py -3`/`python` (Windows), falls
-  back to an installed `project-steward` CLI, and exits 0 silently when
-  neither exists (ADR 0019). `doctor --self` now schema-checks the
-  Claude hooks file, so unsupported hook fields fail CI, and the payload
-  test suite executes the built wrapper on every CI OS.
+  parse error on every hook event. Codex currently documents
+  `commandWindows`, so this rejection is Claude Code-specific. Every
+  Claude hook now runs one polyglot `hooks/run-hook.cmd` wrapper — a
+  valid POSIX shell script and cmd.exe batch file at once — that prefers
+  the bundled launcher via `python3`/`python`/`py` (POSIX) or
+  `py -3`/`python` (Windows), falls back to an installed
+  `project-steward` CLI, and exits 0 silently when neither exists
+  (ADR 0019). `doctor --self` now schema-checks the Claude hooks file,
+  so unsupported hook fields fail CI, and the payload test suite
+  executes the built wrapper on every CI OS.
 - `python3 -m pytest -q` now passes on a bare checkout:
   `test_cli_version_runs` no longer requires the package to be installed
   in the test interpreter.

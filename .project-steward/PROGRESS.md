@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T15:33:35Z — codex
+Hardened 0.3.1 cross-agent accuracy: the Claude hook wrapper now tries
+each Python launcher before CLI fallback, docs/ADR 0020 split Claude
+Code's absent `commandWindows` hook field from Codex's documented
+`commandWindows` support, and regression tests pin wrapper fallback,
+release-version consistency, and wording. Verification: 70 tests,
+compileall, doctor 36/0, payload build, Claude/Codex validators,
+wrapper smoke, isolated Codex smoke, and `git diff --check`.
+
 ### 2026-07-08T14:38:53Z — claude
 0.3.1: replaced fictional commandWindows Claude hook fields with cross-platform polyglot hooks/run-hook.cmd (ADR 0019); doctor now schema-checks Claude hooks; bare-checkout pytest fixed; AGENTS.md stale reference fixed with approval. 66 tests, doctor 36/0, wrapper smoke on all legs, Codex regression gate clean.
 

@@ -1,5 +1,7 @@
 import os
 import json
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -160,6 +162,144 @@ def test_built_wrapper_invokes_bundled_launcher(tmp_path):
     )
     assert proc.returncode == 0, proc.stdout
     assert "project-steward %s" % version in proc.stdout
+
+
+def test_built_wrapper_falls_back_to_installed_cli(tmp_path):
+    out = _run_builder(tmp_path)
+    plugin = out / "claude" / "plugins" / "project-steward"
+    wrapper = plugin / "hooks" / "run-hook.cmd"
+    fakebin = tmp_path / "fakebin"
+    fakebin.mkdir()
+
+    if os.name == "nt":
+        for name in ("py.cmd", "python.cmd"):
+            (fakebin / name).write_text("@echo off\r\nexit /b 7\r\n",
+                                        encoding="utf-8")
+        (fakebin / "project-steward.cmd").write_text(
+            "@echo off\r\necho fallback-cli %*\r\nexit /b 0\r\n",
+            encoding="utf-8",
+        )
+        cmd = ["cmd", "/c", str(wrapper), "--version"]
+        path = str(fakebin) + os.pathsep + os.environ.get("PATH", "")
+    else:
+        shell = shutil.which("sh") or "sh"
+        for name in ("python3", "python", "py"):
+            script = fakebin / name
+            script.write_text("#!/bin/sh\nexit 7\n", encoding="utf-8")
+            script.chmod(0o755)
+        fallback = fakebin / "project-steward"
+        fallback.write_text(
+            "#!/bin/sh\nprintf 'fallback-cli %s\\n' \"$*\"\n",
+            encoding="utf-8",
+        )
+        fallback.chmod(0o755)
+        cmd = [shell, str(wrapper), "--version"]
+        path = str(fakebin) + os.pathsep + os.environ.get("PATH", "")
+
+    env = os.environ.copy()
+    env["PATH"] = path
+    env.pop("PYTHONPATH", None)
+    proc = subprocess.run(
+        cmd,
+        cwd=str(tmp_path),
+        env=env,
+        input="",
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    assert proc.returncode == 0, proc.stdout
+    assert "fallback-cli --version" in proc.stdout
+
+
+def test_built_wrapper_tries_next_python_before_cli(tmp_path):
+    out = _run_builder(tmp_path)
+    plugin = out / "claude" / "plugins" / "project-steward"
+    wrapper = plugin / "hooks" / "run-hook.cmd"
+    fakebin = tmp_path / "fakebin"
+    fakebin.mkdir()
+
+    if os.name == "nt":
+        (fakebin / "py.cmd").write_text("@echo off\r\nexit /b 7\r\n",
+                                        encoding="utf-8")
+        (fakebin / "python.cmd").write_text(
+            "@echo off\r\necho python-ok %*\r\nexit /b 0\r\n",
+            encoding="utf-8",
+        )
+        (fakebin / "project-steward.cmd").write_text(
+            "@echo off\r\necho fallback-cli %*\r\nexit /b 0\r\n",
+            encoding="utf-8",
+        )
+        cmd = ["cmd", "/c", str(wrapper), "--version"]
+        path = str(fakebin) + os.pathsep + os.environ.get("PATH", "")
+    else:
+        shell = shutil.which("sh") or "sh"
+        python3 = fakebin / "python3"
+        python3.write_text("#!/bin/sh\nexit 7\n", encoding="utf-8")
+        python3.chmod(0o755)
+        python = fakebin / "python"
+        python.write_text(
+            "#!/bin/sh\nprintf 'python-ok %s\\n' \"$*\"\n",
+            encoding="utf-8",
+        )
+        python.chmod(0o755)
+        fallback = fakebin / "project-steward"
+        fallback.write_text(
+            "#!/bin/sh\nprintf 'fallback-cli %s\\n' \"$*\"\n",
+            encoding="utf-8",
+        )
+        fallback.chmod(0o755)
+        cmd = [shell, str(wrapper), "--version"]
+        path = str(fakebin) + os.pathsep + os.environ.get("PATH", "")
+
+    env = os.environ.copy()
+    env["PATH"] = path
+    env.pop("PYTHONPATH", None)
+    proc = subprocess.run(
+        cmd,
+        cwd=str(tmp_path),
+        env=env,
+        input="",
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    assert proc.returncode == 0, proc.stdout
+    assert "python-ok" in proc.stdout
+    assert "fallback-cli" not in proc.stdout
+
+
+def test_release_versions_are_consistent(tmp_path):
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    package_init = (
+        ROOT / "plugin-src" / "src" / "project_steward" / "__init__.py"
+    ).read_text(encoding="utf-8")
+    metadata = _json(ROOT / "plugin-src" / "metadata.json")
+
+    pyproject_version = re.search(r'^version = "([^"]+)"',
+                                  pyproject, re.MULTILINE).group(1)
+    package_version = re.search(r'^__version__ = "([^"]+)"',
+                                package_init, re.MULTILINE).group(1)
+
+    out = _run_builder(tmp_path)
+    claude_manifest = _json(
+        out / "claude" / "plugins" / "project-steward"
+        / ".claude-plugin" / "plugin.json"
+    )
+    codex_manifest = _json(
+        out / "codex" / "plugins" / "project-steward"
+        / ".codex-plugin" / "plugin.json"
+    )
+
+    assert {
+        pyproject_version,
+        package_version,
+        metadata["version"],
+        claude_manifest["version"],
+        codex_manifest["version"],
+    } == {package_version}
 
 
 def test_builder_clean_replaces_previous_output(tmp_path):

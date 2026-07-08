@@ -1,6 +1,6 @@
 # Project Steward on Codex
 
-Verified against the official Codex docs on 2026-07-07:
+Verified against the official Codex docs on 2026-07-08:
 skills — https://developers.openai.com/codex/skills ·
 plugins — https://developers.openai.com/codex/plugins ·
 hooks — https://developers.openai.com/codex/hooks
@@ -83,6 +83,9 @@ Known limitations (from the official docs, as of 2026-07):
 
 - Non-managed hooks must be reviewed and trusted in `/hooks` before they
   run.
+- Codex currently documents `commandWindows` for Windows-specific hook
+  commands. Project Steward does not use it because the Codex companion
+  calls the installed `project-steward` CLI directly.
 - Heartbeat tracking is **event-based, not timer-based** — it advances
   when hooks fire, so long tool-free thinking stretches don't tick.
 - `PostToolUse` matching covers the current supported tool names

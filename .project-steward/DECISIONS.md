@@ -302,12 +302,10 @@ skills today.
 against the official docs 2026-07-08) has no per-OS command field:
 unknown fields are ignored, and on Windows hooks run under Git Bash when
 present, else PowerShell — where the POSIX `a || b || true` command
-string is a parse error, so every hook event failed. ADR 0004 had
-already rejected `commandWindows` as undocumented on the Codex side; the
-fiction re-entered through the Claude payload, and CI's `json.tool`
-syntax check plus `claude plugin validate` (manifest-only) could not
-catch it. Official plugins solve Windows with a polyglot wrapper script
-instead.
+string is a parse error, so every hook event failed. The mistake
+re-entered through the Claude payload, and CI's `json.tool` syntax check
+plus `claude plugin validate` (manifest-only) could not catch it.
+Official plugins solve Windows with a polyglot wrapper script instead.
 **Decision**: Every Claude hook invokes
 `"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" hook <event> --agent claude`
 — one file that is simultaneously a valid POSIX shell script and a
@@ -318,8 +316,10 @@ neither exists. Unlike the superpowers wrapper, the batch branch calls
 Python directly, so Git Bash is genuinely not required. `doctor --self`
 now fails on unsupported fields in the Claude hooks file (allowlist:
 `type`, `command`, `timeout`) and the payload tests execute the built
-wrapper on all CI OSes. Per-OS command fields stay banned per ADR 0004's
-verified-docs-not-review-claims rule. Codex payloads are untouched: the
+wrapper on all CI OSes. Per-OS command fields stay banned for Claude
+Code hooks; Codex currently documents `commandWindows`, but Project
+Steward's Codex companion uses the installed CLI and does not need a
+Windows-specific command override. Codex payloads are untouched: the
 wrapper ships only under `claude/`, and `plugin-src/codex/` plus the
 shared hook dispatcher are byte-identical in this change.
 **Consequences**: Windows works with or without Git Bash (needing only
@@ -330,3 +330,20 @@ reference `plugin/references/cross-platform.md` →
 `plugin-src/references/cross-platform.md` was fixed in the same change
 with explicit user approval (2026-07-08), closing the prior handoff's
 step 6.
+
+## 0020 — 2026-07-08 — Codex commandWindows support is separate from Claude Code
+
+**Context**: A post-0.3.1 review rechecked current official Codex and
+Claude Code hook docs. Claude Code has no `commandWindows` hook field;
+Codex currently documents `commandWindows` as an optional
+Windows-only command override. The 0.3.1 fix is still correct because it
+targets Claude Code plugin hooks, but the docs must not imply the two
+schemas are identical.
+**Decision**: Keep Project Steward's Claude hooks on the polyglot
+`run-hook.cmd` wrapper and keep `commandWindows` out of
+`plugin-src/claude/hooks/hooks.json`. Treat Codex `commandWindows` as
+available but unnecessary for Project Steward's manual Codex companion,
+which invokes the installed `project-steward` CLI.
+**Consequences**: Tests now pin the product distinction and version
+consistency. Future docs updates must say "Claude Code has no
+`commandWindows` hook field" rather than making a cross-product claim.

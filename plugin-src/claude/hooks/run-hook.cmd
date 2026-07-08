@@ -14,17 +14,17 @@ REM and no CLI available, exit 0 silently.
 where py >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     py -3 "%~dp0..\bin\project-steward" %*
-    exit /b 0
+    if %ERRORLEVEL% equ 0 exit /b 0
 )
 where python >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     python "%~dp0..\bin\project-steward" %*
-    exit /b 0
+    if %ERRORLEVEL% equ 0 exit /b 0
 )
 where project-steward >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     project-steward %*
-    exit /b 0
+    if %ERRORLEVEL% equ 0 exit /b 0
 )
 exit /b 0
 CMDBLOCK
@@ -35,10 +35,9 @@ LAUNCHER="$SCRIPT_DIR/../bin/project-steward"
 for PY in python3 python py; do
     if command -v "$PY" >/dev/null 2>&1; then
         "$PY" "$LAUNCHER" "$@" && exit 0
-        break
     fi
 done
 if command -v project-steward >/dev/null 2>&1; then
-    exec project-steward "$@"
+    project-steward "$@" && exit 0
 fi
 exit 0

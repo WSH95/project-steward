@@ -1,58 +1,53 @@
 ---
-updated_at: 2026-07-08T14:38:53Z
-updated_by: claude
+updated_at: 2026-07-08T15:40:36Z
+updated_by: codex
 session_status: closed
 branch: main
-last_commit: 55ee35a
+last_commit: current local commit after this handoff
 ---
 # Handoff
 
 ## Now
 
-Claude plugin runtime packaging has been optimized for Project Steward
-0.3.0. The generated Claude payload now ships a plugin-local
-`bin/project-steward` pure-Python launcher, hook commands prefer that
-launcher before falling back to an installed CLI, Windows hooks have
-explicit `commandWindows` variants, and the old POSIX-only hook shim is
-removed from generated payloads.
+Project Steward 0.3.1 has a committed Codex-side hardening pass after
+the Claude Code `commandWindows` review. The Claude hook wrapper
+`plugin-src/claude/hooks/run-hook.cmd` now tries every Python launcher
+leg before falling back to an installed `project-steward`, so one broken
+`python3`/`py` executable does not skip a working launcher. Failed
+fallbacks still exit 0 silently so hooks do not break the agent loop.
 
-Docs, metadata, `doctor`, payload builder, changelog, and regression tests
-were updated to describe and enforce the new launcher behavior. Full
-verification passed: pytest, compileall, `doctor --self`, payload build,
-Codex plugin validation, `git diff --check`, and built Claude launcher
-smoke test.
+Docs and decisions now separate the products accurately: Claude Code has
+no `commandWindows` hook field; Codex currently documents
+`commandWindows`, but Project Steward does not need it in the Codex
+plugin path because the Codex companion invokes the installed CLI
+directly. ADR 0020 records that distinction.
 
-The source implementation is committed as `7bf67c3`
-(`feat(claude): bundle plugin launcher for hooks`). The user-level pipx
-CLI was force-reinstalled from this checkout and reports
-`project-steward 0.3.0`. The generated plugin payload was published to
-`WSH95/agent-plugins` as PR #2:
-https://github.com/WSH95/agent-plugins/pull/2
+Regression tests were added for wrapper fallback behavior, release
+version consistency, and stale cross-agent wording. Verification passed:
+70 tests, compileall, `doctor --self`, payload build, Claude plugin and
+marketplace validation, Codex plugin validation, built wrapper smoke,
+isolated Codex install/prompt-input smoke, and `git diff --check`.
 
 ## In flight
 
-- Local stewardship publication record needs a commit after this handoff
-  refresh.
+- No active implementation work remains in this session.
 - `dist/project-steward/` was rebuilt for validation and remains
   gitignored/generated.
 
 ## Next steps
 
-1. Commit this publication checkpoint with `.project-steward/` updates
-   included.
-2. Do not push or publish further changes without explicit approval.
-3. Review/merge https://github.com/WSH95/agent-plugins/pull/2 when ready.
-4. When `project-steward` is made public, update install docs that still
+1. Do not push or publish further changes without explicit approval.
+2. Review/merge https://github.com/WSH95/agent-plugins/pull/2 when ready.
+3. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
-5. When a standalone skill should be published, add a deliberate
+4. When a standalone skill should be published, add a deliberate
    `agent-artifacts.json` skill entry targeting
    `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
    upload skills ad hoc.
-6. If the AGENTS.md guardrail is explicitly relaxed, update the remaining
-   non-managed prose reference from
-   `plugin/references/cross-platform.md` to
-   `plugin-src/references/cross-platform.md`.
+5. Rebuild and publish a new agent-plugins payload only after the user
+   decides that this 0.3.1 hardening should supersede the existing PR #2
+   payload.
 
 ## Blockers
 
@@ -69,19 +64,21 @@ https://github.com/WSH95/agent-plugins/pull/2
   Codex payloads from `plugin-src/`.
 - `plugin-src/claude/bin/project-steward` — plugin-local Claude launcher
   into bundled `src/`.
+- `plugin-src/claude/hooks/run-hook.cmd` — polyglot POSIX/cmd hook
+  wrapper used by Claude Code without requiring Git Bash on Windows.
 - `tools/publish_agent_artifact_pr.py` — project-local PR publishing
   script for generated agent artifacts.
 - `agent-artifacts.json` — local publish manifest; currently only the
   generated Project Steward plugin artifact is configured.
 - `tests/test_payload_builder.py` — pins extraction layout and Codex
-  command-like companions.
+  command-like companions, plus wrapper fallback and version consistency.
 - `tests/test_codex_plugin.py` / `tests/test_survey_doctor_cli.py` —
   pin Codex hook root schema and self-doctor rejection of invalid
   metadata.
 - `tests/test_agent_artifact_maintainer.py` — pins the artifact
   maintainer skill contract and publish-script behavior.
-- `.project-steward/DECISIONS.md` ADR 0018 — root distribution repo
-  install entry-point decision.
+- `.project-steward/DECISIONS.md` ADR 0020 — Claude Code and Codex
+  `commandWindows` support are separate contracts.
 
 ## Tried and rejected
 
@@ -91,6 +88,11 @@ https://github.com/WSH95/agent-plugins/pull/2
 - Editing non-managed AGENTS.md prose — still avoided because the
   project guardrail limits AGENTS.md edits to managed blocks unless the
   user explicitly relaxes that guardrail.
+- Reintroducing `commandWindows` to Claude hooks — rejected because
+  Claude Code does not support that field.
+- Treating Codex as having the same limitation — rejected because Codex
+  currently documents `commandWindows`; this project simply does not need
+  to use it for Codex's installed-CLI companion path.
 
 ## Warnings
 
@@ -103,4 +105,6 @@ https://github.com/WSH95/agent-plugins/pull/2
   skills remain the supported plugin UX.
 - Codex hooks remain a manual companion file unless/until
   plugin-bundled Codex hooks are field-tested separately.
+- Do not use AGENTS.md or CLAUDE.md as progress logs; session state
+  belongs under `.project-steward/`.
 - Do not push this source repo without explicit user approval.

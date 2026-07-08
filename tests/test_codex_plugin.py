@@ -34,6 +34,21 @@ def test_codex_install_docs_match_current_cli_and_hook_feature():
     assert "features.hooks" in joined
 
 
+def test_docs_keep_claude_and_codex_commandwindows_claims_separate():
+    docs = "\n".join([
+        (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"),
+        (ROOT / ".project-steward" / "DECISIONS.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "codex" / "INSTALL.md").read_text(encoding="utf-8"),
+    ])
+
+    assert "same fiction ADR 0004 had already rejected on the Codex side" not in docs
+    assert "commandWindows` as undocumented on the Codex side" not in docs
+    assert "Claude Code has no `commandWindows` hook field" in docs
+    assert "Codex currently documents `commandWindows`" in docs
+
+
 def test_codex_hooks_json_uses_strict_root_schema():
     hooks = json.loads(
         (ROOT / "plugin-src" / "codex" / "hooks" / "hooks.json").read_text(
