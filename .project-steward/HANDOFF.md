@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-07-08T03:55:43Z
+updated_at: 2026-07-08T03:57:15Z
 updated_by: codex
 session_status: closed
 branch: main
-last_commit: HEAD
+last_commit: ed214cc
 ---
 # Handoff
 
@@ -23,13 +23,17 @@ cleaned so Codex CLI startup no longer reports the hook parse warning.
 
 This source repo remains the canonical Project Steward development repo
 and is on `main`. Source `origin/main` already points at `a470e90`
-(`fix(codex): enforce strict hook schema`) as of this session.
+(`fix(codex): enforce strict hook schema`) as of this session; local
+`main` also has unpushed steward publication record commit `ed214cc`.
+This auto-checkpoint dirtied `.project-steward/` files.
 
 ## In flight
 
 - `/tmp/agent-plugins` is on branch
   `publish/project-steward-plugin-0.3.0`, tracking the pushed remote
   branch and clean after PR creation.
+- Source repo has uncommitted auto-checkpoint updates under
+  `.project-steward/`.
 - `gh repo view WSH95/project-steward` reported the source repo is still
   PRIVATE during this session. The user said they will open-source it at
   `https://github.com/WSH95/project-steward.git`, but that has not

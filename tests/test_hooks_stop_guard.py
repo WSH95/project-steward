@@ -30,6 +30,14 @@ def _make_stale(repo, edits=6):
         sessions.record_activity(repo, "Edit", "f%d.py" % i)
 
 
+def _make_stale_with_activity(repo, activities):
+    handoff = state_dir(repo) / "HANDOFF.md"
+    past = time.time() - 3600
+    os.utime(str(handoff), (past, past))
+    for tool, detail in activities:
+        sessions.record_activity(repo, tool, detail)
+
+
 def test_stop_blocks_once_then_cooldown(git_repo, capsys, monkeypatch):
     _init(git_repo)
     _make_stale(git_repo)
@@ -38,10 +46,62 @@ def test_stop_blocks_once_then_cooldown(git_repo, capsys, monkeypatch):
                         monkeypatch)
     assert rc == 0 and out.get("decision") == "block"
     assert "auto-checkpoint" in out.get("reason", "")
+    assert "handoff-relevant actions" in out.get("reason", "")
+    assert "project-steward checkpoint" in out.get("reason", "")
+    assert "refreshes checkpoint metadata" in out.get("reason", "")
     # Second stop inside the cooldown window: silent.
     rc, out = _run_hook(["stop", "--agent", "claude"], payload, capsys,
                         monkeypatch)
     assert rc == 0 and out == {}
+
+
+def test_stop_ignores_read_only_activity(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    _make_stale_with_activity(git_repo, [
+        ("Bash", "git status --short --branch"),
+        ("Bash", "git log --oneline -5"),
+        ("Bash", "PYTHONPATH=plugin-src/src python3 -m pytest -q"),
+        ("Bash", "CODEX_HOME=/tmp/codex codex --version"),
+        ("Bash", "project-steward resume"),
+        ("Bash", "python3 -m project_steward doctor --self"),
+        ("Bash", "rg -n 'auto_handoff' plugin-src tests"),
+        ("Bash", "python3 -m compileall -q plugin-src/src tools"),
+    ])
+
+    rc, out = _run_hook(
+        ["stop", "--agent", "codex"],
+        {"cwd": str(git_repo), "stop_hook_active": False},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0
+    assert out == {}
+
+
+def test_stop_counts_mutating_activity(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    _make_stale_with_activity(git_repo, [
+        ("Bash", "git status --short --branch"),
+        ("Edit", "src/a.py"),
+        ("apply_patch", "*** Begin Patch"),
+        ("Write", "src/b.py"),
+        ("Bash", "python3 -m compileall -q plugin-src/src tools"),
+        ("Bash", "git commit -m 'change'"),
+        ("Bash",
+         "python3 tools/build_plugin_payloads.py --clean --out "
+         "dist/project-steward"),
+    ])
+
+    rc, out = _run_hook(
+        ["stop", "--agent", "codex"],
+        {"cwd": str(git_repo), "stop_hook_active": False},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0
+    assert out.get("decision") == "block"
 
 
 def test_stop_loop_guard(git_repo, capsys, monkeypatch):

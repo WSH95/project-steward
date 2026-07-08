@@ -48,6 +48,45 @@ def test_crash_detection_from_activity_and_runtime(git_repo):
     assert any("AFTER the last HANDOFF.md" in s for s in signals)
 
 
+def test_crash_detection_ignores_read_only_activity(git_repo):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+    past = time.time() - 3600
+    os.utime(str(handoff), (past, past))
+    sessions.record_activity(git_repo, "Bash", "git status --short")
+    sessions.record_activity(git_repo, "Bash", "sed -n '1,40p' README.md")
+    sessions.record_activity(git_repo, "Bash", "python3 -m pytest -q")
+    sessions.record_activity(
+        git_repo, "Bash",
+        "PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self"
+    )
+    sessions.record_activity(git_repo, "Bash", "project-steward resume")
+
+    signals = sessions.detect_crash_signals(git_repo)
+
+    assert not any("AFTER the last HANDOFF.md" in s for s in signals)
+
+
+def test_handoff_relevant_activity_count_filters_read_only(git_repo):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+    past = time.time() - 3600
+    os.utime(str(handoff), (past, past))
+    sessions.record_activity(git_repo, "Bash", "git status --short")
+    sessions.record_activity(git_repo, "Bash", "rg -n 'handoff' tests")
+    sessions.record_activity(
+        git_repo, "Edit", "plugin-src/src/project_steward/hooks.py"
+    )
+    sessions.record_activity(git_repo, "Bash", "git commit -m 'change'")
+    sessions.record_activity(git_repo, "Bash", "git branch -D old-topic")
+
+    count = sessions.handoff_relevant_activity_count_since(
+        git_repo, handoff.stat().st_mtime
+    )
+
+    assert count == 3
+
+
 def test_clean_resume_reports_no_false_crash(git_repo):
     _init(git_repo)
     sessions.claim_session(git_repo, "test")
