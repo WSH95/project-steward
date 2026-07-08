@@ -13,7 +13,7 @@ it deliberately, explain it plainly, and switch it safely.
 1. **Detect + score**: `project-steward backend recommend --json`
    (detection probes repo artifacts and PATH binaries; scoring uses open
    task count, blocker count, GitHub remote, PRD presence, and what is
-   already in use — see references/backend-selection.md). Without the
+   already in use — see ../../references/backend-selection.md). Without the
    CLI, inspect for `.beads/`, `backlog/`, `.claude/epics|prds/`,
    `.taskmaster/`, `.specify/`, and `gh`.
 2. **Explain in plain English first** — one sentence per candidate about

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-SRC = Path(__file__).resolve().parent.parent / "plugin" / "src"
+SRC = Path(__file__).resolve().parent.parent / "plugin-src" / "src"
 sys.path.insert(0, str(SRC))
 
 

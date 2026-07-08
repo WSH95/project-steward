@@ -2,6 +2,37 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-07-08T00:12:43Z — codex
+User requested recent-commit summary and push. Pre-commit verification
+passed for the development-layout refactor: 51 tests, `python3`
+compileall, self doctor 34 checks / 0 failures, payload build, generated
+Codex plugin validator, and `git diff --check`.
+
+### 2026-07-08T00:04:22Z — codex
+User approved AGENTS.md edit; updated only the `PROJECT-STEWARD`
+managed commands block to use `plugin-src/src`, `python3`, and the new
+payload builder command. ADR 0014 recorded. Verification: self doctor
+34 checks / 0 failures, focused managed-block+doctor tests 8 passed, and
+`git diff --check` passed.
+
+### 2026-07-07T23:35:27Z — codex
+Development layout refactor implemented: canonical plugin source moved to
+`plugin-src/`; `tools/build_plugin_payloads.py` generates clean Claude
+and Codex extraction trees under `dist/project-steward`; Codex gets
+skills-first plugin output plus optional prompts/manual hooks; ADR 0013
+recorded. Verification: 51 tests, generated Codex plugin validator,
+source doctor, `python3` compileall, non-editable packaged install +
+init smoke, isolated Codex marketplace/plugin add + prompt-input smoke,
+and diff whitespace check passed.
+
+### 2026-07-07T22:32:41Z — codex
+Codex plugin fix implemented: root marketplace now uses the full Codex
+entry shape and points to a skills-only `plugins/project-steward/`
+payload; Claude `plugin/` keeps hooks; Codex docs now use
+`codex plugin add` + `features.hooks`; ADR 0012 recorded; 3 Codex
+questions resolved; 51 tests + plugin validator + isolated Codex smoke
+green.
+
 ### 2026-07-05T13:41:29Z — cli
 0.2.3 released: templates ship inside the package (silent stub-scaffold bug from field report fixed, TemplateError hard-fail, CI packaged-install job, recap count scoped); PyPI install docs corrected (ADR 0010); pushed @ 60be5c6, CI 14/14 green, plugin+pipx redistributed from GitHub
 
@@ -72,4 +103,3 @@ Platform assumptions re-verified against developers.openai.com on
 
 ### 2026-07-04T11:58:00Z — project-steward init
 Project initialized as a Project Steward managed project (dogfood).
-

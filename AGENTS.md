@@ -45,8 +45,9 @@ Primary language/stack: Python 3.7+ (stdlib only).
 | Task | Command |
 | --- | --- |
 | Build | `python -m pip install -e .` |
-| Test | `python -m pytest` |
-| Lint | `python -m compileall -q plugin/src` |
+| Test | `python3 -m pytest -q` |
+| Lint | `python3 -m compileall -q plugin-src/src tools` |
+| Payloads | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` |
 <!-- PROJECT-STEWARD:END commands -->
 
 <!-- PROJECT-STEWARD:BEGIN task-backend -->

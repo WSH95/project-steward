@@ -40,7 +40,10 @@ jobs:
           project-steward survey --json
           projectforge --version
       - name: Hook JSON validation
-        run: python -m json.tool plugin/hooks/hooks.json && python -m json.tool plugin/hooks/codex.hooks.json
+        run: python -m json.tool plugin-src/claude/hooks/hooks.json && python -m json.tool plugin-src/codex/hooks/hooks.json
+        shell: bash
+      - name: Build plugin payloads
+        run: python tools/build_plugin_payloads.py --clean --out dist/project-steward
         shell: bash
       - name: Self doctor
         run: project-steward doctor --self

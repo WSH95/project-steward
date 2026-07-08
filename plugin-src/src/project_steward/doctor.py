@@ -173,12 +173,12 @@ def _self_checks(root):
     results = []
     root = Path(root)
     _check(results, OK
-           if (root / "plugin" / "src" / "project_steward").is_dir() else FAIL,
+           if (root / "plugin-src" / "src" / "project_steward").is_dir()
+           else FAIL,
            "self: package source present")
     _check(results, OK if (root / "tests").is_dir() else WARN,
            "self: tests/ present")
-    for manifest in ("plugin/.claude-plugin/plugin.json",
-                     "plugin/.codex-plugin/plugin.json"):
+    for manifest in ("plugin-src/metadata.json",):
         path = root / manifest
         if path.is_file():
             data = read_json(path, None)
@@ -186,8 +186,8 @@ def _self_checks(root):
                    "self: %s parses" % manifest)
         else:
             _check(results, WARN, "self: %s" % manifest, "missing")
-    for hooks_file in ("plugin/hooks/hooks.json",
-                       "plugin/hooks/codex.hooks.json"):
+    for hooks_file in ("plugin-src/claude/hooks/hooks.json",
+                       "plugin-src/codex/hooks/hooks.json"):
         path = root / hooks_file
         if path.is_file():
             try:
@@ -211,7 +211,8 @@ def _self_checks(root):
            "self: no unresolved placeholders",
            "" if not unresolved else ", ".join(unresolved))
     stale_urls = []
-    for rel in ("plugin/.claude-plugin/plugin.json", "pyproject.toml"):
+    for rel in ("plugin-src/metadata.json",
+                "pyproject.toml"):
         path = root / rel
         try:
             if "github.com/USER/" in path.read_text(encoding="utf-8"):

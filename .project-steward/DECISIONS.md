@@ -174,3 +174,62 @@ remain under `plugin/`); the walk-up lookup stays only as a fallback for
 pre-0.2.3 layouts. Released as 0.2.3. General packaging rule going
 forward: every install channel (editable, wheel, plugin cache) must be
 exercised by CI or doctor before release.
+
+## 0012 — 2026-07-07 — Codex plugin payload is skills-only; hooks stay manual
+
+**Context**: Current Codex CLI (`0.142.5`) accepted the repo marketplace
+source but listed zero available plugins with the old entry shape
+(`source.path` only), and `codex plugin install` is not a valid command
+(`codex plugin add` is). Current Codex docs also make `features.hooks`
+the canonical hook feature key and state that plugins can load default
+`hooks/hooks.json`; Project Steward's shared `plugin/` payload uses that
+filename for Claude Code hooks.
+**Decision**: Split the Codex install route from the Claude Code payload:
+the root marketplace points at `plugins/project-steward/`, a Codex
+skills-only plugin that carries skills, references, and templates but no
+`hooks/hooks.json`. Claude Code continues to use `plugin/` and its
+auto-loaded hooks. Codex hooks remain manual via
+`plugin/hooks/codex.hooks.json` until plugin-bundled hooks are separately
+field-tested.
+**Consequences**: Codex plugin installs expose skills as
+`project-steward:<skill>` without accidentally loading Claude hook
+commands. Tests now pin marketplace shape, plugin payload sync, docs
+command spelling, and hook-feature wording. ADR 0008 remains true for
+Claude Code payload isolation but is superseded for the Codex marketplace
+source path.
+
+## 0013 — 2026-07-07 — Plugin development source is canonical; payloads are generated
+
+**Context**: The repo had become a poor development workspace: Claude Code
+and Codex install payloads duplicated the same skills, references, and
+templates across `plugin/` and `plugins/project-steward/`. Tests enforced
+copy-sync, but day-to-day edits still required maintaining generated-like
+folders by hand. The user clarified this repo is a plugin development
+project, not the final install repository; release payloads will be
+collected later into a separate agent-plugins repository.
+**Decision**: Move canonical authoring to `plugin-src/` and generate clean
+Claude/Codex extraction folders with
+`tools/build_plugin_payloads.py --clean --out dist/project-steward`.
+Claude output includes skills, commands, hooks, references, and full
+Python source for the POSIX hook shim. Codex output is skills-first
+(`.codex-plugin` + skills/references/templates), with optional prompts and
+manual hooks emitted alongside the plugin, not bundled into it.
+**Consequences**: `plugin/`, root `.claude-plugin/`, root `.agents/plugins/`,
+`codex/prompts/`, and `plugins/project-steward/` are no longer source
+directories. `pyproject.toml`, tests, CI, and doctor point to
+`plugin-src/`. ADR 0008 and ADR 0012 remain historical distribution
+context but are superseded for development layout.
+
+## 0014 — 2026-07-07 — AGENTS.md commands block tracks plugin-src layout
+
+**Context**: ADR 0013 moved canonical source from `plugin/src` to
+`plugin-src/src` and added generated payload extraction, but AGENTS.md's
+managed commands block still referenced the old lint path. The user
+explicitly approved editing AGENTS.md.
+**Decision**: Update only the `PROJECT-STEWARD` managed commands block:
+tests use `python3 -m pytest -q`, lint uses `python3 -m compileall -q
+plugin-src/src tools`, and payload generation is listed as a first-class
+command.
+**Consequences**: Future agents have the right verification and payload
+build commands without relying on stale `plugin/` paths. Non-managed
+AGENTS.md prose remains untouched.

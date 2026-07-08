@@ -26,7 +26,7 @@ Prefer the deterministic CLI: `project-steward survey --json`
 (falls back to manual inspection of README, manifests, CI configs,
 `git log --oneline -10`, `git status`, and the top-level tree if the CLI
 is unavailable). **Never execute project scripts during the survey** —
-reading only (see references/security-model.md).
+reading only (see ../../references/security-model.md).
 
 Sort findings into: **confident facts** (state them, don't ask),
 **uncertain facts**, **missing facts**, and **risks**. If `.env` or other
@@ -60,8 +60,8 @@ Never guess an unanswered load-bearing question — record it in
    --dry-run` — this prints the create/update/keep file plan plus full
    diffs for `AGENTS.md`, `CLAUDE.md`, and `.gitignore`, and writes
    nothing. (Without the CLI: compose the same draft yourself from
-   `templates/`, preserving any existing user content and editing only
-   inside managed blocks.) Keep AGENTS.md canonical and < 150 lines:
+   `../../src/project_steward/templates/`, preserving any existing user
+   content and editing only inside managed blocks.) Keep AGENTS.md canonical and < 150 lines:
    overview, source of truth, conventions, git policy — plus the three
    managed blocks: `commands`, `task-backend`, `agent-session-protocol`.
 2. Paste the complete AGENTS.md draft (fenced; or diff, if the file

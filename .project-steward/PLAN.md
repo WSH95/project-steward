@@ -20,6 +20,9 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Ship templates inside the package + hard-error on missing; CI
       non-editable install job; recap task count scoped to the named
       milestone (0.2.3, ADR 0011 — from field report)
+- [x] Replace duplicated Claude/Codex payload source trees with
+      canonical `plugin-src/` + generated extraction payloads
+      (ADR 0013)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 

@@ -8,7 +8,7 @@ a crash. Agents are execution surfaces; native session histories are
 never the source of truth.
 
 Formerly **Projectforge** (v0.1). See
-[plugin/references/migration-from-projectforge.md](plugin/references/migration-from-projectforge.md).
+[plugin-src/references/migration-from-projectforge.md](plugin-src/references/migration-from-projectforge.md).
 
 ## What problem this solves
 
@@ -22,22 +22,21 @@ lifecycle hooks.
 ## Layout
 
 ```
-plugin/            the installable payload — ONLY this subtree ships when
-                   the plugin is installed (marketplace source "./plugin")
-  skills/          5 portable Agent Skills (identical files work in
-                   Claude Code and Codex): project-init, session-resume,
-                   session-handoff, progress-tracking, backend-broker
-  src/project_steward/   Python 3.7+ stdlib-only core: CLI + hook dispatcher
-    templates/     AGENTS.md, CLAUDE.md adapter, and 11 state templates
-                   (inside the package so pip installs ship them)
-  hooks/           hooks.json (Claude Code, auto-loaded by the plugin)
-                   codex.hooks.json (copy to <repo>/.codex/hooks.json)
-  commands/        /project-steward:init|resume|wrap|checkpoint|audit|backend
+plugin-src/        canonical source for plugin development
+  skills/          5 portable Agent Skills (Claude Code + Codex)
   references/      session-protocol, security-model, backend-selection,
                    cross-platform, self-hosting, migration docs
-  .claude-plugin/ .codex-plugin/   plugin manifests
-codex/             INSTALL.md + self-contained steward-* prompts
-.claude-plugin/ .agents/plugins/   marketplace catalogs (repo root)
+  src/project_steward/   Python 3.7+ stdlib-only CLI + hook dispatcher
+    templates/     AGENTS.md, CLAUDE.md adapter, and 11 state templates
+  claude/          Claude Code commands + auto-loaded hook config
+  codex/           optional Codex prompts + manual Codex hook config
+  metadata.json    shared plugin/marketplace metadata
+tools/build_plugin_payloads.py
+dist/project-steward/     generated extraction output (gitignored)
+  claude/          Claude marketplace + plugins/project-steward payload
+  codex/           Codex marketplace + plugins/project-steward payload,
+                   optional prompts, and manual hooks.json
+codex/             INSTALL.md for Codex-specific usage
 tests/  .github/workflows/ci.yml   unit tests; Ubuntu/Windows/macOS CI
 .project-steward/  this repo's own state (self-hosting) — never ships
 ```
@@ -61,17 +60,24 @@ pipx install .                      # or: pip install .
 pipx install git+ssh://git@github.com/WSH95/project-steward.git
 ```
 
-**Claude Code (plugin: skills + commands + hooks in one step):**
+**Build extractable plugin payloads from this development repo:**
 
 ```
-/plugin marketplace add /path/to/project-steward
+python tools/build_plugin_payloads.py --clean --out dist/project-steward
+```
+
+**Claude Code (generated plugin: skills + commands + hooks in one step):**
+
+```
+/plugin marketplace add /path/to/project-steward/dist/project-steward/claude
 /plugin install project-steward@project-steward-marketplace
 ```
 
 **Codex:** see [codex/INSTALL.md](codex/INSTALL.md) — skills go to
-`~/.agents/skills/` (or install as a plugin), hooks are experimental
-(`[features] codex_hooks = true`, currently disabled on Windows), and a
-hook-free fallback protocol is included.
+`~/.agents/skills/` or install from the generated Codex marketplace under
+`dist/project-steward/codex` with
+`codex plugin add project-steward@project-steward-marketplace`. Codex
+hooks use `features.hooks` and remain a manual `hooks.json` install.
 
 **Generic agents:** any tool that reads `AGENTS.md` gets the session
 protocol from its managed block; any tool that runs shell commands can
@@ -127,7 +133,7 @@ plain English; `backend adopt <name>` is approval-gated and rewrites only
 the AGENTS.md task-backend block. One system owns fine-grained tasks at a
 time — PLAN.md degrades to milestones + a pointer. Installs are assisted,
 never silent. Linear/Jira are honest stubs. Details:
-[plugin/references/backend-selection.md](plugin/references/backend-selection.md).
+[plugin-src/references/backend-selection.md](plugin-src/references/backend-selection.md).
 
 ## Cross-platform
 
@@ -141,7 +147,7 @@ may also lack `python3` until the Xcode Command Line Tools are present).
 Writes are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS
 matrix including Python 3.7 jobs. Details and the deliberate 3.7-floor
 compromises:
-[plugin/references/cross-platform.md](plugin/references/cross-platform.md).
+[plugin-src/references/cross-platform.md](plugin-src/references/cross-platform.md).
 
 ## Security, git policy, hook trust
 
@@ -152,7 +158,7 @@ explicit approval. The CLI **never pushes**; commits happen only via
 `wrap --commit` under a permitting `commit_policy`. Hooks always exit 0,
 touch no network, and are ~250 auditable lines — review them before
 trusting, like any hook. Details:
-[plugin/references/security-model.md](plugin/references/security-model.md).
+[plugin-src/references/security-model.md](plugin-src/references/security-model.md).
 
 ## Self-hosting
 
@@ -161,7 +167,7 @@ and `.project-steward/` (real plan, handoff, decisions — including where
 this design deviates from its external review and why). Future agents:
 start with `.project-steward/HANDOFF.md` and `project-steward doctor
 --self`. Details:
-[plugin/references/self-hosting.md](plugin/references/self-hosting.md).
+[plugin-src/references/self-hosting.md](plugin-src/references/self-hosting.md).
 
 ## Composition
 
@@ -175,10 +181,10 @@ standard is the canonical instruction carrier.
 ## Troubleshooting
 
 - **Hooks do nothing** → `project-steward` not on PATH (install from a
-  checkout: `pipx install .` — not yet on PyPI), or on Codex the
-  `codex_hooks` flag is off / you are
-  on Windows (hooks disabled upstream — the AGENTS.md protocol still
-  works). `project-steward doctor` reports this.
+  checkout: `pipx install .` — not yet on PyPI), or on Codex hooks are
+  disabled by `features.hooks = false`, not trusted in `/hooks`, or
+  unavailable in that client. The AGENTS.md protocol still works.
+  `project-steward doctor` reports CLI availability.
 - **"Not a Project Steward project"** → run `init`, or `--root` points
   elsewhere.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.

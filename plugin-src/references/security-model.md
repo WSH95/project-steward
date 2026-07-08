@@ -29,8 +29,8 @@ plugin you chose to install; Codex requires the experimental flag and
 (for plugin-bundled hooks) an explicit trust review. Project Steward's
 hooks: never install dependencies, never touch the network, never edit
 AGENTS.md/CLAUDE.md, never read secrets, always exit 0. Inspect them:
-`src/project_steward/hooks.py` (~250 lines) and the JSON configs under
-`hooks/`.
+`plugin-src/src/project_steward/hooks.py` (~250 lines) and the canonical
+JSON configs under `plugin-src/claude/hooks/` and `plugin-src/codex/hooks/`.
 
 ## Repo-local instructions
 

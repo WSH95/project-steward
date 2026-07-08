@@ -1,5 +1,5 @@
 {
-  "description": "Project Steward lifecycle hooks for Codex. Copy this file to <repo>/.codex/hooks.json (or merge into ~/.codex/hooks.json). Requires: (1) `project-steward` CLI installed on PATH, (2) hooks enabled in Codex config: [features] codex_hooks = true. Codex hooks are experimental and currently disabled on Windows — see codex/INSTALL.md for the fallback protocol.",
+  "description": "Project Steward lifecycle hooks for Codex. Copy this file to <repo>/.codex/hooks.json (or merge into ~/.codex/hooks.json). Requires: (1) `project-steward` CLI installed on PATH, (2) hooks enabled in Codex config via the canonical features.hooks setting. Non-managed hooks must be reviewed and trusted in /hooks; see codex/INSTALL.md for the fallback protocol.",
   "hooks": {
     "SessionStart": [
       {

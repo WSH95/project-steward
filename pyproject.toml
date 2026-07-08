@@ -42,7 +42,7 @@ Homepage = "https://github.com/WSH95/project-steward"
 Changelog = "https://github.com/WSH95/project-steward/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-where = ["plugin/src"]
+where = ["plugin-src/src"]
 
 [tool.setuptools.package-data]
 project_steward = ["templates/*.template", "templates/project-steward/*.template"]

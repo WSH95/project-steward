@@ -28,10 +28,11 @@
 `project-steward hook <event> --agent <x>` is the canonical hook command:
 a console script on PATH works identically under sh, cmd, and PowerShell,
 with no env-var expansion differences. The POSIX-only zero-install
-fallback (`python3 .../hooks/scripts/project_steward_hook.py`) exists for
-un-pip-installed Claude Code plugin use; on native Windows, install the
-CLI (pipx/pip). Codex hooks are currently disabled on Windows upstream -
-the AGENTS.md protocol + prompts + manual CLI carry the behavior there.
+fallback (`python3 .../hooks/scripts/project_steward_hook.py`) is emitted
+in the generated Claude Code payload for un-pip-installed plugin use; on
+native Windows, install the CLI (pipx/pip). If Codex hooks are
+unavailable, disabled, or untrusted in a client, the AGENTS.md protocol +
+skills/prompts + manual CLI carry the behavior there.
 
 ## Known Windows notes
 
