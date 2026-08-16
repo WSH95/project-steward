@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-08-16T14:13:33Z
+updated_at: 2026-08-16T14:24:25Z
 updated_by: grok
 session_status: closed
 branch: main
-last_commit: ed88bad
+last_commit: e3510b3
 ---
 # Handoff
 
@@ -27,26 +27,26 @@ compileall, `doctor --self` 36/0, `grok plugin validate` on the Claude
 plugin dir, and `git diff --check` passed. `claude plugin validate` and
 isolated Codex smoke were not re-run this session.
 
-User approved commit, push of this source repo, and an
-`agent-plugins` publish PR for the 0.3.2 payload. `agent-plugins` PR #5
-is the 0.3.1 payload and may still be open.
+Source 0.3.2 is on `origin/main` at `e3510b3`. The generated payload
+was submitted to `WSH95/agent-plugins` as PR #7:
+https://github.com/WSH95/agent-plugins/pull/7
 
 ## In flight
 
-- Source 0.3.2 commit/push and `agent-plugins` publish PR in progress.
-- `dist/project-steward/` was rebuilt for 0.3.2 and remains
+- `agent-plugins` PR #7 is open and awaits review/merge.
+- `dist/project-steward/` was rebuilt for the publish script and remains
   gitignored/generated.
 
 ## Next steps
 
-1. After origin push, publish
-   `project-steward-plugin` to `WSH95/agent-plugins` (new PR; do not
-   merge it).
-2. Grok users: `grok plugin install project-steward --trust`. Use
-   `/session-resume` or `/project-steward:resume`, not bare `/resume`.
-3. After the payload PR merges, run `claude plugin update
+1. Review/merge https://github.com/WSH95/agent-plugins/pull/7 when ready.
+2. After PR #7 merges, run `claude plugin update
    project-steward@agent-plugins` and `pipx reinstall project-steward`
-   where this plugin/CLI should be updated.
+   where this plugin/CLI should be updated. Grok: `grok plugin update
+   project-steward` (reinstall with `--trust` if hooks were never
+   trusted).
+3. Grok users: `/session-resume` or `/project-steward:resume`, not bare
+   `/resume`.
 4. Do not add a sibling `.grok-plugin/marketplace.json` next to
    `.claude-plugin/` without re-checking for a double listing.
 5. When `project-steward` is made public, update install docs that still

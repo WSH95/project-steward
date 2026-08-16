@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-16T14:24:25Z — grok
+Pushed e3510b3 (0.3.2 Grok dual-contract) to origin/main; opened agent-plugins PR #7 for the generated payload.
+
 ### 2026-08-16T14:13:33Z — grok
 0.3.2 Grok compatibility on the Claude payload (ADR 0021): dual-contract hook stdin, additive Grok tool names, no third payload; 77 tests, doctor 36/0, grok plugin validate.
 
