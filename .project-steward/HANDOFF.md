@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-08-16T14:24:25Z
+updated_at: 2026-08-16T14:50:12Z
 updated_by: grok
 session_status: closed
 branch: main
-last_commit: e3510b3
+last_commit: f652271
 ---
 # Handoff
 
@@ -28,23 +28,28 @@ plugin dir, and `git diff --check` passed. `claude plugin validate` and
 isolated Codex smoke were not re-run this session.
 
 Source 0.3.2 is on `origin/main` at `e3510b3`. The generated payload
-was submitted to `WSH95/agent-plugins` as PR #7:
+landed via merged `agent-plugins` PR #7:
 https://github.com/WSH95/agent-plugins/pull/7
+
+The Grok install README missed that merge (pushed after #7 closed). A
+README-only follow-up is PR #8:
+https://github.com/WSH95/agent-plugins/pull/8
 
 ## In flight
 
-- `agent-plugins` PR #7 is open and awaits review/merge.
-- `dist/project-steward/` was rebuilt for the publish script and remains
-  gitignored/generated.
+- `agent-plugins` PR #8 (README Grok install path) is open and awaits
+  review/merge.
+- `dist/project-steward/` remains gitignored/generated.
 
 ## Next steps
 
-1. Review/merge https://github.com/WSH95/agent-plugins/pull/7 when ready.
-2. After PR #7 merges, run `claude plugin update
-   project-steward@agent-plugins` and `pipx reinstall project-steward`
-   where this plugin/CLI should be updated. Grok: `grok plugin update
-   project-steward` (reinstall with `--trust` if hooks were never
-   trusted).
+1. Review/merge https://github.com/WSH95/agent-plugins/pull/8 when ready.
+2. After marketplace docs land, Grok users: `grok plugin marketplace add
+   https://github.com/WSH95/agent-plugins` then `grok plugin install
+   project-steward --trust`. Update existing installs with `grok plugin
+   update project-steward` (reinstall with `--trust` if hooks were never
+   trusted). Claude: `claude plugin update
+   project-steward@agent-plugins`. CLI: `pipx reinstall project-steward`.
 3. Grok users: `/session-resume` or `/project-steward:resume`, not bare
    `/resume`.
 4. Do not add a sibling `.grok-plugin/marketplace.json` next to
