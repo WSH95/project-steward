@@ -1,59 +1,57 @@
 ---
-updated_at: 2026-07-08T16:32:02Z
-updated_by: codex
+updated_at: 2026-08-16T14:13:33Z
+updated_by: grok
 session_status: closed
 branch: main
-last_commit: fc84687
+last_commit: ed88bad
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.3.1 is pushed to `origin/main` through source commit
-`fc84687`. The Claude hook wrapper
-`plugin-src/claude/hooks/run-hook.cmd` now tries every Python launcher
-leg before falling back to an installed `project-steward`, and the
-Windows batch branch uses `call` plus `if not errorlevel 1` so failed
-launcher legs actually cascade under `cmd.exe`. Failed fallbacks still
-exit 0 silently so hooks do not break the agent loop.
+Project Steward 0.3.2 on `main` adds Grok Build
+compatibility without forking a third plugin. Grok installs the existing
+Claude payload (`grok plugin marketplace add` on
+`dist/project-steward/claude` or `https://github.com/WSH95/agent-plugins`,
+then `grok plugin install project-steward --trust`). The shared hook
+dispatcher accepts Grok camelCase stdin after Claude/Codex snake_case
+keys, counts `search_replace` / `run_terminal_command` as mutating/shell
+activity, skips Grok teardown Stops (`shutdown` / `channel_closed`), and
+records agent `grok` when `GROK_SESSION_ID` / `GROK_HOOK_EVENT` is set
+even though the frozen Claude `hooks.json` still passes `--agent
+claude`. ADR 0021.
 
-Docs and decisions now separate the products accurately: Claude Code has
-no `commandWindows` hook field; Codex currently documents
-`commandWindows`, but Project Steward does not need it in the Codex
-plugin path because the Codex companion invokes the installed CLI
-directly. ADR 0020 records that distinction.
+Claude `hooks.json`, Codex hooks/marketplace, Stop `decision: block`
+JSON, and remind `systemMessage` output are unchanged. 77 tests,
+compileall, `doctor --self` 36/0, `grok plugin validate` on the Claude
+plugin dir, and `git diff --check` passed. `claude plugin validate` and
+isolated Codex smoke were not re-run this session.
 
-Regression tests cover wrapper fallback behavior, Windows batch cascade
-idioms, release version consistency, and stale cross-agent wording.
-Verification passed: 70 tests, compileall, `doctor --self`, payload
-build, Claude plugin and marketplace validation, Codex plugin
-validation, built wrapper smoke, isolated Codex install/prompt-input
-smoke, current Codex manual spot-check, and `git diff --check`.
-
-Generated 0.3.1 plugin payload was submitted to `WSH95/agent-plugins` as
-PR #5: https://github.com/WSH95/agent-plugins/pull/5
+User approved commit, push of this source repo, and an
+`agent-plugins` publish PR for the 0.3.2 payload. `agent-plugins` PR #5
+is the 0.3.1 payload and may still be open.
 
 ## In flight
 
-- No active source implementation work remains in this session.
-- `agent-plugins` PR #5 is open and awaits review/merge.
-- `dist/project-steward/` was rebuilt for validation and remains
+- Source 0.3.2 commit/push and `agent-plugins` publish PR in progress.
+- `dist/project-steward/` was rebuilt for 0.3.2 and remains
   gitignored/generated.
 
 ## Next steps
 
-1. Review/merge https://github.com/WSH95/agent-plugins/pull/5 when ready.
-2. After PR #5 merges, run `claude plugin update
+1. After origin push, publish
+   `project-steward-plugin` to `WSH95/agent-plugins` (new PR; do not
+   merge it).
+2. Grok users: `grok plugin install project-steward --trust`. Use
+   `/session-resume` or `/project-steward:resume`, not bare `/resume`.
+3. After the payload PR merges, run `claude plugin update
    project-steward@agent-plugins` and `pipx reinstall project-steward`
    where this plugin/CLI should be updated.
-3. Do not push or publish further changes without explicit approval.
-4. When `project-steward` is made public, update install docs that still
+4. Do not add a sibling `.grok-plugin/marketplace.json` next to
+   `.claude-plugin/` without re-checking for a double listing.
+5. When `project-steward` is made public, update install docs that still
    say "with repo access" or use SSH-only examples where public HTTPS is
    more appropriate.
-5. When a standalone skill should be published, add a deliberate
-   `agent-artifacts.json` skill entry targeting
-   `git@github.com:WSH95/agent-skills.git` and publish by PR; do not
-   upload skills ad hoc.
 
 ## Blockers
 
@@ -85,6 +83,8 @@ PR #5: https://github.com/WSH95/agent-plugins/pull/5
   maintainer skill contract and publish-script behavior.
 - `.project-steward/DECISIONS.md` ADR 0020 — Claude Code and Codex
   `commandWindows` support are separate contracts.
+- `.project-steward/DECISIONS.md` ADR 0021 — Grok reuses the Claude
+  payload; hook stdin is dual-contract; no third tree.
 
 ## Tried and rejected
 
@@ -99,6 +99,9 @@ PR #5: https://github.com/WSH95/agent-plugins/pull/5
 - Treating Codex as having the same limitation — rejected because Codex
   currently documents `commandWindows`; this project simply does not need
   to use it for Codex's installed-CLI companion path.
+- A third `plugin-src/grok/` payload or sibling `.grok-plugin/`
+  marketplace index — rejected (ADR 0021): Grok already lists one
+  `project-steward` from the Claude marketplace file.
 
 ## Warnings
 

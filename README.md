@@ -1,7 +1,7 @@
 # Project Steward
 
-**Cross-agent project stewardship for Claude Code, Codex, and other coding
-agents.** The repository owns project continuity: durable, human-readable
+**Cross-agent project stewardship for Claude Code, Codex, Grok Build, and
+other coding agents.** The repository owns project continuity: durable, human-readable
 state lives in `.project-steward/` and travels via git, so any agent on
 any device can initialize, track, hand off, and resume work — even after
 a crash. Agents are execution surfaces; native session histories are
@@ -82,6 +82,27 @@ python3 tools/build_plugin_payloads.py --clean --out dist/project-steward
 `dist/project-steward/codex` with
 `codex plugin add project-steward@project-steward-marketplace`. Codex
 hooks use `features.hooks` and remain a manual `hooks.json` install.
+
+**Grok Build (reuses the generated Claude plugin; no third payload):**
+
+```
+grok plugin marketplace add /path/to/project-steward/dist/project-steward/claude
+grok plugin install project-steward --trust
+```
+
+Or add the public marketplace and install from there:
+
+```
+grok plugin marketplace add https://github.com/WSH95/agent-plugins
+grok plugin install project-steward --trust
+```
+
+`--trust` is required for lifecycle hooks. Skills and commands also load
+from a Claude Code install via Grok's Claude compatibility, but those
+hooks stay inert until Grok trusts the plugin. Grok's built-in `/resume`
+opens the native session picker — use `/session-resume` or
+`/project-steward:resume` for the Project Steward recap. Prefer
+`project-steward resume --agent grok`.
 
 **Generic agents:** any tool that reads `AGENTS.md` gets the session
 protocol from its managed block; any tool that runs shell commands can
@@ -210,8 +231,10 @@ standard is the canonical instruction carrier.
 - **Hooks do nothing** → Claude Code needs Python available to run the
   bundled launcher, or the installed `project-steward` CLI as fallback.
   Codex hooks need `project-steward` on PATH, `features.hooks = true`,
-  and trust in `/hooks`; some clients do not support hooks. The AGENTS.md
-  protocol still works. `project-steward doctor` reports CLI availability.
+  and trust in `/hooks`; some clients do not support hooks. Grok needs
+  `grok plugin install project-steward --trust` (Claude-cache discovery
+  loads skills only). The AGENTS.md protocol still works.
+  `project-steward doctor` reports CLI availability.
 - **"Not a Project Steward project"** → run `init`, or `--root` points
   elsewhere.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.

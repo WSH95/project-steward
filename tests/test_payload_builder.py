@@ -302,6 +302,14 @@ def test_release_versions_are_consistent(tmp_path):
     } == {package_version}
 
 
+def test_builder_does_not_emit_a_third_grok_payload(tmp_path):
+    out = _run_builder(tmp_path)
+    assert (out / "claude" / "plugins" / "project-steward").is_dir()
+    assert (out / "codex" / "plugins" / "project-steward").is_dir()
+    assert not (out / "grok").exists()
+    assert not list(out.glob("**/.grok-plugin"))
+
+
 def test_builder_clean_replaces_previous_output(tmp_path):
     out = tmp_path / "payloads"
     stale = out / "claude" / "stale.txt"

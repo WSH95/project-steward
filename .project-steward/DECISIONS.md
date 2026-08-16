@@ -347,3 +347,29 @@ which invokes the installed `project-steward` CLI.
 **Consequences**: Tests now pin the product distinction and version
 consistency. Future docs updates must say "Claude Code has no
 `commandWindows` hook field" rather than making a cross-product claim.
+
+## 0021 — 2026-08-16 — Grok reuses the Claude payload; hook stdin is dual-contract
+
+**Context**: Grok Build 1.0.4 accepts `.claude-plugin/` marketplaces,
+`skills/`, `commands/`, `hooks/hooks.json`, and `${CLAUDE_PLUGIN_ROOT}`.
+It does not read `.codex-plugin/`. File hooks send camelCase stdin and
+ignore SessionStart/UserPromptSubmit stdout. A third `plugin-src/grok/`
+tree would drift from Claude. Adding `.grok-plugin/marketplace.json`
+beside `.claude-plugin/marketplace.json` risked listing the plugin twice
+(`grok plugin list --available` already shows one `project-steward`
+from `WSH95/agent-plugins`).
+**Decision**: Grok installs the generated Claude plugin (`grok plugin
+install project-steward --trust`). The shared Python dispatcher looks up
+Claude/Codex snake_case keys first, then Grok camelCase aliases. Activity
+taxonomy adds `search_replace` and `run_terminal_command` without
+removing Claude/Codex names. Skip Stop only for Grok teardown reasons
+(`shutdown`, `channel_closed`). Detect Grok via `GROK_SESSION_ID` /
+`GROK_HOOK_EVENT` so the frozen Claude `hooks.json` (`--agent claude`)
+still records agent `grok`. Do not emit a third payload or a sibling
+Grok marketplace index. Do not change Claude/Codex hook JSON, Stop
+block/remind stdout, or command filenames.
+**Consequences**: Claude/Codex keep the same hook events and output.
+Grok recap/wrap injection still depend on AGENTS.md + skills (stdout
+ignored). Bare `/resume` remains Grok's session picker; steward resume is
+`/session-resume` or `/project-steward:resume`. Publish to
+`agent-plugins` still requires explicit approval.

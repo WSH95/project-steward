@@ -87,6 +87,17 @@ def test_handoff_relevant_activity_count_filters_read_only(git_repo):
     assert count == 3
 
 
+def test_grok_tool_names_are_handoff_relevant():
+    assert sessions.activity_is_handoff_relevant(
+        "search_replace", "src/a.py")
+    assert sessions.activity_is_handoff_relevant(
+        "run_terminal_command", "git commit -m 'change'")
+    assert not sessions.activity_is_handoff_relevant(
+        "run_terminal_command", "git status --short --branch")
+    assert not sessions.activity_is_handoff_relevant(
+        "run_terminal_command", "python3 -m pytest -q")
+
+
 def test_clean_resume_reports_no_false_crash(git_repo):
     _init(git_repo)
     sessions.claim_session(git_repo, "test")

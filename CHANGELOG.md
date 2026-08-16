@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.2 — 2026-08-16
+
+### Added
+- **Grok Build compatibility on the existing Claude payload** (no third
+  plugin tree). The shared hook dispatcher accepts Grok's camelCase
+  stdin (`toolName`, `toolInput`, `stopHookActive`) while still preferring
+  Claude/Codex snake_case keys. Stop-guard activity now counts
+  `search_replace` and `run_terminal_command` the same way as
+  `Edit`/`Write`/`Bash`. Grok session-teardown Stops (`reason`
+  `shutdown` / `channel_closed`) are ignored. When Grok injects
+  `GROK_SESSION_ID` / `GROK_HOOK_EVENT`, a Claude-wrapper `--agent
+  claude` claim is recorded as `grok`. Install:
+  `grok plugin marketplace add` on the Claude marketplace directory,
+  then `grok plugin install project-steward --trust`. Use
+  `/session-resume` or `/project-steward:resume` — Grok's bare `/resume`
+  is the native session picker.
+
+### Unchanged
+- Claude Code hooks.json, Codex hooks.json, marketplace shapes, Stop
+  `decision: block` JSON, and remind-mode `systemMessage` output.
+
 ## 0.3.1 — 2026-07-08
 
 ### Fixed

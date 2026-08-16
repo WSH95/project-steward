@@ -3,7 +3,8 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 70 passed |
+| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 77 passed |
+| Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
 | Payload build | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` | exits 0 |
@@ -17,7 +18,15 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-07-08 (0.3.1 release publication, Windows batch
+Last verified: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
+tests via bare `python3 -m pytest -q`, compileall, self doctor (36
+checks / 0 failures), payload build, `grok plugin validate` on the
+Claude plugin dir (valid, version 0.3.2), `git diff --check`. Claude
+`hooks.json` and `plugin-src/codex/` diffs empty. Not re-run this
+session: `claude plugin validate --strict`, isolated Codex
+marketplace/prompt-input smoke, or `agent-plugins` publish.
+
+Previous entry: 2026-07-08 (0.3.1 release publication, Windows batch
 cascade hardening) — 70 tests via bare `python3 -m pytest -q`,
 compileall, self doctor (36 checks / 0 failures), payload build,
 `claude plugin validate --strict` (plugin + marketplace), generated

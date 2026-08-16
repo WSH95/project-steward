@@ -31,6 +31,10 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 
 ## M2: post-0.2
 
+- [x] Grok Build compatibility on the Claude payload (0.3.2, ADR 0021)
+      — dual-contract hook stdin, additive Grok tool names, no third
+      payload; `grok plugin install … --trust` uses the existing Claude
+      marketplace
 - [ ] Codex plugin-bundled hooks path once stabilized upstream
 - [ ] `sessions/*.md` per-session logs (optional verbosity tier)
 - [ ] GitHub Issues adapter beyond detection (create/close via gh)

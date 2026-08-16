@@ -5,7 +5,7 @@ import sys
 import time
 
 from project_steward import hooks, sessions
-from project_steward.paths import state_dir
+from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
 from project_steward.state import write_text_atomic
 
@@ -147,6 +147,17 @@ def test_wrap_language_detector(git_repo, capsys, monkeypatch):
     assert out == {}
 
 
+def test_wrap_detector_accepts_grok_user_prompt_field(git_repo, capsys,
+                                                      monkeypatch):
+    _init(git_repo)
+    rc, out = _run_hook(
+        ["user-prompt-submit", "--agent", "claude"],
+        {"cwd": str(git_repo), "userPrompt": "ok, switch to grok now"},
+        capsys, monkeypatch,
+    )
+    assert "session-handoff" in out["hookSpecificOutput"]["additionalContext"]
+
+
 def test_wrap_detector_ignores_harness_text_and_prose(git_repo, capsys,
                                                       monkeypatch):
     _init(git_repo)
@@ -178,3 +189,95 @@ def test_hooks_never_fail(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(sys, "stdin", io.StringIO("not json"))
     rc = hooks.main(["stop", "--agent", "claude"])
     assert rc == 0 and capsys.readouterr().out == ""
+
+
+def test_grok_camelcase_post_tool_use_counts_toward_stop(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+    past = time.time() - 3600
+    os.utime(str(handoff), (past, past))
+    for path in ("src/a.py", "src/b.py", "src/c.py", "src/d.py", "src/e.py"):
+        rc, out = _run_hook(
+            ["post-tool-use", "--agent", "claude"],
+            {
+                "cwd": str(git_repo),
+                "toolName": "search_replace",
+                "toolInput": {"file_path": path},
+            },
+            capsys,
+            monkeypatch,
+        )
+        assert rc == 0 and out == {}
+    rc, out = _run_hook(
+        ["post-tool-use", "--agent", "claude"],
+        {
+            "cwd": str(git_repo),
+            "toolName": "run_terminal_command",
+            "toolInput": {"command": "git status --short --branch"},
+        },
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0 and out == {}
+
+    activity = (runtime_dir(git_repo) / "activity.log").read_text(
+        encoding="utf-8")
+    assert "search_replace" in activity
+    assert "src/a.py" in activity
+    assert "run_terminal_command" in activity
+
+    rc, out = _run_hook(
+        ["stop", "--agent", "claude"],
+        {"cwd": str(git_repo), "stopHookActive": False, "reason": "end_turn"},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0
+    assert out.get("decision") == "block"
+
+
+def test_grok_camelcase_stop_loop_guard(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    _make_stale(git_repo)
+    rc, out = _run_hook(
+        ["stop", "--agent", "claude"],
+        {"cwd": str(git_repo), "stopHookActive": True, "reason": "end_turn"},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0 and out == {}
+
+
+def test_grok_session_end_stop_does_not_block(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    _make_stale(git_repo)
+    for reason in ("shutdown", "channel_closed"):
+        rc, out = _run_hook(
+            ["stop", "--agent", "claude"],
+            {
+                "cwd": str(git_repo),
+                "stopHookActive": False,
+                "reason": reason,
+            },
+            capsys,
+            monkeypatch,
+        )
+        assert rc == 0 and out == {}, reason
+
+
+def test_grok_env_claims_agent_as_grok(git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    monkeypatch.setenv("GROK_SESSION_ID", "sess-grok-1")
+    rc, out = _run_hook(
+        ["session-start", "--agent", "claude"],
+        {"cwd": str(git_repo)},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0
+    assert "session recap" in out["hookSpecificOutput"]["additionalContext"]
+    record = json.loads(
+        (runtime_dir(git_repo) / "session.json").read_text(encoding="utf-8")
+    )
+    assert record.get("agent") == "grok"

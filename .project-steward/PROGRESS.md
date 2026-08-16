@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-16T14:13:33Z — grok
+0.3.2 Grok compatibility on the Claude payload (ADR 0021): dual-contract hook stdin, additive Grok tool names, no third payload; 77 tests, doctor 36/0, grok plugin validate.
+
 ### 2026-07-08T16:32:02Z — codex
 Pushed main through fc84687 and opened agent-plugins PR #5 for Project Steward 0.3.1 payload after release verification.
 
