@@ -27,6 +27,12 @@ validation, and `git diff --check`. A representative fresh `AGENTS.md` is
 blocks were updated, then the full tests, compileall, self doctor, and
 `git diff --check` passed again.
 
+Distribution publish (2026-08-26): source `b3b887c` was pushed to
+`WSH95/project-steward` `main`; the publish dry-run passed; generated payload
+commit `6f026f0` was pushed to `WSH95/agent-plugins` branch
+`publish/project-steward-plugin-0.3.3`; PR #10 is open with a clean merge
+state: https://github.com/WSH95/agent-plugins/pull/10
+
 Previous entry: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
 tests via bare `python3 -m pytest -q`, compileall, self doctor (36
 checks / 0 failures), payload build, `grok plugin validate` on the

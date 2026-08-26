@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-08-26T09:33:11Z
+updated_at: 2026-08-26T09:37:01Z
 updated_by: cli
 session_status: closed
 branch: main
-last_commit: 372addf
+last_commit: b3b887c
 ---
 # Handoff
 
@@ -22,19 +22,22 @@ blocks were updated. The final tree passes 81 tests, compileall, self doctor
 36/0, Claude and Grok validation, the Codex plugin validator, and
 `git diff --check`.
 
+Source 0.3.3 is on `origin/main` at `b3b887c`. The generated Claude and Codex
+payloads are in `agent-plugins` PR #10 at payload commit `6f026f0`:
+https://github.com/WSH95/agent-plugins/pull/10
+
 ## In flight
 
-- Release validation, the source push, and the `agent-plugins` publication PR
-  are in progress.
+- `agent-plugins` PR #10 is open, reports a clean merge state, and awaits
+  review or merge. The repository does not report any PR status checks.
 - `dist/project-steward/` was rebuilt and remains gitignored/generated.
-- `agent-plugins` PR #8 (README Grok install path) still awaits review.
+- The earlier Grok install documentation PR #8 is merged.
 
 ## Next steps
 
-1. Validate and commit the 0.3.3 source changes, then push `main`.
-2. Publish the generated payload to `agent-plugins` in a reviewable PR.
-3. Record the source commit and PR URL, commit that checkpoint, and push it.
-4. Review or merge https://github.com/WSH95/agent-plugins/pull/8 separately.
+1. Review and merge https://github.com/WSH95/agent-plugins/pull/10 when ready.
+2. After it merges, update installed copies with the normal Claude, Codex, or
+   Grok plugin update flow.
 
 ## Blockers
 

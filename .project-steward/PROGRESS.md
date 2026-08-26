@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-26T09:37:01Z — cli
+Pushed Project Steward 0.3.3 source commit b3b887c to origin/main and opened agent-plugins PR #10 with payload commit 6f026f0; PR merge state is clean.
+
 ### 2026-08-26T09:33:11Z — cli
 Prepared Project Steward 0.3.3: rebuilt Claude and Codex payloads; 81 tests, compileall, self doctor 36/0, Claude, Codex, and Grok validators, launcher smoke, and diff checks pass.
 
