@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-26T09:42:52Z — cli
+agent-plugins PR #10 for Project Steward 0.3.3 merged as c65e1a2; no 0.3.3 publication work remains.
+
 ### 2026-08-26T09:37:01Z — cli
 Pushed Project Steward 0.3.3 source commit b3b887c to origin/main and opened agent-plugins PR #10 with payload commit 6f026f0; PR merge state is clean.
 
