@@ -26,6 +26,7 @@ def test_init_scaffold_creates_everything(git_repo):
     assert ".project-steward/runtime/" in gi
     handoff = (state_dir(git_repo) / "HANDOFF.md").read_text(encoding="utf-8")
     assert "session_status: closed" in handoff
+    assert "last_commit:" not in handoff
     assert (state_dir(git_repo) / "state.json").is_file()
 
 

@@ -12,7 +12,8 @@ def _make_legacy(repo):
         "# Plan (Projectforge)\n- [ ] task in .projectforge/PLAN.md\n",
         encoding="utf-8")
     (legacy / "HANDOFF.md").write_text(
-        "---\nsession_status: closed\n---\n\n# Handoff\n\n## Now\nok\n",
+        "---\nsession_status: closed\nlast_commit: old123\n---\n\n"
+        "# Handoff\n\n## Now\nok\n",
         encoding="utf-8")
     (legacy / "config").write_text(
         'AUTO_HANDOFF_MODE=remind\nAUTO_HANDOFF_COOLDOWN_MIN=30\n'
@@ -49,6 +50,9 @@ def test_full_migration(git_repo):
     assert ".projectforge" not in gi
     assert ".project-steward/runtime/" in gi
     assert (sdir / "runtime" / "journal-legacy" / "heartbeat").is_file()
+    handoff = (sdir / "HANDOFF.md").read_text(encoding="utf-8")
+    assert "last_commit:" not in handoff
+    assert any("obsolete HANDOFF.md" in note for note in report["notes"])
 
 
 def test_parse_legacy_config():

@@ -7,7 +7,7 @@ import time
 from project_steward import hooks, sessions
 from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
-from project_steward.state import write_text_atomic
+from project_steward.state import write_json_atomic, write_text_atomic
 
 
 def _init(repo):
@@ -41,18 +41,49 @@ def _make_stale_with_activity(repo, activities):
 def test_stop_blocks_once_then_cooldown(git_repo, capsys, monkeypatch):
     _init(git_repo)
     _make_stale(git_repo)
+    now = time.time()
+    monkeypatch.setattr(hooks.time, "time", lambda: now)
     payload = {"cwd": str(git_repo), "stop_hook_active": False}
     rc, out = _run_hook(["stop", "--agent", "claude"], payload, capsys,
                         monkeypatch)
     assert rc == 0 and out.get("decision") == "block"
     assert "auto-checkpoint" in out.get("reason", "")
     assert "handoff-relevant actions" in out.get("reason", "")
-    assert "project-steward checkpoint" in out.get("reason", "")
-    assert "refreshes checkpoint metadata" in out.get("reason", "")
+    assert "leave tracked files unchanged" in out.get("reason", "")
+    assert "Do not create a checkpoint only" in out.get("reason", "")
     # Second stop inside the cooldown window: silent.
     rc, out = _run_hook(["stop", "--agent", "claude"], payload, capsys,
                         monkeypatch)
     assert rc == 0 and out == {}
+    # The same activity batch remains handled after the cooldown expires.
+    monkeypatch.setattr(hooks.time, "time", lambda: now + 3600)
+    rc, out = _run_hook(["stop", "--agent", "claude"], payload, capsys,
+                        monkeypatch)
+    assert rc == 0 and out == {}
+
+
+def test_stop_blocks_for_new_activity_after_previous_prompt(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+    past = time.time() - 7200
+    os.utime(str(handoff), (past, past))
+    write_json_atomic(runtime_dir(git_repo) / "stop_guard.json", {
+        "last_auto_epoch": time.time() - 3600,
+        "last_auto_at": "earlier",
+    })
+    for i in range(5):
+        sessions.record_activity(git_repo, "Edit", "new%d.py" % i)
+
+    rc, out = _run_hook(
+        ["stop", "--agent", "codex"],
+        {"cwd": str(git_repo), "stop_hook_active": False},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0
+    assert out.get("decision") == "block"
 
 
 def test_stop_ignores_read_only_activity(git_repo, capsys, monkeypatch):
@@ -122,6 +153,7 @@ def test_stop_remind_mode(git_repo, capsys, monkeypatch):
     rc, out = _run_hook(["stop", "--agent", "codex"], payload, capsys,
                         monkeypatch)
     assert rc == 0 and "systemMessage" in out and "decision" not in out
+    assert "leave tracked files unchanged" in out["systemMessage"]
 
 
 def test_session_start_injects_recap(git_repo, capsys, monkeypatch):

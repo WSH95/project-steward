@@ -1,42 +1,35 @@
 ---
-updated_at: 2026-08-26T09:42:52Z
+updated_at: 2026-08-26T10:09:41Z
 updated_by: cli
 session_status: closed
 branch: main
-last_commit: 1f48279
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.3.3 makes the init scaffold produce a 44-line `AGENTS.md`.
-It keeps the same three managed-block identifiers and uses a shorter session
-workflow. The generated
-project-state templates use plain, factual language. A new shared writing
-guide tells init, progress, resume, and handoff skills to edit only new prose
-and to use an installed `humanizer` skill when available. Humanizer is not a
-runtime dependency. ADR 0022.
+Project Steward 0.3.4 removes the self-referential `last_commit` field from
+`HANDOFF.md`. Resume derives the handoff anchor from Git history and keeps the
+existing JSON key for compatibility. A clean clone no longer treats its own
+handoff commit as unexplained work. ADR 0023.
 
-The user approved the exact root `AGENTS.md` diff, and only its three managed
-blocks were updated. The final tree passes 81 tests, compileall, self doctor
-36/0, Claude and Grok validation, the Codex plugin validator, and
-`git diff --check`.
-
-Source 0.3.3 is on `origin/main` at `b3b887c`. The generated Claude and Codex
-payloads were merged through `agent-plugins` PR #10 at merge commit `c65e1a2`:
-https://github.com/WSH95/agent-plugins/pull/10
+The Stop guard now handles each activity batch once. If no project state
+changed, the agent leaves tracked files alone instead of creating another
+checkpoint. The full release suite passes: 85 tests, compileall, self doctor
+36/0, payload build, publication dry-run, skill schema, Claude, Codex, and
+Grok validators, launcher smoke, and `git diff --check`.
 
 ## In flight
 
-- No 0.3.3 publication work remains. PR #10 was merged on 2026-08-26.
-- `dist/project-steward/` was rebuilt and remains gitignored/generated.
-- The earlier Grok install documentation PR #8 is merged.
+- The source commit and push, followed by the `agent-plugins` 0.3.4 PR, are
+  pending.
+- `dist/project-steward/` was rebuilt at 0.3.4 and remains gitignored.
 
 ## Next steps
 
-1. Update installed copies with the normal Claude, Codex, or Grok plugin
-   update flow when ready.
-2. Continue with the next open task in `.project-steward/PLAN.md`.
+1. Commit and push the 0.3.4 source release.
+2. Publish the generated payload in an `agent-plugins` PR.
+3. Record the source SHA, payload SHA, and PR URL, then push that checkpoint.
 
 ## Blockers
 
@@ -44,38 +37,29 @@ https://github.com/WSH95/agent-plugins/pull/10
 
 ## Key files
 
-- `plugin-src/src/project_steward/scaffold.py` builds the three managed
-  `AGENTS.md` blocks.
-- `plugin-src/src/project_steward/templates/` contains the files created by
-  init.
-- `plugin-src/references/documentation-style.md` is the shared writing
-  contract and optional Humanizer integration.
-- `plugin-src/skills/` and `plugin-src/codex/prompts/` apply that contract
-  while agents update project state.
-- `tests/test_scaffold_init.py` and `tests/test_skill_text.py` cover the
-  compact output, preserved user prose, and optional Humanizer behavior.
+- `plugin-src/src/project_steward/sessions.py` derives the handoff anchor and
+  removes legacy metadata during lifecycle writes.
+- `plugin-src/src/project_steward/gitutil.py` provides path-specific Git
+  history and dirty-state checks.
+- `plugin-src/src/project_steward/hooks.py` tracks handled Stop-guard batches.
+- `tests/test_sessions.py` and `tests/test_hooks_stop_guard.py` cover the two
+  regressions.
 
 ## Tried and rejected
 
-- Bundling the full Humanizer skill was rejected. It would enlarge the
-  plugin and create a versioned dependency for behavior that can remain
-  optional.
-- Automatically rewriting existing project history was rejected because it
-  would create unrelated diffs and could flatten the project's own voice.
-- Moving the full session protocol to another managed state file was
-  rejected because generic agents still need the basic workflow in
-  `AGENTS.md`.
+- Embedding the containing commit's SHA in a tracked file cannot converge:
+  changing the file changes the commit hash.
+- Renaming the resume JSON key was rejected because deriving its value fixes
+  the bug without breaking consumers.
+- A runtime-only acknowledgement command was unnecessary. The Stop guard can
+  remember the handled activity batch and tell the agent not to write files.
 
 ## Warnings
 
 - Do not manually edit generated `dist/project-steward/` output; rebuild
   from `plugin-src/`.
-- The root `AGENTS.md` update was explicitly approved on 2026-08-26. Its
-  unmarked content remains out of scope.
 - Local `python` points to an interpreter too old for
   `from __future__ import annotations`; use `python3` here.
-- Do not run Humanizer across historical entries or user prose. Limit it to
-  text already being created or changed.
-- Keep required `HANDOFF.md` headings, front matter, commands, links, and
-  managed markers unchanged during a style pass.
+- Preserve the current auto-checkpoint entry; it exposed this bug and belongs
+  in the 0.3.4 state history.
 - Do not push this source repo without explicit user approval.

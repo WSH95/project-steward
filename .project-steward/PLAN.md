@@ -28,6 +28,8 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
       (ADR 0016)
 - [x] Make init-generated project docs concise and natural; add optional
       Humanizer guidance without a runtime dependency (0.3.3, ADR 0022)
+- [x] Derive the handoff commit from Git and stop no-op checkpoint loops
+      (0.3.4, ADR 0023)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 

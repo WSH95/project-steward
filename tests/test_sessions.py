@@ -1,15 +1,24 @@
 import json
 import os
+import subprocess
 import time
 
 from project_steward import sessions
+from project_steward import gitutil
 from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
+from project_steward.state import parse_front_matter, update_front_matter
 
 
 def _init(repo):
     plan, mapping = plan_files(repo, {"project_name": "Demo"})
     apply_plan(repo, plan, mapping)
+
+
+def _commit_all(repo, message):
+    subprocess.run(["git", "add", "-A"], cwd=str(repo), check=True)
+    subprocess.run(["git", "commit", "-q", "-m", message],
+                   cwd=str(repo), check=True)
 
 
 def test_resume_never_dirties_committed_files(git_repo):
@@ -105,6 +114,50 @@ def test_clean_resume_reports_no_false_crash(git_repo):
     previous, _record = sessions.claim_session(git_repo, "test")
     recap = sessions.build_recap(git_repo, runtime_record=previous)
     assert not any("active session" in s for s in recap["crash_signals"])
+
+
+def test_handoff_commit_is_derived_without_a_checkpoint_loop(git_repo):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+    update_front_matter(handoff, {"last_commit": "stale123"})
+    _commit_all(git_repo, "initial handoff")
+
+    initial_head = gitutil.head_sha(git_repo)
+    recap = sessions.build_recap(git_repo)
+    assert recap["handoff"]["last_commit"] == initial_head
+    assert not any("commit(s) exist" in s for s in recap["crash_signals"])
+
+    (git_repo / "work.txt").write_text("done\n", encoding="utf-8")
+    _commit_all(git_repo, "later work")
+    signals = sessions.detect_crash_signals(git_repo)
+    assert any("commit(s) exist" in s for s in signals)
+
+    sessions.checkpoint(git_repo, "covered later work", "test")
+    meta, _body = parse_front_matter(
+        handoff.read_text(encoding="utf-8"))
+    assert "last_commit" not in meta
+    signals = sessions.detect_crash_signals(git_repo)
+    assert not any("commit(s) exist" in s for s in signals)
+
+    _commit_all(git_repo, "checkpoint")
+    recap = sessions.build_recap(git_repo)
+    assert recap["handoff"]["last_commit"] == gitutil.head_sha(git_repo)
+    assert not any("commit(s) exist" in s for s in recap["crash_signals"])
+
+
+def test_wrap_and_close_remove_legacy_last_commit(git_repo):
+    _init(git_repo)
+    handoff = state_dir(git_repo) / "HANDOFF.md"
+
+    update_front_matter(handoff, {"last_commit": "legacy"})
+    sessions.wrap(git_repo, "wrapped", "test")
+    meta, _body = parse_front_matter(handoff.read_text(encoding="utf-8"))
+    assert "last_commit" not in meta
+
+    update_front_matter(handoff, {"last_commit": "legacy"})
+    sessions.close_only(git_repo, "test")
+    meta, _body = parse_front_matter(handoff.read_text(encoding="utf-8"))
+    assert "last_commit" not in meta
 
 
 def test_wrap_closes_and_flags_unmentioned_dirty(git_repo):

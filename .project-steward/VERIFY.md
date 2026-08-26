@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 81 passed |
+| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 85 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -18,7 +18,15 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-08-26 (0.3.3 compact, humanized init documentation, ADR
+Last verified: 2026-08-26 (0.3.4 handoff anchor and Stop-guard batch fix, ADR
+0023) — 85 tests via bare `python3 -m pytest -q`, compileall, self doctor
+(36 checks / 0 failures), payload build, publish dry-run, skill schema check,
+`grok plugin validate`, Claude plugin and marketplace validation with
+`--strict`, generated Codex plugin validation, launcher smoke, and
+`git diff --check`. Regression tests cover a clean clone, later commits, a
+dirty handoff, legacy metadata cleanup, and handled Stop-guard batches.
+
+Previous entry: 2026-08-26 (0.3.3 compact, humanized init documentation, ADR
 0022) — 81 tests via bare `python3 -m pytest -q`, compileall, self doctor
 (36 checks / 0 failures), payload build, `grok plugin validate`, Claude
 plugin and marketplace validation with `--strict`, generated Codex plugin
@@ -33,7 +41,7 @@ commit `6f026f0` was pushed to `WSH95/agent-plugins` branch
 `publish/project-steward-plugin-0.3.3`; PR #10 was merged as `c65e1a2` on
 2026-08-26: https://github.com/WSH95/agent-plugins/pull/10
 
-Previous entry: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
+Earlier entry: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
 tests via bare `python3 -m pytest -q`, compileall, self doctor (36
 checks / 0 failures), payload build, `grok plugin validate` on the
 Claude plugin dir (valid, version 0.3.2), `git diff --check`. Claude

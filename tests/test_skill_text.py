@@ -49,3 +49,12 @@ def test_init_guidance_pins_compact_agents_output():
     for text in (skill, prompt):
         assert "40-45 lines" in text
         assert "below 50" in text
+
+
+def test_handoff_guidance_does_not_require_a_noop_checkpoint():
+    handoff = _flat("plugin-src/skills/session-handoff/SKILL.md")
+    protocol = _flat("plugin-src/references/session-protocol.md")
+    assert "leave tracked files unchanged" in handoff
+    assert "Do not create a checkpoint only" in handoff
+    assert "last changed `HANDOFF.md`" in protocol
+    assert "self-referential" in protocol

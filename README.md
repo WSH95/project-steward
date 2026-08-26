@@ -169,9 +169,14 @@ the surface; `--json` and `--dry-run` are available where they matter.
    dirty/commits, in-progress git ops), then reconstructs from git
    evidence with every claim labeled *(inferred)*. Hooks add automatic
    recap injection, a wrap-language detector, and a Stop guard that
-   forces one brief auto-checkpoint when the handoff goes stale
+   requests one brief auto-checkpoint when the handoff goes stale and leaves
+   tracked files alone when nothing material changed
    (bounded worst-case loss: one cooldown window). **Resuming never
    dirties the git tree** — claims live in gitignored runtime files.
+
+Resume derives the handoff's Git anchor from the commit that last changed
+`HANDOFF.md`. The file does not try to store the hash of the commit that
+contains it.
 
 ## Backend broker
 

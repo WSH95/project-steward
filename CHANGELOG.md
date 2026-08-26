@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.4 — 2026-08-26
+
+### Fixed
+- `HANDOFF.md` no longer stores the SHA of the commit that is supposed to
+  contain it. Resume derives the handoff commit from Git history, so a clean
+  clone does not report its own checkpoint commit as unexplained work.
+- The Stop guard handles each activity batch once. When project state has not
+  changed, its prompt now tells the agent to leave tracked files alone instead
+  of creating a bookkeeping-only checkpoint.
+
 ## 0.3.3 — 2026-08-26
 
 ### Changed

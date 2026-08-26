@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-26T10:09:41Z — cli
+Validated Project Steward 0.3.4: 85 tests, compileall, self doctor 36/0, payload build, publish dry-run, skill schema, Claude, Codex, and Grok validators, launcher smoke, and diff checks pass.
+
+### 2026-08-26T10:08:49Z — cli
+Implemented the 0.3.4 handoff-anchor and Stop-guard fixes; 85 tests, compileall, self doctor 36/0, and diff checks pass.
+
+### 2026-08-26T09:43:58Z — cli
+[auto-checkpoint] Final verification confirmed source main is clean and synchronized, dist contains version 0.3.3, and agent-plugins PR #10 is merged.
+
 ### 2026-08-26T09:42:52Z — cli
 agent-plugins PR #10 for Project Steward 0.3.3 merged as c65e1a2; no 0.3.3 publication work remains.
 

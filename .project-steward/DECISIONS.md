@@ -396,3 +396,22 @@ git, and instruction-file rules from `AGENTS.md`. Claude, Codex, and Grok
 plugin users also get a shared writing guide and optional Humanizer pass.
 Existing user prose and project history remain untouched unless that text is
 already being edited for the current task. The change ships as version 0.3.3.
+
+## 0023 — 2026-08-26 — Derive the handoff commit instead of storing it
+
+**Context**: Checkpoint and wrap wrote the current HEAD SHA into tracked
+`HANDOFF.md`. Committing that file created a different SHA, so the stored value
+was always one commit behind. On a clean clone, resume could report the commit
+containing the handoff as unexplained work. The Stop guard also required a
+tracked checkpoint when no project state had changed, which could start the
+same bookkeeping cycle again.
+**Decision**: Remove `last_commit` from `HANDOFF.md` front matter. Derive the
+anchor from the latest Git commit that changed the file, while preserving the
+existing `handoff.last_commit` resume JSON key. Ignore the commit-lag check
+while `HANDOFF.md` has uncommitted changes. The Stop guard counts activity from
+the newer of the handoff update and its last prompt, and its no-change path
+leaves tracked files untouched.
+**Consequences**: Clean clones no longer flag their own handoff commit. Later
+commits still mark a clean handoff as stale. Existing front matter remains
+readable and is removed on the next checkpoint, wrap, close, or Projectforge
+migration. The fix ships as version 0.3.4.
