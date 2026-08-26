@@ -26,6 +26,12 @@ Last verified: 2026-08-26 (0.3.4 handoff anchor and Stop-guard batch fix, ADR
 `git diff --check`. Regression tests cover a clean clone, later commits, a
 dirty handoff, legacy metadata cleanup, and handled Stop-guard batches.
 
+Distribution publish (2026-08-26): source `4750e38` was pushed to
+`WSH95/project-steward` `main`; generated payload commit `13fc90f` was pushed
+to `WSH95/agent-plugins` branch `publish/project-steward-plugin-0.3.4`; PR #11
+is open with a clean merge state and no reported status checks:
+https://github.com/WSH95/agent-plugins/pull/11
+
 Previous entry: 2026-08-26 (0.3.3 compact, humanized init documentation, ADR
 0022) — 81 tests via bare `python3 -m pytest -q`, compileall, self doctor
 (36 checks / 0 failures), payload build, `grok plugin validate`, Claude

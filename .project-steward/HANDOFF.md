@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-08-26T10:09:41Z
+updated_at: 2026-08-26T10:15:06Z
 updated_by: cli
 session_status: closed
 branch: main
@@ -19,17 +19,21 @@ checkpoint. The full release suite passes: 85 tests, compileall, self doctor
 36/0, payload build, publication dry-run, skill schema, Claude, Codex, and
 Grok validators, launcher smoke, and `git diff --check`.
 
+Source 0.3.4 is on `origin/main` at `4750e38`. The generated payload is in
+`agent-plugins` PR #11 at `13fc90f`:
+https://github.com/WSH95/agent-plugins/pull/11
+
 ## In flight
 
-- The source commit and push, followed by the `agent-plugins` 0.3.4 PR, are
-  pending.
+- `agent-plugins` PR #11 is open with a clean merge state and no reported
+  status checks. It awaits review or merge.
 - `dist/project-steward/` was rebuilt at 0.3.4 and remains gitignored.
 
 ## Next steps
 
-1. Commit and push the 0.3.4 source release.
-2. Publish the generated payload in an `agent-plugins` PR.
-3. Record the source SHA, payload SHA, and PR URL, then push that checkpoint.
+1. Review and merge https://github.com/WSH95/agent-plugins/pull/11 when ready.
+2. Update installed copies with the normal Claude, Codex, or Grok plugin
+   update flow after the PR merges.
 
 ## Blockers
 
@@ -60,6 +64,4 @@ Grok validators, launcher smoke, and `git diff --check`.
   from `plugin-src/`.
 - Local `python` points to an interpreter too old for
   `from __future__ import annotations`; use `python3` here.
-- Preserve the current auto-checkpoint entry; it exposed this bug and belongs
-  in the 0.3.4 state history.
 - Do not push this source repo without explicit user approval.
