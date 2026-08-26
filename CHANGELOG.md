@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.3 — 2026-08-26
+
+### Changed
+- `project-steward init` now produces a shorter `AGENTS.md` and uses clearer,
+  more natural wording across the project-state templates.
+- Skills that write project documentation now share a plain-language writing
+  guide and can use an installed `humanizer` skill as an optional final pass.
+  Existing history is not rewritten, and the CLI has no new dependency.
+
 ## 0.3.2 — 2026-08-16
 
 ### Added

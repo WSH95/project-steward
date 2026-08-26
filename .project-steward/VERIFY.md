@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 77 passed |
+| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 81 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -18,7 +18,16 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
+Last verified: 2026-08-26 (0.3.3 compact, humanized init documentation, ADR
+0022) — 81 tests via bare `python3 -m pytest -q`, compileall, self doctor
+(36 checks / 0 failures), payload build, `grok plugin validate`, Claude
+plugin and marketplace validation with `--strict`, generated Codex plugin
+validation, and `git diff --check`. A representative fresh `AGENTS.md` is
+44 lines. The user approved the exact root `AGENTS.md` diff; its three managed
+blocks were updated, then the full tests, compileall, self doctor, and
+`git diff --check` passed again.
+
+Previous entry: 2026-08-16 (0.3.2 Grok dual-contract, ADR 0021) — 77
 tests via bare `python3 -m pytest -q`, compileall, self doctor (36
 checks / 0 failures), payload build, `grok plugin validate` on the
 Claude plugin dir (valid, version 0.3.2), `git diff --check`. Claude
@@ -26,7 +35,7 @@ Claude plugin dir (valid, version 0.3.2), `git diff --check`. Claude
 session: `claude plugin validate --strict`, isolated Codex
 marketplace/prompt-input smoke, or `agent-plugins` publish.
 
-Previous entry: 2026-07-08 (0.3.1 release publication, Windows batch
+Earlier entry: 2026-07-08 (0.3.1 release publication, Windows batch
 cascade hardening) — 70 tests via bare `python3 -m pytest -q`,
 compileall, self doctor (36 checks / 0 failures), payload build,
 `claude plugin validate --strict` (plugin + marketplace), generated

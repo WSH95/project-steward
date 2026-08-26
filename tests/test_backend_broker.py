@@ -34,7 +34,7 @@ def test_adopt_updates_agents_and_backend_json(git_repo):
     report = backend_broker.adopt(git_repo, "beads", assume_yes=True)
     assert report["ok"]
     agents = (git_repo / "AGENTS.md").read_text(encoding="utf-8")
-    assert "owned by **beads" in agents.replace("(bd)**", "**")
+    assert "beads owns the detailed task list" in agents
     assert load_backend(git_repo)["name"] == "beads"
     stub = backend_broker.adopt(git_repo, "jira", assume_yes=True)
     assert not stub["ok"]

@@ -84,6 +84,10 @@ def test_builder_emits_extractable_claude_and_codex_payloads(tmp_path):
     assert "hooks" not in codex_manifest
     assert (codex_plugin / "skills" / "project-init" / "SKILL.md").is_file()
     assert (codex_plugin / "references" / "session-protocol.md").is_file()
+    assert (codex_plugin / "references" / "documentation-style.md").is_file()
+    assert (
+        claude_plugin / "references" / "documentation-style.md"
+    ).is_file()
     assert (
         codex_plugin
         / "src"

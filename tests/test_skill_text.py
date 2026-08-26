@@ -23,3 +23,29 @@ def test_init_command_mirrors_the_gate():
     assert "BEFORE asking approval" in cmd
     assert "not review surfaces" in cmd
     assert cmd.index("--dry-run") < cmd.index("--yes")
+
+
+def test_writing_skills_share_optional_humanizer_contract():
+    guide = _flat("plugin-src/references/documentation-style.md")
+    assert "plain" in guide
+    assert "Do not invent facts" in guide
+    assert "humanizer" in guide
+    assert "do not install it automatically" in guide
+
+    for name in (
+        "project-init",
+        "progress-tracking",
+        "session-handoff",
+        "session-resume",
+    ):
+        skill = _flat("plugin-src/skills/%s/SKILL.md" % name)
+        assert "documentation-style.md" in skill
+        assert "humanizer" in skill
+
+
+def test_init_guidance_pins_compact_agents_output():
+    skill = _flat("plugin-src/skills/project-init/SKILL.md")
+    prompt = _flat("plugin-src/codex/prompts/steward-init.md")
+    for text in (skill, prompt):
+        assert "40-45 lines" in text
+        assert "below 50" in text

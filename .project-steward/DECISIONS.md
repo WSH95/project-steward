@@ -373,3 +373,26 @@ Grok recap/wrap injection still depend on AGENTS.md + skills (stdout
 ignored). Bare `/resume` remains Grok's session picker; steward resume is
 `/session-resume` or `/project-steward:resume`. Publish to
 `agent-plugins` still requires explicit approval.
+
+## 0022 — 2026-08-26 — Keep managed project documentation concise and natural
+
+**Context**: A fresh `project-steward init` produced an `AGENTS.md` of
+roughly 78 lines, much of it generic session boilerplate. The generated
+state templates also used stock phrases and an even, mechanical cadence.
+Projects still need enough inline guidance to work when hooks or plugin
+skills are unavailable.
+**Decision**: Keep the three existing managed-block identifiers, but reduce
+a representative new `AGENTS.md` to 40-45 lines. Put the detailed writing
+rules in `references/documentation-style.md`. Skills that write project
+state follow that guide and may use an installed `humanizer` skill on the
+new prose. Humanizer remains optional, is never installed automatically,
+and is not a Python dependency. Re-init changes managed blocks only, and
+ordinary workflows do not restyle historical entries. The root
+`AGENTS.md` adopts the compact blocks only after the user reviews and approves
+the exact diff. That approval was given and the managed blocks were updated on
+2026-08-26.
+**Consequences**: Generic agents still receive the start, checkpoint, wrap,
+git, and instruction-file rules from `AGENTS.md`. Claude, Codex, and Grok
+plugin users also get a shared writing guide and optional Humanizer pass.
+Existing user prose and project history remain untouched unless that text is
+already being edited for the current task. The change ships as version 0.3.3.

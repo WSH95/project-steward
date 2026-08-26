@@ -1,124 +1,79 @@
 ---
-updated_at: 2026-08-16T14:50:12Z
-updated_by: grok
+updated_at: 2026-08-26T09:33:11Z
+updated_by: cli
 session_status: closed
 branch: main
-last_commit: f652271
+last_commit: 372addf
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.3.2 on `main` adds Grok Build
-compatibility without forking a third plugin. Grok installs the existing
-Claude payload (`grok plugin marketplace add` on
-`dist/project-steward/claude` or `https://github.com/WSH95/agent-plugins`,
-then `grok plugin install project-steward --trust`). The shared hook
-dispatcher accepts Grok camelCase stdin after Claude/Codex snake_case
-keys, counts `search_replace` / `run_terminal_command` as mutating/shell
-activity, skips Grok teardown Stops (`shutdown` / `channel_closed`), and
-records agent `grok` when `GROK_SESSION_ID` / `GROK_HOOK_EVENT` is set
-even though the frozen Claude `hooks.json` still passes `--agent
-claude`. ADR 0021.
+Project Steward 0.3.3 makes the init scaffold produce a 44-line `AGENTS.md`.
+It keeps the same three managed-block identifiers and uses a shorter session
+workflow. The generated
+project-state templates use plain, factual language. A new shared writing
+guide tells init, progress, resume, and handoff skills to edit only new prose
+and to use an installed `humanizer` skill when available. Humanizer is not a
+runtime dependency. ADR 0022.
 
-Claude `hooks.json`, Codex hooks/marketplace, Stop `decision: block`
-JSON, and remind `systemMessage` output are unchanged. 77 tests,
-compileall, `doctor --self` 36/0, `grok plugin validate` on the Claude
-plugin dir, and `git diff --check` passed. `claude plugin validate` and
-isolated Codex smoke were not re-run this session.
-
-Source 0.3.2 is on `origin/main` at `e3510b3`. The generated payload
-landed via merged `agent-plugins` PR #7:
-https://github.com/WSH95/agent-plugins/pull/7
-
-The Grok install README missed that merge (pushed after #7 closed). A
-README-only follow-up is PR #8:
-https://github.com/WSH95/agent-plugins/pull/8
+The user approved the exact root `AGENTS.md` diff, and only its three managed
+blocks were updated. The final tree passes 81 tests, compileall, self doctor
+36/0, Claude and Grok validation, the Codex plugin validator, and
+`git diff --check`.
 
 ## In flight
 
-- `agent-plugins` PR #8 (README Grok install path) is open and awaits
-  review/merge.
-- `dist/project-steward/` remains gitignored/generated.
+- Release validation, the source push, and the `agent-plugins` publication PR
+  are in progress.
+- `dist/project-steward/` was rebuilt and remains gitignored/generated.
+- `agent-plugins` PR #8 (README Grok install path) still awaits review.
 
 ## Next steps
 
-1. Review/merge https://github.com/WSH95/agent-plugins/pull/8 when ready.
-2. After marketplace docs land, Grok users: `grok plugin marketplace add
-   https://github.com/WSH95/agent-plugins` then `grok plugin install
-   project-steward --trust`. Update existing installs with `grok plugin
-   update project-steward` (reinstall with `--trust` if hooks were never
-   trusted). Claude: `claude plugin update
-   project-steward@agent-plugins`. CLI: `pipx reinstall project-steward`.
-3. Grok users: `/session-resume` or `/project-steward:resume`, not bare
-   `/resume`.
-4. Do not add a sibling `.grok-plugin/marketplace.json` next to
-   `.claude-plugin/` without re-checking for a double listing.
-5. When `project-steward` is made public, update install docs that still
-   say "with repo access" or use SSH-only examples where public HTTPS is
-   more appropriate.
+1. Validate and commit the 0.3.3 source changes, then push `main`.
+2. Publish the generated payload to `agent-plugins` in a reviewable PR.
+3. Record the source commit and PR URL, commit that checkpoint, and push it.
+4. Review or merge https://github.com/WSH95/agent-plugins/pull/8 separately.
 
 ## Blockers
 
-- None for this implementation.
-- Local `python` points to an interpreter too old for
-  `from __future__ import annotations`; use `python3` here.
+- None.
 
 ## Key files
 
-- `plugin-src/` — canonical plugin source: shared skills/references,
-  Python package/templates, Claude commands/hooks, Codex prompts/hooks,
-  and shared metadata.
-- `tools/build_plugin_payloads.py` — generates extractable Claude and
-  Codex payloads from `plugin-src/`.
-- `plugin-src/claude/bin/project-steward` — plugin-local Claude launcher
-  into bundled `src/`.
-- `plugin-src/claude/hooks/run-hook.cmd` — polyglot POSIX/cmd hook
-  wrapper used by Claude Code without requiring Git Bash on Windows.
-- `tools/publish_agent_artifact_pr.py` — project-local PR publishing
-  script for generated agent artifacts.
-- `agent-artifacts.json` — local publish manifest; currently only the
-  generated Project Steward plugin artifact is configured.
-- `tests/test_payload_builder.py` — pins extraction layout and Codex
-  command-like companions, plus wrapper fallback and version consistency.
-- `tests/test_codex_plugin.py` / `tests/test_survey_doctor_cli.py` —
-  pin Codex hook root schema and self-doctor rejection of invalid
-  metadata.
-- `tests/test_agent_artifact_maintainer.py` — pins the artifact
-  maintainer skill contract and publish-script behavior.
-- `.project-steward/DECISIONS.md` ADR 0020 — Claude Code and Codex
-  `commandWindows` support are separate contracts.
-- `.project-steward/DECISIONS.md` ADR 0021 — Grok reuses the Claude
-  payload; hook stdin is dual-contract; no third tree.
+- `plugin-src/src/project_steward/scaffold.py` builds the three managed
+  `AGENTS.md` blocks.
+- `plugin-src/src/project_steward/templates/` contains the files created by
+  init.
+- `plugin-src/references/documentation-style.md` is the shared writing
+  contract and optional Humanizer integration.
+- `plugin-src/skills/` and `plugin-src/codex/prompts/` apply that contract
+  while agents update project state.
+- `tests/test_scaffold_init.py` and `tests/test_skill_text.py` cover the
+  compact output, preserved user prose, and optional Humanizer behavior.
 
 ## Tried and rejected
 
-- Adding a skill artifact to `agent-artifacts.json` now — rejected
-  because `agent-skills` must stay empty until the user asks to publish a
-  specific standalone skill.
-- Editing non-managed AGENTS.md prose — still avoided because the
-  project guardrail limits AGENTS.md edits to managed blocks unless the
-  user explicitly relaxes that guardrail.
-- Reintroducing `commandWindows` to Claude hooks — rejected because
-  Claude Code does not support that field.
-- Treating Codex as having the same limitation — rejected because Codex
-  currently documents `commandWindows`; this project simply does not need
-  to use it for Codex's installed-CLI companion path.
-- A third `plugin-src/grok/` payload or sibling `.grok-plugin/`
-  marketplace index — rejected (ADR 0021): Grok already lists one
-  `project-steward` from the Claude marketplace file.
+- Bundling the full Humanizer skill was rejected. It would enlarge the
+  plugin and create a versioned dependency for behavior that can remain
+  optional.
+- Automatically rewriting existing project history was rejected because it
+  would create unrelated diffs and could flatten the project's own voice.
+- Moving the full session protocol to another managed state file was
+  rejected because generic agents still need the basic workflow in
+  `AGENTS.md`.
 
 ## Warnings
 
 - Do not manually edit generated `dist/project-steward/` output; rebuild
   from `plugin-src/`.
-- Do not restore `plugin/` or `plugins/project-steward/` as source
-  directories; generated payloads are deliberately built from
-  `plugin-src/`.
-- Codex prompt files are optional command-like companions only; Codex
-  skills remain the supported plugin UX.
-- Codex hooks remain a manual companion file unless/until
-  plugin-bundled Codex hooks are field-tested separately.
-- Do not use AGENTS.md or CLAUDE.md as progress logs; session state
-  belongs under `.project-steward/`.
+- The root `AGENTS.md` update was explicitly approved on 2026-08-26. Its
+  unmarked content remains out of scope.
+- Local `python` points to an interpreter too old for
+  `from __future__ import annotations`; use `python3` here.
+- Do not run Humanizer across historical entries or user prose. Limit it to
+  text already being created or changed.
+- Keep required `HANDOFF.md` headings, front matter, commands, links, and
+  managed markers unchanged during a style pass.
 - Do not push this source repo without explicit user approval.

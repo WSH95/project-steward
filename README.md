@@ -108,6 +108,14 @@ opens the native session picker — use `/session-resume` or
 protocol from its managed block; any tool that runs shell commands can
 use the CLI directly.
 
+### Writing style
+
+Project Steward writes project records as plain, factual working notes. Its
+init, progress, resume, and handoff skills share one small writing guide. If
+the agent runtime also provides a `humanizer` skill, those workflows can use
+it on the prose they are already changing. Humanizer is optional, existing
+history is left alone, and the Python CLI has no runtime dependency on it.
+
 **Publish a review PR to the agent-plugins repo:**
 
 ```

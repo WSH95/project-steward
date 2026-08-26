@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-26T09:33:11Z — cli
+Prepared Project Steward 0.3.3: rebuilt Claude and Codex payloads; 81 tests, compileall, self doctor 36/0, Claude, Codex, and Grok validators, launcher smoke, and diff checks pass.
+
+### 2026-08-26T09:21:23Z — cli
+Completed concise init documentation and optional Humanizer guidance; applied the approved root AGENTS.md managed-block update; 81 tests and final diagnostics pass.
+
+### 2026-08-26T09:17:33Z — codex
+Implemented the compact 44-line init AGENTS.md output and optional Humanizer writing contract. 81 tests, compileall, doctor 36/0, payload build, and Claude, Codex, and Grok validators passed. The root AGENTS.md managed-block diff is waiting for approval.
+
 ### 2026-08-16T14:50:12Z — grok
 agent-plugins PR #7 merged (0.3.2 payload); opened README-only PR #8 because the Grok install docs missed the merge.
 

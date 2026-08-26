@@ -26,6 +26,8 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Add agent artifact maintenance skill + project-local PR publish
       script for agent-skills/agent-plugins workflows
       (ADR 0016)
+- [x] Make init-generated project docs concise and natural; add optional
+      Humanizer guidance without a runtime dependency (0.3.3, ADR 0022)
 - [ ] Verify backend install commands against upstream READMEs
 - [ ] Field-test Stop-guard thresholds in daily use; tune defaults
 
