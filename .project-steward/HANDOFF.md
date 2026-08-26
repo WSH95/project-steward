@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-08-26T10:15:06Z
+updated_at: 2026-08-26T10:20:39Z
 updated_by: cli
 session_status: closed
 branch: main
@@ -19,21 +19,22 @@ checkpoint. The full release suite passes: 85 tests, compileall, self doctor
 36/0, payload build, publication dry-run, skill schema, Claude, Codex, and
 Grok validators, launcher smoke, and `git diff --check`.
 
-Source 0.3.4 is on `origin/main` at `4750e38`. The generated payload is in
-`agent-plugins` PR #11 at `13fc90f`:
+The 0.3.4 implementation is on `origin/main` at `4750e38`. Generated payload
+commit `13fc90f` was merged into `WSH95/agent-plugins` as `f969829` in PR #11:
 https://github.com/WSH95/agent-plugins/pull/11
 
 ## In flight
 
-- `agent-plugins` PR #11 is open with a clean merge state and no reported
-  status checks. It awaits review or merge.
+- No 0.3.4 release work remains in flight; `agent-plugins` PR #11 was merged
+  on 2026-08-26 at 10:19:01 UTC.
 - `dist/project-steward/` was rebuilt at 0.3.4 and remains gitignored.
 
 ## Next steps
 
-1. Review and merge https://github.com/WSH95/agent-plugins/pull/11 when ready.
-2. Update installed copies with the normal Claude, Codex, or Grok plugin
-   update flow after the PR merges.
+1. Update installed copies with the normal Claude, Codex, or Grok plugin
+   update flow when needed.
+2. Continue with the next open PLAN task: verify backend install commands
+   against their upstream READMEs.
 
 ## Blockers
 

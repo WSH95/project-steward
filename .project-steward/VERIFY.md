@@ -29,7 +29,7 @@ dirty handoff, legacy metadata cleanup, and handled Stop-guard batches.
 Distribution publish (2026-08-26): source `4750e38` was pushed to
 `WSH95/project-steward` `main`; generated payload commit `13fc90f` was pushed
 to `WSH95/agent-plugins` branch `publish/project-steward-plugin-0.3.4`; PR #11
-is open with a clean merge state and no reported status checks:
+was merged as `f969829` on 2026-08-26 at 10:19:01 UTC:
 https://github.com/WSH95/agent-plugins/pull/11
 
 Previous entry: 2026-08-26 (0.3.3 compact, humanized init documentation, ADR

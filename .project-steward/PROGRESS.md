@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-08-26T10:20:39Z — cli
+[auto-checkpoint] Recorded the merged Project Steward 0.3.4 distribution PR (agent-plugins #11, merge f969829).
+
 ### 2026-08-26T10:15:06Z — cli
 Pushed Project Steward 0.3.4 source commit 4750e38 and opened agent-plugins PR #11 with payload commit 13fc90f; the PR merge state is clean.
 
