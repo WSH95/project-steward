@@ -49,6 +49,16 @@ Reconstruction uses `git diff`/`git log` since the commit that last changed
 `HANDOFF.md`, plus runtime logs. The CLI reports that derived commit as
 `handoff.last_commit`; every rebuilt claim is labeled "(inferred)".
 
+Git operation markers are located with `git rev-parse --git-path`, which covers
+ordinary repositories and repositories whose `.git` entry is a file, including
+linked worktrees and submodules.
+
+Implicit project discovery checks managed and legacy state at each directory,
+then stops at the nearest `.git` directory or file. Commands started inside an
+independent nested repository therefore cannot select an enclosing project's
+state. A subdirectory of a managed repository still finds that repository, and
+`--root` remains the explicit override when an enclosing project is intended.
+
 ## Stop guard (Claude Code + Codex + Grok hooks)
 
 If >= `auto_handoff_min_edits` actions occurred since the handoff's last

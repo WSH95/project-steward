@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-09-08T09:33:14Z
+updated_at: 2026-09-08T10:05:34Z
 updated_by: codex
 session_status: closed
 branch: fix/reliability-0.4.1
@@ -8,32 +8,29 @@ branch: fix/reliability-0.4.1
 
 ## Now
 
-Task 1 of the approved 0.4.1 reliability plan is complete (ADR 0025). Migration
-now preflights all inputs and destinations, preserves every raw attempt, rejects
-conflicting retries, and verifies the live legacy tree before removal. Init
-waits for migration, and partial Build/Test/Lint updates retain other command
-rows and custom managed-block lines. Independent review fixes keep original
-instructions below `original-instructions/` so the per-attempt ignore file
-survives, and reject unsafe or changed destination ancestors before copying.
+Tasks 1 and 2 of the approved 0.4.1 reliability plan are complete. Task 2 keeps
+selected Git paths lexical through their final component, so ordinary and
+dangling symlinks are committed as links while parent escapes are rejected.
+Whole-index checks translate project-relative selections when an explicit
+managed root is below the Git top level. Implicit discovery stops at the nearest
+Git boundary, and operation detection uses `git rev-parse --git-path` for
+ordinary repositories and `.git`-file layouts (ADR 0026).
 
-Validation passed: the pre-review full suite had 199 tests on Python 3.12.3;
-all 31 migration tests pass after the review fixes, including six direct
-covering cases. The focused fix round did not repeat the full suite by
-controller instruction. Self doctor remains at 40 checks, 3 expected warnings,
-and 0 failures; `git diff --check` passes. Native Python 3.7 and Windows/macOS
-execution were not available in this task.
+The focused Git, path, and session set passes 31 tests. The full suite passes
+217 tests on Python 3.12.3, and compileall exits 0. Self doctor reports 40
+checks, 3 expected warnings, and 0 failures. `git diff --check` passes. The
+local Task 2 commit is ready for independent review.
 
 ## In flight
 
-- The controller's Task 1 re-review and integration remain.
-- Tasks 2-5 in `docs/plans/2026-09-08-reliability-fixes.md` are still open.
+- Independent Task 2 review and integration remain with the controller.
+- Tasks 3-5 in `docs/plans/2026-09-08-reliability-fixes.md` are open.
 
 ## Next steps
 
-1. Review and integrate the local Task 1 commit without touching the source
-   checkout's unrelated file-mode differences.
-2. Continue with Task 2: respect Git paths, repository boundaries, and
-   worktrees.
+1. Review the Task 2 commit against `task-2-brief.md` and `task-2-report.md`;
+   rerun the 31 focused tests and integrate it if accepted.
+2. Continue Task 3: make build and publication previews safe.
 
 ## Blockers
 
@@ -41,29 +38,38 @@ execution were not available in this task.
 
 ## Key files
 
-- `plugin-src/src/project_steward/migrate.py` contains the preflight, plan, raw
-  backup, verified apply, and narrow retry rules; `cli.py` exposes dry-run and
-  blocks init while legacy state remains.
-- `plugin-src/src/project_steward/managed_blocks.py` and `scaffold.py` preserve
-  CRLF user prose and partial command settings.
-- `tests/test_migrate.py` and `tests/test_scaffold_init.py` cover conflicts,
-  malformed markers, failures, retries, backups, and re-init preservation.
-- `plugin-src/references/migration-from-projectforge.md` documents the recovery
-  and retry behavior.
+- `plugin-src/src/project_steward/gitutil.py` validates lexical commit paths,
+  compares index names in Git's namespace, and resolves operation metadata.
+- `plugin-src/src/project_steward/paths.py` stops discovery at the nearest Git
+  boundary after checking managed and legacy markers.
+- `tests/test_git_commits.py`, `tests/test_paths.py`, and
+  `tests/test_sessions.py` cover symlinks, index scope, repository boundaries,
+  explicit roots, ordinary operation markers, and a real linked worktree merge.
+- `README.md`, `plugin-src/references/security-model.md`,
+  `plugin-src/references/session-protocol.md`, and
+  `plugin-src/references/cross-platform.md` document the behavior.
 
 ## Tried and rejected
 
-- Reusing the shared backup root can modify or obscure an older flat backup.
-  Each new attempt carries its own ignore file before raw copying starts, and
-  original instruction files live in a distinct subdirectory.
-- Treating any pre-existing task document as a completed retry can discard
-  changed legacy tasks. Documents must match the current transformed legacy
-  bytes; only generated metadata timestamps have narrow equivalence rules.
+- Resolving the complete selected path follows its final symlink and can stage
+  the target. Resolving only the parent preserves the Git entry while still
+  rejecting an escaping parent.
+- Comparing project-relative selections directly with Git-root-relative index
+  names rejects valid staged files when the managed root is a subdirectory.
+  `git rev-parse --show-prefix` supplies the comparison prefix without changing
+  the literal add and commit pathspecs.
+- Looking under `<root>/.git` misses operation files in linked worktrees and
+  submodules because `.git` is a file there. Git's `--git-path` resolves the
+  repository-specific metadata location.
 
 ## Warnings
 
 - Root AGENTS.md/CLAUDE.md retain the supported legacy protocol. Self doctor
   warns about the absent WORKFLOW.md and local Codex hooks; those are upgrade
   notices, not failed checks. Adoption is through reviewed re-init.
+- Symlink regressions skip on accounts without symlink privileges, and the
+  linked-worktree regression skips when Git worktrees are unavailable. This
+  Linux run exercised them without skips. Native Python 3.7 and Windows/macOS
+  execution were not available for Task 2.
 - No push or publication is authorized. Preserve the source checkout's
   unrelated file-mode changes during integration.

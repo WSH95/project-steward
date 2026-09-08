@@ -7,9 +7,11 @@
   hook depends on Bash; the v0.1 shell scripts are gone.
 - Atomic writes use tempfile + os.replace (safe on NTFS); text is written
   UTF-8 with "\n" newlines for deterministic diffs on all OSes.
-- Paths with spaces, Unicode, drive letters, and nested repos are handled
-  by pathlib + argument-list subprocess calls (no shell string
-  interpolation).
+- Paths with spaces, Unicode, drive letters, and nested repos use pathlib,
+  os.path, and argument-list subprocess calls (no shell string interpolation).
+  Commit paths keep their lexical final component so symlinks remain symlinks;
+  resolved parent checks reject repository escapes. Git supplies operation
+  metadata paths for ordinary repositories, worktrees, and `.git` files.
 
 ## Python 3.7 floor — deliberate compatibility choices
 

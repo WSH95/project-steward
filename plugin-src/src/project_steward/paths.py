@@ -10,19 +10,19 @@ from . import LEGACY_DIR_NAME, STATE_DIR_NAME
 def find_project_root(start=None):
     """Walk upward from *start* (default cwd) looking for a steward project.
 
-    Priority: .project-steward > .projectforge (legacy) > .git.
-    Returns the directory containing the first marker found, else *start*.
+    At each directory, managed and legacy state take priority over its Git
+    marker. A Git marker stops the search so state from an enclosing repository
+    is never selected. Returns the nearest matching directory, else *start*.
     """
     cur = Path(start or os.getcwd()).resolve()
-    git_root = None
     for candidate in [cur] + list(cur.parents):
         if (candidate / STATE_DIR_NAME).is_dir():
             return candidate
         if (candidate / LEGACY_DIR_NAME).is_dir():
             return candidate
-        if git_root is None and (candidate / ".git").exists():
-            git_root = candidate
-    return git_root or cur
+        if (candidate / ".git").exists():
+            return candidate
+    return cur
 
 
 def state_dir(root):

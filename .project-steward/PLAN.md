@@ -7,7 +7,8 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Preserve Projectforge migration data across preflight, backup, failure,
       and retry; refuse init until migration completes; preserve partial
       command settings during re-init.
-- [ ] Respect Git paths, repository boundaries, and worktrees.
+- [x] Respect Git paths, repository boundaries, and worktrees, including
+      scoped commits from a managed root below the Git top level.
 - [ ] Make build and publication previews safe.
 - [ ] Correct handoff hook bookkeeping and edit detection.
 - [ ] Validate configuration and release 0.4.1.

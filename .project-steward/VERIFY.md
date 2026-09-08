@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 203 passed (199-test full run preceded four focused review regressions) |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 217 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -17,6 +17,16 @@
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+
+Task 2 verification: 2026-09-08 (ADR 0026) — 217 tests passed on Python
+3.12.3. The 31 focused Git path, root discovery, and session tests cover
+ordinary and dangling final symlinks, literal pathspecs, parent escapes,
+unrelated index entries, managed roots below the Git top level, nested
+repository boundaries, explicit roots, ordinary operation markers, and an
+actual linked-worktree merge conflict. Compileall exited 0. Native Python 3.7
+and Windows/macOS execution was not available for this task. Self doctor
+reported 40 checks, 3 expected warnings, and 0 failures. `git diff --check`
+passed. No remote operation was performed.
 
 Fix-round verification: 2026-09-08 (Task 1 independent review) — all six direct
 covering tests passed in 0.23s and `tests/test_migrate.py` passed 31 tests in

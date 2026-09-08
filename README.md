@@ -266,8 +266,9 @@ standard is the canonical instruction carrier.
   `project-steward doctor` reports installation and CLI availability separately
   from activation. Existing disabled settings stay disabled; unsupported inline
   hooks or malformed files are preserved and reported during init.
-- **"Not a Project Steward project"** → run `init`, or `--root` points
-  elsewhere.
+- **"Not a Project Steward project"** → run `init` in the current Git
+  repository, or pass an intentional `--root`. Implicit discovery stops at the
+  nearest Git boundary, so a nested repository does not inherit parent state.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.
 - **Windows hooks do nothing** → the `run-hook.cmd` wrapper needs the
   Python Launcher (`py -3`) or `python` on PATH, or the CLI installed

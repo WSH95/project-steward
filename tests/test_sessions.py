@@ -3,6 +3,8 @@ import os
 import subprocess
 import time
 
+import pytest
+
 from project_steward import sessions
 from project_steward import gitutil
 from project_steward.paths import runtime_dir, state_dir
@@ -19,6 +21,12 @@ def _commit_all(repo, message):
     subprocess.run(["git", "add", "-A"], cwd=str(repo), check=True)
     subprocess.run(["git", "commit", "-q", "-m", message],
                    cwd=str(repo), check=True)
+
+
+def _run_git(repo, *args):
+    return subprocess.run(
+        ["git"] + list(args), cwd=str(repo), stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
 
 
 def test_resume_never_dirties_committed_files(git_repo):
@@ -114,6 +122,64 @@ def test_clean_resume_reports_no_false_crash(git_repo):
     previous, _record = sessions.claim_session(git_repo, "test")
     recap = sessions.build_recap(git_repo, runtime_record=previous)
     assert not any("active session" in s for s in recap["crash_signals"])
+
+
+@pytest.mark.parametrize(
+    ("marker", "label", "is_directory"),
+    [
+        ("MERGE_HEAD", "merge", False),
+        ("rebase-merge", "rebase", True),
+        ("CHERRY_PICK_HEAD", "cherry-pick", False),
+    ],
+)
+def test_operation_metadata_in_ordinary_repository(
+        git_repo, marker, label, is_directory):
+    metadata = subprocess.check_output(
+        ["git", "rev-parse", "--git-path", marker], cwd=str(git_repo)
+    ).decode("utf-8").strip()
+    path = git_repo / metadata
+    if is_directory:
+        path.mkdir(parents=True)
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("in progress\n", encoding="utf-8")
+
+    assert gitutil.in_progress_operation(git_repo) == label
+
+
+def test_merge_conflict_in_linked_worktree_is_reported(git_repo):
+    conflict = git_repo / "conflict.txt"
+    conflict.write_text("base\n", encoding="utf-8")
+    _commit_all(git_repo, "base")
+    branch = subprocess.check_output(
+        ["git", "branch", "--show-current"], cwd=str(git_repo)
+    ).decode("utf-8").strip()
+    subprocess.run(["git", "branch", "topic"], cwd=str(git_repo), check=True)
+
+    conflict.write_text("main\n", encoding="utf-8")
+    _commit_all(git_repo, "main change")
+
+    linked = git_repo.parent / (git_repo.name + "-linked")
+    created = _run_git(git_repo, "worktree", "add", "-q", str(linked),
+                       "topic")
+    if created.returncode:
+        pytest.skip(
+            "git worktree unavailable: %s"
+            % created.stderr.decode("utf-8", "replace").strip())
+    assert (linked / ".git").is_file()
+
+    linked_conflict = linked / "conflict.txt"
+    linked_conflict.write_text("topic\n", encoding="utf-8")
+    _commit_all(linked, "topic change")
+    merged = _run_git(linked, "merge", "--no-edit", branch)
+    assert merged.returncode != 0
+    marker = subprocess.check_output(
+        ["git", "rev-parse", "--git-path", "MERGE_HEAD"], cwd=str(linked)
+    ).decode("utf-8").strip()
+    marker_path = linked / marker
+    assert marker_path.exists()
+
+    assert gitutil.in_progress_operation(linked) == "merge"
 
 
 def test_handoff_commit_is_derived_without_a_checkpoint_loop(git_repo):

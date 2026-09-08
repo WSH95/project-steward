@@ -1,6 +1,7 @@
 """Thin, cross-platform git wrappers. Never push; never commit implicitly."""
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -48,14 +49,34 @@ def head_sha(root, short=True):
 
 
 def _relative_path(root, path):
-    root_path = Path(root).resolve()
-    candidate = Path(path)
-    if not candidate.is_absolute():
-        candidate = root_path / candidate
+    root_path = os.path.abspath(str(root))
+    root_real = os.path.realpath(root_path)
+    candidate = str(path)
+    if not os.path.isabs(candidate):
+        candidate = os.path.join(root_path, candidate)
+    candidate = os.path.abspath(candidate)
+
+    def relative_to(base, target):
+        try:
+            common = os.path.commonpath([base, target])
+        except (OSError, ValueError):
+            return ""
+        if os.path.normcase(common) != os.path.normcase(base):
+            return ""
+        return os.path.relpath(target, base)
+
+    relative = relative_to(root_path, candidate)
+    if not relative:
+        relative = relative_to(root_real, candidate)
+    if not relative:
+        return ""
     try:
-        return candidate.resolve().relative_to(root_path).as_posix()
+        parent_real = os.path.realpath(os.path.dirname(candidate))
+        if not relative_to(root_real, parent_real):
+            return ""
     except (OSError, ValueError):
         return ""
+    return Path(relative).as_posix()
 
 
 def last_commit_for_path(root, path, short=True):
@@ -126,9 +147,6 @@ def last_commit_epoch(root):
 
 def in_progress_operation(root):
     """Name of an in-flight git operation (merge/rebase/cherry-pick), if any."""
-    git_dir = Path(root) / ".git"
-    if not git_dir.exists():
-        return ""
     checks = [
         ("MERGE_HEAD", "merge"),
         ("REBASE_HEAD", "rebase"),
@@ -138,7 +156,13 @@ def in_progress_operation(root):
         ("BISECT_LOG", "bisect"),
     ]
     for name, label in checks:
-        if (git_dir / name).exists():
+        rc, git_path = run_git(["rev-parse", "--git-path", name], root)
+        if rc != 0:
+            return ""
+        path = Path(git_path)
+        if not path.is_absolute():
+            path = Path(root) / path
+        if path.exists():
             return label
     return ""
 
@@ -164,12 +188,17 @@ def stage_and_commit(root, message, paths):
             relative.append(name)
     if not relative:
         return 1, "No commit paths selected."
+    rc, prefix = run_git(["rev-parse", "--show-prefix"], root)
+    if rc:
+        return rc, prefix
+    index_relative = [prefix + name for name in relative]
     rc, out = run_git(["diff", "--cached", "--name-only", "--no-renames", "-z"],
                       root, strip_output=False)
     if rc:
         return rc, out
     unrelated = [name for name in out.split("\0") if name and not any(
-        name == selected or name.startswith(selected + "/") for selected in relative)]
+        name == selected or name.startswith(selected + "/")
+        for selected in index_relative)]
     if unrelated:
         return 1, "Refusing to commit unrelated staged changes: %s" % ", ".join(unrelated)
 
@@ -179,7 +208,7 @@ def stage_and_commit(root, message, paths):
         rc, tracked = run_git(["--literal-pathspecs", "ls-files", "--", name], root)
         if rc:
             return rc, tracked
-        if (Path(root) / name).exists() or tracked:
+        if os.path.lexists(str(Path(root) / name)) or tracked:
             selected.append(name)
     if not selected:
         return 1, "No existing or tracked commit paths selected."

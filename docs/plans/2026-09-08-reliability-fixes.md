@@ -89,6 +89,10 @@ and project records. Migration/init changes from Task 1 are already present.
    the scoped wrap path too. Reject outside traversal and escaping parent
    paths while retaining literal pathspec safety, unrelated-index rejection,
    and useful error propagation.
+   When the managed root is a subdirectory of a larger Git repository, compare
+   selected and staged paths in the same Git-root-relative namespace. Accept
+   staged files inside that managed root, still reject staged files elsewhere
+   in the repository, and keep the final commit scoped to the selected paths.
 2. Stop implicit project-root discovery at the nearest Git boundary after
    checking the current directory's managed/legacy markers. An independent
    nested Git repository must not use or modify the parent's project state.

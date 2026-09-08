@@ -489,3 +489,30 @@ leave auditable attempts. A retry can finish when its earlier outputs match,
 but changed task documents produce a visible conflict instead of an implicit
 merge. Users can inspect the same plan with `migrate --dry-run`, and normal
 migration shows the `AGENTS.md` diff before confirmation.
+
+## 0026 — 2026-09-08 — Keep Git paths inside their repository boundary
+
+**Context**: Commit path normalization resolved the final path component. A
+selected symlink could therefore stage its target, while a dangling symlink was
+treated as absent. Implicit project discovery also continued above a nested Git
+repository, and operation detection assumed `.git` was a directory under the
+working tree. For an explicit project root below the Git top level, selected
+paths and index paths were compared in different namespaces.
+
+**Decision**: Normalize selected paths lexically and resolve only their parent
+for the repository containment check. A final symlink, including a dangling
+one, remains the selected Git entry. Keep literal pathspecs, unrelated-index
+rejection, and Git error returns. Implicit discovery checks managed and legacy
+markers before stopping at the nearest Git boundary; explicit `--root` remains
+authoritative. Use Git's current-directory prefix to compare the whole index
+with project-relative selections, while keeping add and commit pathspecs scoped
+to the project root. Resolve every operation marker with
+`git rev-parse --git-path`.
+
+**Consequences**: Scoped commits cannot follow a selected link into another
+file or traverse through a parent outside the repository. An independent nested
+repository cannot read or update enclosing Project Steward state implicitly.
+Managed roots below a larger repository accept their own staged paths and
+still reject staged entries elsewhere in that repository.
+Merge, rebase, and cherry-pick detection works in ordinary repositories and
+`.git`-file layouts such as linked worktrees and submodules.

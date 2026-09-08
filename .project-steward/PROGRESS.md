@@ -2,6 +2,13 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T10:05:34Z — codex
+Completed Task 2 Git path, repository-boundary, and worktree fixes. The full
+suite passes 217 tests; compileall, self doctor (40/3/0), and diff checks pass.
+
+### 2026-09-08T09:54:04Z — codex
+Task 2 implementation is focused-green: 29 Git path, root discovery, session, and linked-worktree tests pass. Final documentation and full validation are pending.
+
 ### 2026-09-08T09:33:14Z — codex
 Resolved the three Task 1 independent-review findings: instruction originals no
 longer replace the per-attempt ignore file, filesystem destination errors return

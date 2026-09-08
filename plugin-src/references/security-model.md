@@ -57,3 +57,12 @@ with diffs and explicit approval.
   (no forced continuation), review-required for any AGENTS.md change.
 Never silently loosen permissions, and never bypass Claude Code or Codex
 permission systems.
+
+The wrap commit helper treats selected paths as lexical Git names. It stages a
+final symlink as the link itself, including a dangling link, but rejects paths
+outside the repository and paths whose parent resolves outside it. Literal Git
+pathspecs prevent path names from becoming patterns. The helper also refuses an
+unrelated index entry before staging and returns Git command failures to the
+caller. When the managed root is below the Git top level, Git's directory
+prefix puts selected paths and whole-index paths in the same namespace; staged
+entries elsewhere in the repository remain unrelated.
