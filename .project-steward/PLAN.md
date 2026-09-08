@@ -4,16 +4,22 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 
 ## M4: 0.4.1 reliability fixes
 
-- [x] Preserve Projectforge migration data across preflight, backup, failure,
-      and retry; refuse init until migration completes; preserve partial
-      command settings during re-init.
-- [x] Respect Git paths, repository boundaries, and worktrees, including
+All five approved milestones are complete, reviewed, and delivered locally to
+`feat/workflow-improvements`. Version: 0.4.1. Validation: VERIFY.md.
+
+- [x] 1. Preserve migration data and partial init settings.
+      Commits: `1f3cde6`, `4977a9d`; final preservation correction `a5f2260`.
+- [x] 2. Respect Git paths, repository boundaries, and worktrees, including
       scoped commits from a managed root below the Git top level.
-- [x] Make build and publication previews safe.
-- [x] Correct handoff hook bookkeeping and edit detection.
-- [ ] Validate configuration and release 0.4.1. Implementation and the final
-      review corrections are green in the isolated branch; scoped rereview,
-      package checks, and local delivery remain with the controller.
+      Commit: `904f239` (`fix(git): respect repository path boundaries`).
+- [x] 3. Make build and publication previews safe.
+      Commits: `9b5d601`, `3c5f043`, `394d029`; literal-path correction `a5f2260`.
+- [x] 4. Correct handoff hook bookkeeping and edit detection.
+      Commits: `7c3ace0`, `0ad0306`.
+- [x] 5. Validate configuration and prepare version 0.4.1.
+      Commit: `81a612f`. Final review, package checks, installed smoke, and
+      actual-source validation passed after `a5f2260`: 277 tests, doctor
+      40 checks / 3 existing setup warnings / 0 failures. No publication.
 
 ## M3: 0.4.0 workflow improvements
 

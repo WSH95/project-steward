@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 271 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 277 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -18,6 +18,53 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
+Final 0.4.1 delivery verification: 2026-09-08T13:32:35Z — all five approved milestones
+and the final correction are committed on the original
+`feat/workflow-improvements` branch. Final code: `a5f2260`; milestone 2:
+`904f239`. The whole-branch review's two Important preservation findings were
+fixed together, and scoped rereview accepted both with no remaining
+Critical/Important findings.
+
+The actual source checkout passed **277 tests in 12.08s** on Linux/Python
+3.12.3 using the test venv and absolute source import path:
+`PATH=/tmp/project-steward-venv/bin:$PATH PYTHONPATH=/home/wsh/Documents/project-steward/plugin-src/src /tmp/project-steward-venv/bin/python3 -m pytest -q`.
+Self doctor at the same source reported **40 checks, 3 existing setup warnings,
+0 failures**, and imported version 0.4.1. The preservation helper confirmed
+all 106 original file modes, the exact 97 pre-existing mode-only differences,
+clean content/index ignoring modes, and unchanged root AGENTS.md/CLAUDE.md.
+
+Release checks:
+
+- Forced older-Python Codex parsing: 48 passed, 15 native-only cases skipped.
+  Native Codex setup set: 63 passed. These config checks ran at `81a612f`;
+  the final correction does not change that code.
+- Compileall and Python 3.7 grammar checks passed after `a5f2260` for all 20
+  source/tool Python files. These are syntax checks, not native Python 3.7.
+- The default generated 0.4.0 payload upgraded successfully to 0.4.1 and was
+  rebuilt again after `a5f2260`. Both final plugin manifests report 0.4.1.
+  Claude plugin/marketplace strict validation, Grok plugin validation, Codex
+  plugin schema validation, and the bundled 0.4.1 hook launcher passed before
+  the final correction; those manifests and wrappers did not change.
+- Artifact-maintainer, session-resume, and session-handoff skills passed the
+  existing skill schema validator after their respective changes.
+- The corrected wheel was rebuilt offline and installed in a new empty venv
+  at `/tmp/project-steward-reliability-final-wheel-venv`. Installed CLI smoke
+  passed version/templates, dry-run, Beads initialization, effective backend
+  identity, Codex files, repeated init, read-only resume, doctor, legacy alias,
+  migration dry-run, and migration apply. Imports came from site-packages.
+- The wheel, fresh installed module, and Claude/Grok bundled runtime contain
+  migration.py bytes identical to the corrected source. Codex ships templates
+  and skills and uses the installed CLI; it does not bundle that runtime.
+- Wheel: `/tmp/project-steward-reliability-wheels/project_steward-0.4.1-py3-none-any.whl`
+  (72,402 bytes), SHA-256
+  `2b2cbe0d39faace2e6c5d8bbc65f6a830d5dfb94a25a357a1934d796812761bd`.
+  Payloads: `/tmp/project-steward-reliability/dist/project-steward`.
+- Native Windows, macOS, and Python 3.7 were not executed locally. Existing
+  doctor warnings concern missing WORKFLOW.md and unconfigured local Codex
+  hooks/activation. No dependency, backend, or global plugin installation,
+  push, or publication occurred; only the local project wheel was installed
+  into the isolated smoke-test venv.
+
 Final-review correction verification: 2026-09-08 — six direct regressions
 failed against `81a612f` before production edits. They covered ignored-file
 preservation, real publication and immutable preview for the literal
@@ -25,10 +72,10 @@ preservation, real publication and immutable preview for the literal
 late symlinked destination ancestor. The same six tests pass after the fixes,
 and all 53 migration and publisher tests pass in 3.10s on Linux/Python 3.12.3.
 Self doctor before and after the code changes reported 40 checks, 3 known local
-setup warnings, and 0 failures. `git diff --check` passed. The controller owns
-the scoped rereview, release artifact rebuilds, installed smoke, actual-source
-full suite, and final delivery checks. Native Python 3.7 and Windows/macOS did
-not run in this batch. No network operation or publication occurred.
+setup warnings, and 0 failures. `git diff --check` passed. Scoped rereview,
+release artifact rebuilds, installed smoke, actual-source full suite, and final
+delivery checks are complete; see the final delivery record above. Native
+Python 3.7 and Windows/macOS did not run in this batch. No network operation or publication occurred.
 
 Task 5 implementation verification: 2026-09-08 (ADR 0029) — the Project
 Steward config RED slice failed 2 tests before implementation and passed after
@@ -41,7 +88,7 @@ Linux/Python 3.12.3. Self doctor reported 40 checks, 3 existing setup warnings,
 and 0 failures. `git diff --check` and the prepared installed-smoke script's
 syntax check passed. Native Python 3.7 and Windows/macOS did not run. Payload,
 wheel, plugin, forced-fallback, installed-smoke, final review, and source
-delivery checks remain with the controller.
+delivery checks subsequently passed as recorded above.
 
 Task 4 review correction: 2026-09-08 — two end-to-end regressions failed
 against `7c3ace0`: newline normalization hid `git status\ntouch changed.txt`,
@@ -50,8 +97,8 @@ versioned activity records carry classification computed from the full original
 detail; legacy three-field records are classified when read. The direct set
 passes 3 tests in 0.32s and all 51 session/hook tests pass in 4.07s. Self doctor
 reports 40 checks, 3 existing warnings, and 0 failures; diff checks pass. The
-controller will run the actual-source full suite after scoped rereview and
-delivery, so the equivalent full suite was not repeated in this correction.
+actual-source full suite passed after scoped rereview and delivery, as recorded
+below; the equivalent full suite was not repeated in this focused correction.
 
 Delivered Task 4 verification: 2026-09-08 — scoped rereview cleared the
 activity-log finding with no new Critical/Important issue. The actual source

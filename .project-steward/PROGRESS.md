@@ -2,6 +2,25 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T13:32:35Z — codex
+Completed and locally delivered all five approved 0.4.1 reliability milestones
+and the final review correction `a5f2260` to `feat/workflow-improvements`.
+Milestone 2 is visible as `904f239`. All implementation and corrections used
+gpt-5.6-sol at max effort. Final scoped review accepted both preservation
+fixes with no remaining Critical/Important findings. The actual source passed
+277 tests in 12.08s; doctor reported 40 checks, 3 existing setup warnings,
+and 0 failures. Corrected payload/wheel builds and a fresh installed CLI smoke
+passed; VERIFY.md records the plugin, fallback, syntax, and artifact evidence.
+The original 106 file modes, exact 97 mode-only differences, and root
+AGENTS.md/CLAUDE.md were preserved. Native Windows/macOS/Python 3.7 did not run.
+No push or publication occurred. The approved plan is complete; older backlog
+items remain out of scope.
+
+Scope ruling retained from Task 2 (ADR 0026): include the verified fix for a
+managed project inside a larger Git repository, because it otherwise rejects
+its own staged paths as unrelated. The cost if that scope choice is wrong is
+an extra scoped Git change/test and local rework; it adds no public interface.
+
 ### 2026-09-08T13:20:59Z — cli
 Corrected final-review literal pathspec and post-backup migration gaps; 53 focused tests pass.
 
