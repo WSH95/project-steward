@@ -37,14 +37,14 @@ def markers(name, style="html", prefix=BLOCK_PREFIX):
 def _block_re(name, style="html", prefix=BLOCK_PREFIX):
     begin, end = markers(name, style, prefix)
     return re.compile(
-        re.escape(begin) + r"\n(.*?)" + re.escape(end),
+        re.escape(begin) + r"\r?\n(.*?)" + re.escape(end),
         flags=re.DOTALL,
     )
 
 
 def get_block(text, name, style="html", prefix=BLOCK_PREFIX):
     match = _block_re(name, style, prefix).search(text)
-    return match.group(1).rstrip("\n") if match else None
+    return match.group(1).rstrip("\r\n") if match else None
 
 
 def has_block(text, name, style="html", prefix=BLOCK_PREFIX):
@@ -54,15 +54,23 @@ def has_block(text, name, style="html", prefix=BLOCK_PREFIX):
 def upsert_block(text, name, content, style="html"):
     """Replace the named block's body, or append the block at end of file."""
     begin, end = markers(name, style)
-    body = content.rstrip("\n")
-    rendered = "%s\n%s\n%s" % (begin, body, end)
+    newline = "\r\n" if "\r\n" in text else "\n"
+    body = content.rstrip("\r\n").replace("\r\n", "\n")
+    if newline == "\r\n":
+        body = body.replace("\n", newline)
+    rendered = "%s%s%s%s%s" % (begin, newline, body, newline, end)
     pattern = _block_re(name, style)
     if pattern.search(text):
         return pattern.sub(lambda _m: rendered, text, count=1)
-    base = text.rstrip("\n")
-    if base:
-        return base + "\n\n" + rendered + "\n"
-    return rendered + "\n"
+    if text:
+        if text.endswith(newline + newline):
+            separator = ""
+        elif text.endswith(newline):
+            separator = newline
+        else:
+            separator = newline + newline
+        return text + separator + rendered + newline
+    return rendered + newline
 
 
 def remove_block(text, name, style="html", prefix=BLOCK_PREFIX):

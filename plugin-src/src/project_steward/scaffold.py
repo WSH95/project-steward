@@ -8,11 +8,13 @@ diff for review).
 """
 from __future__ import annotations
 
+import re
 import string
 from pathlib import Path
 
 from . import __version__
-from .managed_blocks import has_block, remove_block, unified_diff, upsert_block
+from .managed_blocks import (get_block, has_block, remove_block, unified_diff,
+                             upsert_block)
 from .paths import DURABLE_FILES, GITIGNORE_ENTRIES, state_dir
 from .state import (default_state, load_backend, load_config, utcnow_iso, write_json_atomic,
                     write_text_atomic)
@@ -49,6 +51,11 @@ def _read_template(name):
         if candidate.is_file():
             return candidate.read_text(encoding="utf-8")
     return None
+
+
+def _read_user_text(path):
+    """Decode UTF-8 without universal-newline changes to user-owned bytes."""
+    return Path(path).read_bytes().decode("utf-8")
 
 
 def _require_template(name):
@@ -96,6 +103,53 @@ def commands_block(mapping):
         "- Test: `%(test_command)s`\n"
         "- Lint: `%(lint_command)s`\n" % mapping
     )
+
+
+COMMAND_FIELDS = (
+    ("build_command", "Build"),
+    ("test_command", "Test"),
+    ("lint_command", "Lint"),
+)
+
+
+def update_commands_block(text, answers, mapping):
+    """Update only command entries explicitly supplied during re-init."""
+    body = get_block(text, "commands")
+    if body is None:
+        return upsert_block(text, "commands", commands_block(mapping))
+    updated = body
+    for key, label in COMMAND_FIELDS:
+        value = answers.get(key)
+        if not value:
+            continue
+        rendered = "`%s`" % value
+        bullet = re.compile(
+            r"^(?P<prefix>[ \t]*-[ \t]*%s:[ \t]*)`[^`\n]*`"
+            r"(?P<suffix>[^\n]*)$" % re.escape(label),
+            re.MULTILINE,
+        )
+        updated, count = bullet.subn(
+            lambda match: match.group("prefix") + rendered
+            + match.group("suffix"),
+            updated,
+            count=1,
+        )
+        if count:
+            continue
+        table = re.compile(
+            r"^(?P<prefix>[ \t]*\|[ \t]*%s[ \t]*\|[ \t]*)"
+            r"`[^`\n]*`(?P<suffix>[ \t]*\|[^\n]*)$" % re.escape(label),
+            re.MULTILINE,
+        )
+        updated, count = table.subn(
+            lambda match: match.group("prefix") + rendered
+            + match.group("suffix"),
+            updated,
+            count=1,
+        )
+        if not count:
+            updated = updated.rstrip("\n") + "\n- %s: %s" % (label, rendered)
+    return upsert_block(text, "commands", updated)
 
 
 def task_backend_block(mapping):
@@ -211,14 +265,21 @@ def plan_files(root, answers=None):
     # 2. AGENTS.md: create from template, or upsert managed blocks only.
     agents_path = root / "AGENTS.md"
     if agents_path.exists():
-        old = agents_path.read_text(encoding="utf-8")
+        old = _read_user_text(agents_path)
         new = old
     else:
         template = _require_template("AGENTS.md.template")
         old, new = "", render(template, mapping)
-    if not has_block(new, "commands") or any(
-            answers.get(k) for k in ("build_command", "test_command", "lint_command")):
+    if not has_block(new, "commands"):
         new = upsert_block(new, "commands", commands_block(mapping))
+    else:
+        supplied_commands = [
+            key for key, _label in COMMAND_FIELDS if answers.get(key)
+        ]
+        if len(supplied_commands) == len(COMMAND_FIELDS):
+            new = upsert_block(new, "commands", commands_block(mapping))
+        elif supplied_commands:
+            new = update_commands_block(new, answers, mapping)
     new = remove_block(new, "task-backend")
     new = upsert_block(new, "agent-session-protocol", session_protocol_block())
     if new != old:
@@ -230,7 +291,7 @@ def plan_files(root, answers=None):
     # 3. CLAUDE.md adapter: create, or ensure the @AGENTS.md import exists.
     claude_path = root / "CLAUDE.md"
     if claude_path.exists():
-        old = claude_path.read_text(encoding="utf-8")
+        old = _read_user_text(claude_path)
         if "@AGENTS.md" in old:
             result["CLAUDE.md"] = ("noop", None, "")
         else:
@@ -248,7 +309,7 @@ def plan_files(root, answers=None):
 
     # 4. .gitignore managed block for runtime state.
     gi_path = root / ".gitignore"
-    old = gi_path.read_text(encoding="utf-8") if gi_path.exists() else ""
+    old = _read_user_text(gi_path) if gi_path.exists() else ""
     new = upsert_block(old, "runtime-state", gitignore_block(), style="hash")
     if new != old:
         action = "update" if gi_path.exists() else "create"

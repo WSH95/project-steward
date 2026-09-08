@@ -75,9 +75,12 @@ def cmd_survey(args):
 
 def cmd_init(args):
     root = _root(args)
-    if has_legacy_state(root) and not is_steward_project(root):
-        _print("Legacy .projectforge/ found. Run `project-steward migrate` "
-               "first (or alongside init).", False)
+    if has_legacy_state(root):
+        error = ("Legacy .projectforge/ found. Run `project-steward migrate` "
+                 "successfully before init.")
+        _print({"ok": False, "error": error} if args.json else error,
+               args.json)
+        return 1
     answers = {
         "project_name": args.project_name,
         "one_liner": args.one_liner,
@@ -244,6 +247,35 @@ def cmd_migrate(args):
     if not has_legacy_state(root):
         _print("No legacy .projectforge/ directory found.", False)
         return 1
+    migration_plan = migrate.plan_migration(
+        root, project_name=args.project_name or "")
+    preflight = migration_plan.report()
+    if not args.json:
+        _print("Migration plan for %s" % root, False)
+        for rel in preflight["changes"]:
+            _print("  write:  %s" % rel, False)
+        for _source, target, _manifest in migration_plan.copies:
+            _print("  copy:   %s" % target.relative_to(root), False)
+        _print("  backup: fresh attempt under "
+               ".project-steward/migration-backup-projectforge/", False)
+        if preflight.get("will_remove_legacy"):
+            _print("  remove: .projectforge/ after verification", False)
+        for conflict in preflight.get("conflicts", []):
+            _print("  conflict: %s" % conflict, False)
+        if preflight["agents_diff"]:
+            _print("\nAGENTS.md changes:\n%s" % preflight["agents_diff"], False)
+    if not preflight.get("ok"):
+        if args.json:
+            _print(preflight, True)
+        else:
+            _print("error: %s" % preflight.get("error"), False)
+        return 1
+    if args.json and args.dry_run:
+        preflight["dry_run"] = True
+        _print(preflight, True)
+        return 0
+    if args.dry_run:
+        return 0
     if not args.yes:
         _print("This will back up .projectforge/, move its state into "
                ".project-steward/, convert markers/config, and remove the "
@@ -251,7 +283,7 @@ def cmd_migrate(args):
         if not _confirm("Proceed with migration?"):
             _print("Aborted; nothing changed.", False)
             return 1
-    report = migrate.migrate(root, project_name=args.project_name or "")
+    report = migrate.apply_migration(migration_plan)
     if args.json:
         _print(report, True)
         return 0 if report.get("ok") else 1
@@ -262,8 +294,6 @@ def cmd_migrate(args):
            False)
     for note in report["notes"]:
         _print("note: %s" % note, False)
-    if report["agents_diff"]:
-        _print("\nAGENTS.md changes:\n%s" % report["agents_diff"], False)
     _print("Suggested commit: %s" % gitutil.suggest_commit_command(
         root, "chore(steward): migrate Projectforge state to Project Steward",
         [".project-steward", ".projectforge", "AGENTS.md", ".gitignore"]),
@@ -397,6 +427,7 @@ def build_parser():
     p = common(sub.add_parser("migrate",
                               help="migrate legacy .projectforge/ state"))
     p.add_argument("--yes", action="store_true")
+    p.add_argument("--dry-run", action="store_true")
     p.add_argument("--project-name")
     p.set_defaults(func=cmd_migrate)
 

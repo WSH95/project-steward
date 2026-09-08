@@ -2,6 +2,13 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T09:14:31Z — codex
+Completed 0.4.1 reliability Task 1 (ADR 0025): migration preflight and dry-run,
+unique byte-preserving backups, strict destination/retry checks, verified
+legacy removal, init-before-migrate enforcement, and partial command updates.
+Validation passed with 199 tests, focused fault-injection regressions,
+`git diff --check`, and self doctor 40/3/0. No push or publication was performed.
+
 ### 2026-09-08T07:00:51Z — codex
 Completed the 0.4.0 workflow improvements and release-review fixes. Validation:
 174 tests; 48 simulated older-Python Codex checks (12 native-only skips);

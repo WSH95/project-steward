@@ -2,6 +2,16 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M4: 0.4.1 reliability fixes
+
+- [x] Preserve Projectforge migration data across preflight, backup, failure,
+      and retry; refuse init until migration completes; preserve partial
+      command settings during re-init.
+- [ ] Respect Git paths, repository boundaries, and worktrees.
+- [ ] Make build and publication previews safe.
+- [ ] Correct handoff hook bookkeeping and edit detection.
+- [ ] Validate configuration and release 0.4.1.
+
 ## M3: 0.4.0 workflow improvements
 
 - [x] Move generated stewardship instructions into WORKFLOW.md with a
@@ -57,5 +67,5 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [ ] GitHub Issues adapter beyond detection (create/close via gh)
 - [ ] Windows-native Codex hook support when upstream re-enables it
 
-- [ ] Preserve unspecified existing commands during partial re-init command updates
-      (pre-existing behavior found during the 0.4.0 review).
+- [x] Preserve unspecified existing commands during partial re-init command updates
+      (completed in the 0.4.1 reliability work, Task 1).

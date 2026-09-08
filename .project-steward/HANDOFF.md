@@ -1,38 +1,35 @@
 ---
-updated_at: 2026-09-08T07:00:51Z
+updated_at: 2026-09-08T09:14:31Z
 updated_by: codex
 session_status: closed
-branch: feat/workflow-improvements
+branch: fix/reliability-0.4.1
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.4.0 implements the approved workflow improvements in
-`docs/plans/2026-09-08-workflow-improvements.md` (ADR 0024). Generated AGENTS.md
-points to WORKFLOW.md; new projects default to local milestone commits;
-external task backends retain task ownership with readable PLAN/HANDOFF
-context; init configures project-local Codex hooks with an opt-out.
+Task 1 of the approved 0.4.1 reliability plan is complete (ADR 0025). Migration
+now preflights all inputs and destinations, preserves every raw attempt, rejects
+conflicting retries, and verifies the live legacy tree before removal. Init
+waits for migration, and partial Build/Test/Lint updates retain other command
+rows and custom managed-block lines.
 
-Validation passed: 174 tests, 48 tests under the simulated older-Python Codex
-fallback (12 native-parser cases skipped), compileall, Python 3.7 syntax checks,
-self doctor with zero failures, payload build, installed-wheel smoke, local
-publication dry-run, Claude/Codex/Grok manifests, changed skill schemas, and the
-bundled launcher. Full native OS/Python CI was not run in this session.
+Validation passed: 199 tests on Python 3.12.3, focused preservation and init
+regressions, `git diff --check`, and self doctor with 40 checks, 3 expected
+upgrade warnings, and 0 failures. Native Python 3.7 and Windows/macOS execution
+were not available in this task.
 
 ## In flight
 
-- No 0.4.0 implementation tasks remain. The changes are ready for local review;
-  no publication or push was requested.
-- The checkout's pre-existing file-mode-only differences are unrelated to this
-  implementation and must stay out of its commits.
+- The controller's independent Task 1 review and integration remain.
+- Tasks 2-5 in `docs/plans/2026-09-08-reliability-fixes.md` are still open.
 
 ## Next steps
 
-1. Review the local 0.4.0 change and use the normal release workflow if the user
-   requests publication. Rebuild payloads with the command in AGENTS.md.
-2. For future development, continue the open backlog in PLAN.md: verify backend
-   install commands against upstream documentation, then field-test thresholds.
+1. Review and integrate the local Task 1 commit without touching the source
+   checkout's unrelated file-mode differences.
+2. Continue with Task 2: respect Git paths, repository boundaries, and
+   worktrees.
 
 ## Blockers
 
@@ -40,34 +37,28 @@ bundled launcher. Full native OS/Python CI was not run in this session.
 
 ## Key files
 
-- `plugin-src/src/project_steward/scaffold.py` and packaged templates implement
-  the new documents, defaults, and reviewed re-init behavior.
-- `plugin-src/src/project_steward/codex_setup.py` plans and checks local hook
-  setup. `plugin-src/src/project_steward/templates/codex-hooks.json.template`
-  supplies both installed wheels and generated payloads.
-- `plugin-src/src/project_steward/gitutil.py` checks the staged scope and makes
-  literal path-scoped commits; CLI init suggestions include new Codex files.
-- `plugin-src/src/project_steward/backend_broker.py` and `sessions.py` keep
-  workflow instructions and recaps aligned with backend.json.
-- `plugin-src/skills/` contains the agent workflows that maintain document
-  bodies and choose semantic commits; the CLI does not make those judgments.
+- `plugin-src/src/project_steward/migrate.py` contains the preflight, plan, raw
+  backup, verified apply, and narrow retry rules; `cli.py` exposes dry-run and
+  blocks init while legacy state remains.
+- `plugin-src/src/project_steward/managed_blocks.py` and `scaffold.py` preserve
+  CRLF user prose and partial command settings.
+- `tests/test_migrate.py` and `tests/test_scaffold_init.py` cover conflicts,
+  malformed markers, failures, retries, backups, and re-init preservation.
+- `plugin-src/references/migration-from-projectforge.md` documents the recovery
+  and retry behavior.
 
 ## Tried and rejected
 
-- Exporting every external task into Markdown would create a second task
-  store. Keep a focused, dated overview with backend IDs instead.
-- A permissive TOML subset reader cannot validate arbitrary Codex settings.
-  Python 3.11+ uses tomllib; older runtimes auto-merge only a narrow, unambiguous
-  subset and explain when manual merging or a newer Python is needed.
-- Codex project files cannot establish trust or approve execution. Setup and
-  doctor leave those steps to Codex's project and /hooks UI.
+- Reusing the shared backup root can modify or obscure an older flat backup.
+  Each new attempt carries its own ignore file before raw copying starts.
+- Treating any pre-existing task document as a completed retry can discard
+  changed legacy tasks. Documents must match the current transformed legacy
+  bytes; only generated metadata timestamps have narrow equivalence rules.
 
 ## Warnings
 
-- Existing configurations keep their commit policy. This repo still uses ask;
-  the user's session Git instructions authorize the local implementation commit.
 - Root AGENTS.md/CLAUDE.md retain the supported legacy protocol. Self doctor
   warns about the absent WORKFLOW.md and local Codex hooks; those are upgrade
   notices, not failed checks. Adoption is through reviewed re-init.
-- Generated `dist/project-steward/` output is ignored; rebuild from plugin-src.
-- No push or publication is authorized. Preserve unrelated working-tree edits.
+- No push or publication is authorized. Preserve the source checkout's
+  unrelated file-mode changes during integration.

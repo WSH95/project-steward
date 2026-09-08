@@ -86,6 +86,33 @@ def test_reinit_compacts_only_managed_agents_blocks(git_repo):
     assert apply_plan(git_repo, plan2, mapping2) == []
 
 
+def test_partial_command_update_preserves_unspecified_and_custom_block_lines(
+        git_repo):
+    agents_path = git_repo / "AGENTS.md"
+    agents_path.write_text(
+        "# Project\n\n"
+        "<!-- PROJECT-STEWARD:BEGIN commands -->\n"
+        "## Commands\n\n"
+        "- Build: `custom-build --release`\n"
+        "- Test: `old-test`\n"
+        "- Lint: `custom-lint --strict`\n"
+        "- Generate fixtures: `custom-generate`\n"
+        "Keep this command note exactly.\n"
+        "<!-- PROJECT-STEWARD:END commands -->\n",
+        encoding="utf-8",
+    )
+
+    plan, mapping = plan_files(git_repo, {"test_command": "new-test -q"})
+    apply_plan(git_repo, plan, mapping)
+    updated = agents_path.read_text(encoding="utf-8")
+
+    assert "- Build: `custom-build --release`" in updated
+    assert "- Test: `new-test -q`" in updated
+    assert "- Lint: `custom-lint --strict`" in updated
+    assert "- Generate fixtures: `custom-generate`" in updated
+    assert "Keep this command note exactly." in updated
+
+
 def test_templates_live_inside_the_package():
     # Regression: templates outside the package never ship in wheels.
     root = scaffold._templates_root()

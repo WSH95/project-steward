@@ -457,3 +457,29 @@ implementation commit. Publication and pushing remain separate actions.
 The Python 3.7-3.10 standard library has no full TOML parser; automatic Codex
 merges there accept a narrow validated subset and explain when richer existing
 configuration needs Python 3.11+ or manual merging. Fresh setup remains supported.
+
+## 0025 — 2026-09-08 — Preflight and preserve every migration attempt
+
+**Context**: The Projectforge migration wrote destinations incrementally,
+reused one backup directory, and skipped existing files. A failed run could
+therefore leave a mixture of old and new state, overwrite the only backup on a
+later attempt, or silently discard new task content. Re-init could also create
+placeholder state while the legacy tree was still present.
+
+**Decision**: Split migration into a read-only plan and a verified apply step.
+Preflight decodes and validates all required inputs, validates managed-marker
+structure, computes the instruction diff, and rejects any destination that is
+not the exact intended transformation. Only narrowly shaped migration metadata
+and the single generated progress entry may differ by timestamp on retry.
+
+Every apply creates a unique self-ignored attempt directory, preserves the raw
+legacy tree plus original instruction files, then verifies the backup, writes,
+copied journal, and live legacy manifest before removal. Existing attempts are
+never changed. Init refuses to run while `.projectforge/` remains. Partial
+Build/Test/Lint re-init options update only the supplied command rows.
+
+**Consequences**: Failed and interrupted migrations retain the legacy tree and
+leave auditable attempts. A retry can finish when its earlier outputs match,
+but changed task documents produce a visible conflict instead of an implicit
+merge. Users can inspect the same plan with `migrate --dry-run`, and normal
+migration shows the `AGENTS.md` diff before confirmation.
