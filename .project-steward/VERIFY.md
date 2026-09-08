@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 261 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 264 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -28,6 +28,14 @@ reports 40 checks, 3 existing warnings, and 0 failures; diff checks pass. The
 controller will run the actual-source full suite after scoped rereview and
 delivery, so the equivalent full suite was not repeated in this correction.
 
+Delivered Task 4 verification: 2026-09-08 — scoped rereview cleared the
+activity-log finding with no new Critical/Important issue. The actual source
+checkout at `0ad0306` passed 264 tests in 12.14s on Linux/Python 3.12.3;
+doctor reported 40 checks, 3 existing setup warnings, and 0 failures.
+All 106 saved file modes and the exact 97 pre-existing mode-only differences
+were verified; root AGENTS.md and CLAUDE.md remain unchanged. Both changed
+session skills passed the existing schema validator. No push or publication.
+
 Task 4 verification: 2026-09-08 (ADR 0028) — the initial lifecycle batch
 failed all 3 tests before implementation, covering hook start followed by CLI
 resume, repeated same-ID start/compact, and A-start/B-start/A-end. The next
@@ -36,8 +44,8 @@ focused batch reproduced 6 failures for stale heartbeat ownership, Codex
 final session/hook set passed 48 tests in 4.45s, and the full suite passed 261
 tests in 11.18s on Linux/Python 3.12.3. Self doctor reported 40 checks, 3
 existing setup warnings, and 0 failures. Native Python 3.7 and Windows/macOS
-execution were not available for this task. Independent review and delivery
-are pending.
+execution were not available for this task. Review and delivery are complete;
+the delivered-source result above includes the review correction.
 
 Delivered Task 3 verification: 2026-09-08 — after independent review resolved
 all findings, the actual source checkout at `394d029` passed 244 tests in

@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T12:14:46Z — codex
+Task 4 passed scoped rereview with no open findings and was delivered locally
+through `0ad0306`. The actual source checkout passed 264 tests in 12.14s;
+self doctor reported 40 checks, 3 existing setup warnings, and 0 failures.
+All 106 saved file modes, the exact 97 mode-only differences, and root
+AGENTS.md/CLAUDE.md remain unchanged. Tasks 1–4 are delivered; Task 5 owns
+configuration fixes, version 0.4.1, release checks and final review. No push
+or publication occurred.
+
 ### 2026-09-08T12:08:46Z — codex
 Corrected Task 4's activity-log review finding. New log records preserve the
 handoff-relevance result computed from the full command, while legacy records

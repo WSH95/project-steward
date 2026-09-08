@@ -1,42 +1,40 @@
 ---
-updated_at: 2026-09-08T12:08:46Z
+updated_at: 2026-09-08T12:14:46Z
 updated_by: codex
 session_status: closed
-branch: fix/reliability-0.4.1
+branch: feat/workflow-improvements
 ---
 # Handoff
 
 ## Now
 
-Tasks 1–3 of the approved 0.4.1 reliability plan are independently reviewed and
-delivered to `/home/wsh/Documents/project-steward` through `394d029`. Task 4's
-independent review found one activity-log classification gap; it is corrected
-in `/tmp/project-steward-reliability` and awaits scoped rereview and source
-delivery. Hook ownership, CLI reuse, advisory runtime notes, and Codex/shell
-classification remain as implemented in `7c3ace0`.
+Tasks 1–4 of the approved 0.4.1 reliability plan are independently reviewed and
+delivered to `/home/wsh/Documents/project-steward` through `0ad0306`. Task 4's
+activity-log review finding is resolved: full-command relevance survives log
+serialization, including multiline and long commands, while legacy logs remain
+readable. Hook ownership, CLI reuse, advisory runtime notes, and Codex/shell
+classification are delivered in `7c3ace0` and `0ad0306`.
 
-The correction's direct set passes 3 tests in 0.32s and all 51 session/hook
-tests pass in 4.07s on Linux/Python 3.12.3. Self doctor reports 40 checks, 3
-existing setup warnings, and 0 failures. The earlier full suite passed 261
-tests before this correction; the controller will run the actual-source full
-suite after delivery. Nothing was pushed or published.
+After scoped review cleared the finding, the actual source checkout passed
+264 tests in 12.14s on Linux/Python 3.12.3. Self doctor reports 40 checks,
+3 existing setup warnings, and 0 failures. All 106 original file modes, the
+exact 97 mode-only differences, and root AGENTS.md/CLAUDE.md are preserved.
+Nothing was pushed or published.
 
 ## In flight
 
-- Task 4 correction is ready for controller rereview and delivery.
 - Task 5 remains in `docs/plans/2026-09-08-reliability-fixes.md`.
+- Implementation continues in `/tmp/project-steward-reliability` on
+  `fix/reliability-0.4.1`, using gpt-5.6-sol with max reasoning.
 - Reviewed milestones are integrated into the source checkout as they finish;
-  the source checkout has not been changed by this worker.
+  source target branch is `feat/workflow-improvements`.
 
 ## Next steps
 
-1. Review the Task 4 correction against the recorded activity-log finding;
-   use the focused results rather than rerunning the full suite solely for
-   review.
-2. Deliver the reviewed Task 4 commits to the source checkout while preserving
-   its unrelated file modes and root AGENTS.md/CLAUDE.md.
-3. Complete Task 5: configuration normalization, Codex TOML semantics,
-   backend identity, version 0.4.1, release validation and final branch review.
+1. Complete Task 5: configuration normalization, Codex TOML semantics,
+   backend identity, and version 0.4.1.
+2. Run release validation and independent final branch review, then deliver
+   the reviewed release locally while preserving unrelated source work.
 
 ## Blockers
 
@@ -69,7 +67,5 @@ suite after delivery. Nothing was pushed or published.
 - Self doctor warnings are the existing absent WORKFLOW.md and unconfigured
   local Codex hooks/activation; they are upgrade notices, not failures.
 - Native Python 3.7 and Windows/macOS execution were not available for Task 4.
-- The full suite was not repeated for the review correction by controller
-  instruction; actual-source validation follows rereview and delivery.
 - No push or publication is authorized. Preserve the source checkout's 97
   unrelated file-mode changes and root AGENTS.md/CLAUDE.md during integration.
