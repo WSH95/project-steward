@@ -234,6 +234,45 @@ def test_feature_hook_keys_are_not_mistaken_for_inline_hooks(tmp_path):
     assert entries[".codex/hooks.json"][0] == "create"
 
 
+def test_native_parser_ignores_toml_like_prose_in_multiline_string(tmp_path):
+    codex_setup = _codex_setup()
+    if codex_setup._tomllib is None:
+        pytest.skip("Native TOML validation requires Python 3.11+")
+    config_text = (
+        'instructions = """\n'
+        "[hooks]\n"
+        "Stop = []\n"
+        "[features]\n"
+        "hooks = false\n"
+        '"""\n'
+    )
+    config = _write_codex_file(tmp_path, "config.toml", config_text)
+    before = config.read_bytes()
+
+    entries, warnings = codex_setup.plan_files(tmp_path)
+
+    assert warnings == []
+    assert entries[".codex/config.toml"] == ("skip", None, "")
+    assert entries[".codex/hooks.json"][0] == "create"
+    assert config.read_bytes() == before
+
+
+def test_native_parser_recognizes_escaped_quoted_inline_hooks_key(tmp_path):
+    codex_setup = _codex_setup()
+    if codex_setup._tomllib is None:
+        pytest.skip("Native TOML validation requires Python 3.11+")
+    config_text = r'"\u0068ooks" = { Stop = [] }' + "\n"
+    config = _write_codex_file(tmp_path, "config.toml", config_text)
+    before = config.read_bytes()
+
+    entries, warnings = codex_setup.plan_files(tmp_path)
+
+    assert all(entry == ("skip", None, "") for entry in entries.values())
+    assert len(warnings) == 1
+    assert "inline" in warnings[0].lower()
+    assert config.read_bytes() == before
+
+
 def test_malformed_existing_codex_config_skips_setup_and_fails_inspection(
         tmp_path):
     codex_setup = _codex_setup()
@@ -540,6 +579,30 @@ def test_inspection_identifies_known_disabled_hook_feature(
     else:
         assert "disabled" in activation_detail
     assert results["Codex hook CLI on PATH"]["status"] == "ok"
+
+
+def test_native_inspection_recognizes_escaped_quoted_feature_key(
+        tmp_path, monkeypatch):
+    codex_setup = _codex_setup()
+    if codex_setup._tomllib is None:
+        pytest.skip("Native TOML validation requires Python 3.11+")
+    _install_planned_codex_files(tmp_path)
+    config = tmp_path / ".codex" / "config.toml"
+    config_text = "[features]\n" + r'"\u0068ooks" = false' + "\n"
+    config.write_text(config_text, encoding="utf-8")
+    before = config.read_bytes()
+    monkeypatch.setattr(
+        codex_setup.shutil, "which", lambda _name: "/usr/bin/project-steward"
+    )
+
+    results = {
+        result["name"]: result for result in codex_setup.inspect_setup(tmp_path)
+    }
+
+    activation = results["Codex hooks activation"]
+    assert activation["status"] == "warn"
+    assert "disabled" in activation["detail"].lower()
+    assert config.read_bytes() == before
 
 
 def test_inspection_reports_missing_and_malformed_hook_installations(tmp_path):

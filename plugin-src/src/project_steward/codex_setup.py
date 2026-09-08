@@ -91,113 +91,37 @@ def _unquoted_index(text, needle):
     return -1
 
 
-def _parse_key_path(text):
-    """Parse enough TOML key syntax to identify a leading ``hooks`` key."""
-    parts = []
-    index = 0
-    length = len(text)
-    while index < length:
-        while index < length and text[index].isspace():
-            index += 1
-        if index >= length:
-            break
-        if text[index] in ("'", '"'):
-            quote = text[index]
-            index += 1
-            chars = []
-            escaped = False
-            while index < length:
-                char = text[index]
-                if quote == '"' and escaped:
-                    chars.append(char)
-                    escaped = False
-                elif quote == '"' and char == "\\":
-                    escaped = True
-                elif char == quote:
-                    index += 1
-                    break
-                else:
-                    chars.append(char)
-                index += 1
-            else:
-                return None
-            part = "".join(chars)
-        else:
-            start = index
-            while index < length and (text[index].isalnum()
-                                      or text[index] in "_-"):
-                index += 1
-            if index == start:
-                return None
-            part = text[start:index]
-        parts.append(part)
-        while index < length and text[index].isspace():
-            index += 1
-        if index >= length:
-            break
-        if text[index] != ".":
-            return None
-        index += 1
-    return parts or None
-
-
-def _contains_inline_hooks(config_text):
-    table = []
-    for raw_line in config_text.splitlines():
-        line = _strip_toml_comment(raw_line)
-        if not line:
-            continue
-        is_array_table = line.startswith("[[") and line.endswith("]]")
-        if is_array_table:
-            parts = _parse_key_path(line[2:-2])
-            table = parts or []
-            if parts and parts[0].lower() == "hooks":
-                return True
-            continue
-        if line.startswith("[") and line.endswith("]"):
-            parts = _parse_key_path(line[1:-1])
-            table = parts or []
-            if parts and parts[0].lower() == "hooks":
-                return True
-            continue
-        equals = _unquoted_index(line, "=")
-        if equals < 0:
-            continue
-        parts = _parse_key_path(line[:equals])
-        if not parts:
-            continue
-        full_path = table + parts
-        if full_path and full_path[0].lower() == "hooks":
-            return True
-    return False
+def _contains_inline_hooks(config):
+    return isinstance(config, dict) and "hooks" in config
 
 
 def _validate_config(config_text):
-    """Return (valid, detail); valid is None without a full TOML parser."""
+    """Return (valid, detail, parsed); valid is None without a full parser."""
     if _tomllib is None:
         fallback_status = _narrow_toml_status(config_text)
         if fallback_status is True:
             try:
-                _tomlmini_loads(config_text)
-                return True, ""
+                return True, "", _tomlmini_loads(config_text)
             except TomlMiniError as exc:
                 if "unsupported value" not in str(exc):
-                    return False, "malformed .codex/config.toml: %s" % exc
+                    return (False,
+                            "malformed .codex/config.toml: %s" % exc,
+                            None)
         elif fallback_status is False:
             return False, (
                 "malformed .codex/config.toml: outside the validated "
                 "scalar/table TOML subset"
-            )
+            ), None
         return None, (
             "cannot safely validate this richer Codex TOML with the Python "
             "3.7-3.10 standard library; use Python 3.11+ or merge hooks "
             "manually"
-        )
+        ), None
     try:
-        _tomllib.loads(config_text)
+        parsed = _tomllib.loads(config_text)
     except Exception as exc:
-        return False, "malformed .codex/config.toml: %s" % exc
-    return True, ""
+        return False, "malformed .codex/config.toml: %s" % exc, None
+    return True, "", parsed
 
 
 _SIMPLE_NUMBER = re.compile(
@@ -355,80 +279,14 @@ def _merge_hooks(existing, canonical):
     return merged
 
 
-def _feature_hooks_value(config_text):
-    table = []
-    found = None
-    for raw_line in config_text.splitlines():
-        line = _strip_toml_comment(raw_line)
-        if not line:
-            continue
-        is_array_table = line.startswith("[[") and line.endswith("]]")
-        if is_array_table:
-            table = _parse_key_path(line[2:-2]) or []
-            continue
-        if line.startswith("[") and line.endswith("]"):
-            table = _parse_key_path(line[1:-1]) or []
-            continue
-        equals = _unquoted_index(line, "=")
-        if equals < 0:
-            continue
-        parts = _parse_key_path(line[:equals])
-        if not parts:
-            continue
-        full_path = [part.lower() for part in table + parts]
-        value = line[equals + 1:].strip().lower()
-        if full_path == ["features", "hooks"]:
-            if value == "true":
-                found = True
-            elif value == "false":
-                found = False
-        elif full_path == ["features"]:
-            inline_value = _inline_table_boolean(value, "hooks")
-            if inline_value is not None:
-                found = inline_value
-    return found
-
-
-def _inline_table_boolean(value, wanted_key):
-    if not (value.startswith("{") and value.endswith("}")):
+def _feature_hooks_value(config):
+    if not isinstance(config, dict):
         return None
-    body = value[1:-1]
-    fields = []
-    start = 0
-    depth = 0
-    quote = None
-    escaped = False
-    for index, char in enumerate(body):
-        if quote:
-            if quote == '"' and escaped:
-                escaped = False
-            elif quote == '"' and char == "\\":
-                escaped = True
-            elif char == quote:
-                quote = None
-        elif char in ("'", '"'):
-            quote = char
-        elif char in "[{":
-            depth += 1
-        elif char in "]}":
-            depth -= 1
-        elif char == "," and depth == 0:
-            fields.append(body[start:index])
-            start = index + 1
-    fields.append(body[start:])
-    for field in fields:
-        equals = _unquoted_index(field, "=")
-        if equals < 0:
-            continue
-        key = _parse_key_path(field[:equals])
-        if not key or [part.lower() for part in key] != [wanted_key]:
-            continue
-        raw = field[equals + 1:].strip()
-        if raw == "true":
-            return True
-        if raw == "false":
-            return False
-    return None
+    features = config.get("features")
+    if not isinstance(features, dict):
+        return None
+    value = features.get("hooks")
+    return value if isinstance(value, bool) else None
 
 
 def _canonical_commands():
@@ -501,9 +359,11 @@ def inspect_setup(root):
     if safe and config_path.is_file():
         try:
             config_text = config_path.read_bytes().decode("utf-8")
-            config_status, config_problem = _validate_config(config_text)
+            config_status, config_problem, parsed_config = _validate_config(
+                config_text
+            )
             if config_status:
-                feature = _feature_hooks_value(config_text)
+                feature = _feature_hooks_value(parsed_config)
         except (OSError, UnicodeError) as exc:
             config_problem = "cannot read .codex/config.toml: %s" % exc
     if config_problem:
@@ -558,12 +418,14 @@ def plan_files(root, enabled=True):
                 "Codex setup skipped: cannot read .codex/config.toml: %s"
                 % exc
             ]
-        valid_config, validation_detail = _validate_config(config_text)
+        valid_config, validation_detail, parsed_config = _validate_config(
+            config_text
+        )
         if valid_config is not True:
             return _skip_entries(), [
                 "Codex setup skipped: %s." % validation_detail
             ]
-        if _contains_inline_hooks(config_text):
+        if _contains_inline_hooks(parsed_config):
             return _skip_entries(), [
                 "Codex setup skipped: .codex/config.toml defines inline "
                 "hooks; keep that configuration unchanged or merge "

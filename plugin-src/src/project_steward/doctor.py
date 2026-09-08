@@ -17,8 +17,8 @@ from .paths import (DURABLE_FILES, has_legacy_state, is_steward_project,
                     state_dir)
 from .security import scan_text_for_secrets
 from .sessions import handoff_meta
-from .state import load_config, parse_front_matter, read_json
-from .tomlmini import load_toml_text
+from .state import (load_config, load_config_with_diagnostics,
+                    parse_front_matter, read_json)
 
 OK, WARN, FAIL = "ok", "warn", "fail"
 
@@ -81,17 +81,9 @@ def run_checks(root, self_mode=False):
                    "" if isinstance(data, dict) else "invalid JSON")
     cfg_path = sdir / "config.toml"
     if cfg_path.is_file():
-        try:
-            parsed_config = load_toml_text(cfg_path.read_text(encoding="utf-8"))
-            git_config = parsed_config.get("git", {})
-            if not isinstance(git_config, dict) or git_config.get(
-                    "commit_policy", "ask") not in ("auto", "ask", "never"):
-                raise ValueError("git.commit_policy must be auto, ask, or never; using ask")
-            if not isinstance(parsed_config.get("init", {}), dict):
-                raise ValueError("init section must be a table; using defaults")
-            _check(results, OK, "config.toml parses")
-        except Exception as exc:
-            _check(results, FAIL, "config.toml parses", str(exc))
+        _config, problems = load_config_with_diagnostics(root)
+        _check(results, FAIL if problems else OK, "config.toml parses",
+               "; ".join(problems))
 
     # Handoff front matter + staleness
     meta, _body, handoff_mtime = handoff_meta(root)

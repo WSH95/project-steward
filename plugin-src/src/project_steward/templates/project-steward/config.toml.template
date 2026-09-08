@@ -14,9 +14,6 @@ auto_handoff_min_edits = 5
 commit_policy = "$commit_policy"
 never_push = true
 
-[backend]
-name = "$backend_name"
-
 [init]
 run_project_scripts = false
 codex_hooks = $codex_hooks

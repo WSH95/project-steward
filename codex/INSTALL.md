@@ -62,7 +62,7 @@ hooks. Plugin installation alone does not configure or trust project hooks.
 
 ## 4. Automatic project hook setup
 
-Project Steward 0.4.0 includes Codex setup in every `project-steward init`.
+Project Steward 0.4.1 includes Codex setup in every `project-steward init`.
 Preview it with `--dry-run`; the normal approval/apply step covers these files:
 
 - `.codex/config.toml`: created when absent with `[features] hooks = true`.
@@ -75,7 +75,10 @@ existing hook files are retained. Unsupported inline hooks, malformed TOML or JS
 and paths escaping the project are preserved and reported; unrelated project
 initialization still proceeds. Fix the reported issue before retrying setup.
 
-Python 3.11+ validates existing Codex TOML with the standard-library parser.
+Python 3.11+ validates existing Codex TOML with the standard-library parser and
+uses that parsed mapping for inline-hook and `features.hooks` checks. TOML-like
+prose inside multiline strings is ignored, while quoted keys are interpreted
+after TOML escape decoding.
 On Python 3.7-3.10, automatic merging accepts a narrow subset of simple scalar
 settings and tables. Richer configuration is left untouched with a warning;
 use Python 3.11+ for setup or merge the exported hooks manually. Fresh projects

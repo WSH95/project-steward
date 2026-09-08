@@ -54,6 +54,12 @@ AGENTS.md keeps project identity, commands, and an instruction to read WORKFLOW.
 the detailed stewardship protocol lives there. Init also prepares `.codex/`
 configuration and hooks unless `--no-codex-hooks` is selected.
 
+Runtime commands and doctor share one config validator. Known sections, types,
+enums, and nonnegative integer settings fall back safely when invalid, while
+valid unrelated settings remain available; doctor reports every fallback.
+`backend.json` is the authoritative task-backend identity, including for the
+effective config returned by `status --json`.
+
 ## Install
 
 **CLI (recommended for terminal use and required for Codex hooks; Claude
@@ -214,7 +220,7 @@ backend.json. One system owns detailed tasks. PLAN.md retains milestone goals
 and a dated overview of active, blocked, next, and recent work with task IDs;
 HANDOFF.md retains full context and validation evidence. Update the backend
 first, then these summaries. If access fails, preserve and qualify the last
-verified overview. Installs are assisted,
+verified overview. Adoption does not copy backend tasks into PLAN.md. Installs are assisted,
 never silent. Linear/Jira are honest stubs. Details:
 [plugin-src/references/backend-selection.md](plugin-src/references/backend-selection.md).
 

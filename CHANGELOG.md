@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.4.1 — 2026-09-08
+
+- Make Projectforge migration preflight complete and retries lossless. Migration
+  now preserves raw state and instruction originals, detects destination races,
+  and removes legacy data only after verified writes.
+- Keep Git operations inside the selected repository and managed root, including
+  symlink entries, nested repositories, subdirectory projects, and linked
+  worktrees.
+- Validate payload destinations before cleanup and run publication previews in
+  temporary clones, preserving target files, index state, branch, and commits.
+- Keep the current runtime session owner-aware across repeated or overlapping
+  hook events. Codex shell activity and mutating command chains now reach the
+  Stop guard without treating a live marker alone as a crash.
+- Normalize Project Steward configuration through one runtime/doctor path.
+  Invalid sections, types, enums, and negative numeric values use safe defaults
+  with diagnostics; valid unrelated settings and the legacy `ask` fallback are
+  preserved. Booleans are not accepted as integers.
+- Use parsed Codex TOML for inline-hook and `features.hooks` checks. Multiline
+  string content is ignored as prose, escaped quoted keys are recognized, and
+  existing configuration bytes remain unchanged. Older Python keeps the
+  conservative supported subset without a new dependency.
+- Make `backend.json` the sole authoritative task-backend identity. New config
+  files no longer duplicate the backend name; effective status config derives
+  it from `backend.json`, and backend adoption does not copy tasks into PLAN.md.
+
 ## 0.4.0 — 2026-09-08
 
 - Move generated stewardship instructions into `.project-steward/WORKFLOW.md`.

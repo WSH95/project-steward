@@ -120,6 +120,10 @@ def test_external_backend_init_has_honest_useful_context(git_repo):
     assert "Parcel tracking." in handoff and "M1: shipment search" in handoff
     assert "beads" in handoff
     assert "No project work has started" not in handoff
+    config_text = (
+        git_repo / ".project-steward/config.toml"
+    ).read_text(encoding="utf-8")
+    assert "[backend]" not in config_text
     assert load_config(git_repo)["backend"]["name"] == "beads"
     recap = sessions.build_recap(git_repo)
     assert recap["task_backend"] == "beads"
@@ -137,6 +141,26 @@ def test_adopt_updates_workflow_without_recreating_agents_block(git_repo):
     assert "beads" in (git_repo / ".project-steward/WORKFLOW.md").read_text(encoding="utf-8")
     assert "overview" in report["pointer_note"]
     assert load_backend(git_repo)["name"] == "beads"
+
+
+def test_adopt_preserves_config_and_plan_and_status_uses_backend_identity(
+        git_repo, capsys):
+    initialize(git_repo)
+    config_path = git_repo / ".project-steward/config.toml"
+    plan_path = git_repo / ".project-steward/PLAN.md"
+    config_before = config_path.read_bytes()
+    plan_before = plan_path.read_bytes()
+
+    report = backend_broker.adopt(git_repo, "beads", assume_yes=True)
+    assert report["ok"]
+    assert config_path.read_bytes() == config_before
+    assert plan_path.read_bytes() == plan_before
+
+    assert main(["status", "--root", str(git_repo), "--json"]) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["task_backend"] == "beads"
+    assert status["backend"]["name"] == "beads"
+    assert status["config"]["backend"]["name"] == "beads"
 
 
 def test_adopt_declined_preserves_all_files(git_repo):
@@ -194,6 +218,84 @@ def test_invalid_legacy_commit_policy_falls_back_to_ask(git_repo, text):
     state.mkdir()
     (state / "config.toml").write_text(text, encoding="utf-8")
     assert load_config(git_repo)["git"]["commit_policy"] == "ask"
+
+
+def test_invalid_config_fields_use_safe_defaults_and_preserve_valid_values(
+        git_repo):
+    state = git_repo / ".project-steward"
+    state.mkdir()
+    (state / "config.toml").write_text(
+        """\
+[session]
+auto_handoff_mode = "later"
+auto_handoff_cooldown_min = true
+auto_handoff_min_edits = -1
+custom_session_value = "keep"
+
+[git]
+commit_policy = "auto"
+never_push = "yes"
+
+[init]
+run_project_scripts = true
+codex_hooks = "disabled"
+
+[custom]
+label = "keep this too"
+""",
+        encoding="utf-8",
+    )
+    before = (state / "config.toml").read_bytes()
+
+    config = load_config(git_repo)
+
+    assert config["session"] == {
+        "auto_handoff_mode": "block",
+        "auto_handoff_cooldown_min": 45,
+        "auto_handoff_min_edits": 5,
+        "custom_session_value": "keep",
+    }
+    assert config["git"]["commit_policy"] == "auto"
+    assert config["git"]["never_push"] is True
+    assert config["init"]["run_project_scripts"] is True
+    assert config["init"]["codex_hooks"] is True
+    assert config["custom"] == {"label": "keep this too"}
+
+    config_check = next(
+        check for check in doctor.run_checks(git_repo)
+        if check["name"] == "config.toml parses"
+    )
+    assert config_check["status"] == "fail"
+    for field in (
+        "session.auto_handoff_mode",
+        "session.auto_handoff_cooldown_min",
+        "session.auto_handoff_min_edits",
+        "git.never_push",
+        "init.codex_hooks",
+    ):
+        assert field in config_check["detail"]
+    assert (state / "config.toml").read_bytes() == before
+
+
+def test_zero_session_limits_are_valid(git_repo):
+    state = git_repo / ".project-steward"
+    state.mkdir()
+    (state / "config.toml").write_text(
+        "[session]\n"
+        "auto_handoff_cooldown_min = 0\n"
+        "auto_handoff_min_edits = 0\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(git_repo)
+    config_check = next(
+        check for check in doctor.run_checks(git_repo)
+        if check["name"] == "config.toml parses"
+    )
+
+    assert config["session"]["auto_handoff_cooldown_min"] == 0
+    assert config["session"]["auto_handoff_min_edits"] == 0
+    assert config_check["status"] == "ok"
 
 
 @pytest.mark.parametrize("text", [

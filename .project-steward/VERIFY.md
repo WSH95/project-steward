@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 264 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 271 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -17,6 +17,19 @@
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+
+Task 5 implementation verification: 2026-09-08 (ADR 0029) — the Project
+Steward config RED slice failed 2 tests before implementation and passed after
+normalization was shared by runtime and doctor. The Codex semantic slice failed
+3 native-parser cases before parsed mappings replaced semantic line scans. The
+backend slice failed 2 identity cases before new configs stopped storing the
+backend and effective config derived it from backend.json. The expanded focused
+set passed 191 tests in 6.82s; the full suite passed 271 tests in 10.94s on
+Linux/Python 3.12.3. Self doctor reported 40 checks, 3 existing setup warnings,
+and 0 failures. `git diff --check` and the prepared installed-smoke script's
+syntax check passed. Native Python 3.7 and Windows/macOS did not run. Payload,
+wheel, plugin, forced-fallback, installed-smoke, final review, and source
+delivery checks remain with the controller.
 
 Task 4 review correction: 2026-09-08 — two end-to-end regressions failed
 against `7c3ace0`: newline normalization hid `git status\ntouch changed.txt`,

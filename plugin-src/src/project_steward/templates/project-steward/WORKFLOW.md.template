@@ -13,6 +13,9 @@ AGENTS.md and explicit user instructions take precedence.
 - config.toml controls commit and session preferences. backend.json identifies
   the authoritative task backend.
 
+Invalid known config values use safe defaults and are reported by
+`project-steward doctor`; valid unrelated settings remain available.
+
 All these files live in `.project-steward/`. Runtime files are local and ignored
 by Git; durable records travel with the repository.
 

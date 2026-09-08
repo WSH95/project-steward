@@ -27,7 +27,7 @@ DEFAULT_CONFIG = {
         "never_push": True,
     },
     "backend": {"name": "markdown"},
-    "init": {"run_project_scripts": False},
+    "init": {"run_project_scripts": False, "codex_hooks": True},
 }
 
 
@@ -86,25 +86,101 @@ def _deep_merge(base, extra):
     return out
 
 
-def load_config(root):
-    """DEFAULT_CONFIG deep-merged with .project-steward/config.toml."""
+def _config_problem(path, requirement, fallback):
+    return "%s %s; using %s" % (path, requirement, fallback)
+
+
+def _normalize_config(parsed):
+    """Return a safe effective config and semantic diagnostics."""
+    if not isinstance(parsed, dict):
+        return copy.deepcopy(DEFAULT_CONFIG), [
+            "config root must be a table; using defaults"
+        ]
+
+    config = _deep_merge(DEFAULT_CONFIG, parsed)
+    problems = []
+    for section in ("session", "git", "backend", "init"):
+        if not isinstance(parsed.get(section, {}), dict):
+            config[section] = copy.deepcopy(DEFAULT_CONFIG[section])
+            problems.append(
+                "%s section must be a table; using defaults" % section
+            )
+
+    session = config["session"]
+    if session.get("auto_handoff_mode") not in ("block", "remind", "off"):
+        session["auto_handoff_mode"] = "block"
+        problems.append(_config_problem(
+            "session.auto_handoff_mode",
+            "must be block, remind, or off",
+            "block",
+        ))
+    for key in ("auto_handoff_cooldown_min", "auto_handoff_min_edits"):
+        value = session.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            fallback = DEFAULT_CONFIG["session"][key]
+            session[key] = fallback
+            problems.append(_config_problem(
+                "session.%s" % key,
+                "must be a nonnegative integer",
+                str(fallback),
+            ))
+
+    git = config["git"]
+    if git.get("commit_policy") not in ("auto", "ask", "never"):
+        git["commit_policy"] = "ask"
+        problems.append(_config_problem(
+            "git.commit_policy", "must be auto, ask, or never", "ask"
+        ))
+    if not isinstance(git.get("never_push"), bool):
+        git["never_push"] = DEFAULT_CONFIG["git"]["never_push"]
+        problems.append(_config_problem(
+            "git.never_push", "must be a boolean", "true"
+        ))
+
+    backend = config["backend"]
+    if not isinstance(backend.get("name"), str):
+        backend["name"] = DEFAULT_CONFIG["backend"]["name"]
+        problems.append(_config_problem(
+            "backend.name", "must be a string", "markdown"
+        ))
+
+    init = config["init"]
+    for key, fallback in DEFAULT_CONFIG["init"].items():
+        if not isinstance(init.get(key), bool):
+            init[key] = fallback
+            problems.append(_config_problem(
+                "init.%s" % key,
+                "must be a boolean",
+                "true" if fallback else "false",
+            ))
+    return config, problems
+
+
+def load_config_with_diagnostics(root):
+    """Return normalized effective config plus parse/validation problems."""
     cfg_path = state_dir(root) / "config.toml"
     if not cfg_path.is_file():
-        return copy.deepcopy(DEFAULT_CONFIG)
-    try:
-        text = cfg_path.read_text(encoding="utf-8")
-        config = _deep_merge(DEFAULT_CONFIG, load_toml_text(text))
-        git = config.get("git")
-        if not isinstance(git, dict):
-            config["git"] = copy.deepcopy(DEFAULT_CONFIG["git"])
-        elif git.get("commit_policy") not in ("auto", "ask", "never"):
-            git["commit_policy"] = "ask"
-        if not isinstance(config.get("init"), dict):
-            config["init"] = copy.deepcopy(DEFAULT_CONFIG["init"])
-        return config
-    except Exception:
-        # Broken config must never break hooks; doctor reports it.
-        return copy.deepcopy(DEFAULT_CONFIG)
+        config, problems = _normalize_config({})
+    else:
+        try:
+            text = cfg_path.read_text(encoding="utf-8")
+            config, problems = _normalize_config(load_toml_text(text))
+        except Exception as exc:
+            config = copy.deepcopy(DEFAULT_CONFIG)
+            problems = [str(exc)]
+
+    active_backend = load_backend(root)
+    backend_name = active_backend.get("name", "markdown") \
+        if isinstance(active_backend, dict) else "markdown"
+    if not isinstance(backend_name, str) or not backend_name:
+        backend_name = "markdown"
+    config["backend"]["name"] = backend_name
+    return config, problems
+
+
+def load_config(root):
+    """Return normalized effective Project Steward configuration."""
+    return load_config_with_diagnostics(root)[0]
 
 
 def default_state(project_name=""):

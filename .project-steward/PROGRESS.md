@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T12:44:31Z — codex
+Implemented Task 5 configuration validation and the 0.4.1 source release
+changes (ADR 0029). Three RED batches reproduced unsafe Project Steward config,
+Codex TOML scanner errors, and duplicate backend identity. The expanded focused
+set passes 191 tests; the full suite passes 271 tests in 10.94s. Self doctor
+reports 40 checks, 3 existing setup warnings, and 0 failures. Independent
+review, package/plugin validation, installed smoke, and source delivery remain
+with the controller.
+
 ### 2026-09-08T12:14:46Z — codex
 Task 4 passed scoped rereview with no open findings and was delivered locally
 through `0ad0306`. The actual source checkout passed 264 tests in 12.14s;

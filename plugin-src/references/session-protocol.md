@@ -11,6 +11,12 @@ Committed (durable, travels via git): `.project-steward/WORKFLOW.md`, `PROJECT.m
 `RISKS.md`, `VERIFY.md`, `config.toml`, `state.json`, `backend.json`,
 optional `sessions/*.md`.
 
+Runtime commands and doctor use the same config normalization. Invalid known
+sections, values, or types use documented safe defaults and doctor reports the
+fallback; valid unrelated settings remain intact. Numeric session limits must
+be nonnegative integers, and booleans do not count as integers. backend.json is
+the sole authoritative task-backend identity.
+
 Local (gitignored, device-scoped forensics): `.project-steward/runtime/`
 — `session.json` (the current session claim), `activity.log` (event-based
 heartbeat, rotated), `events.log`, `last_snapshot.md`, `stop_guard.json`.
@@ -87,6 +93,8 @@ did not change, the agent leaves tracked files unchanged. `stop_hook_active` /
 (default) / `remind`
 (`systemMessage` only; weaker on Grok) / `off`. Worst case after a hard
 crash: one cooldown window of work, still journaled in runtime logs.
+Malformed session configuration falls back to these defaults instead of
+silently disabling the guard; doctor reports the invalid fields.
 
 ## External task backends
 

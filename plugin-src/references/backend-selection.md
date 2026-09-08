@@ -32,8 +32,10 @@ backend doesn't track.
 ## Adoption procedure
 
 recommend -> plain-English explanation -> approval -> `backend adopt`
-(WORKFLOW.md task-backend block diff + backend.json (AGENTS.md for legacy projects)) -> move open tasks
-with the user -> DECISIONS.md entry. Installation is assisted, never
+(WORKFLOW.md task-backend block diff + backend.json (AGENTS.md for legacy projects)).
+The command does not export backend tasks into PLAN.md. After verifying the
+backend, update PLAN.md's dated overview with task IDs and record the decision
+in DECISIONS.md. Installation is assisted, never
 silent, and install commands are labeled "verify against upstream README"
 because installers drift.
 

@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from project_steward import hooks, sessions
+from project_steward import doctor, hooks, sessions
 from project_steward.cli import main as cli_main
 from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
@@ -155,6 +155,30 @@ def test_stop_remind_mode(git_repo, capsys, monkeypatch):
                         monkeypatch)
     assert rc == 0 and "systemMessage" in out and "decision" not in out
     assert "leave tracked files unchanged" in out["systemMessage"]
+
+
+def test_wrong_shaped_session_config_cannot_silence_stop_guard(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    cfg = state_dir(git_repo) / "config.toml"
+    write_text_atomic(cfg, 'session = "off"\n')
+    _make_stale(git_repo)
+
+    rc, out = _run_hook(
+        ["stop", "--agent", "codex"],
+        {"cwd": str(git_repo), "stop_hook_active": False},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0
+    assert out.get("decision") == "block"
+    config_check = next(
+        check for check in doctor.run_checks(git_repo)
+        if check["name"] == "config.toml parses"
+    )
+    assert config_check["status"] == "fail"
+    assert "session section" in config_check["detail"]
 
 
 def test_session_start_injects_recap(git_repo, capsys, monkeypatch):

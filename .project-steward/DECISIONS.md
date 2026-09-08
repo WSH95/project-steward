@@ -572,3 +572,33 @@ shell redirection or chaining.
 the current claim or causes recovery from marker state alone. Existing
 Claude/Grok and ID-less records remain compatible. The runtime remains a
 lightweight current marker rather than a session registry.
+
+## 0029 — 2026-09-08 — Normalize config and keep one backend identity
+
+**Context**: Runtime config loading validated only part of the file, while
+doctor used a separate validator. A wrong-shaped session table or invalid
+numeric value could therefore bypass the Stop guard even when doctor accepted
+the config. Codex setup parsed native TOML but then scanned source lines for
+hook settings, so text inside multiline strings looked like configuration and
+escaped quoted keys could be missed. New projects also stored the backend name
+in both config.toml and backend.json.
+
+**Decision**: Normalize Project Steward config through one state-layer path
+used by runtime and doctor. Validate known section shapes, field types, enums,
+and nonnegative integers, with booleans excluded from integer settings. Replace
+invalid fields with safe defaults, report each fallback, preserve valid
+unrelated values, and keep `ask` as the legacy Git-policy fallback.
+
+Use the parsed Codex TOML mapping for inline hooks and `features.hooks` when a
+parser is available. Retain the conservative simple-syntax check and bundled
+parser for Python 3.7–3.10. Keep existing Codex bytes unchanged in every case.
+
+Treat backend.json as the only authoritative backend identity. New config
+templates omit backend.name, existing config files remain unchanged, and the
+effective config compatibility field derives from backend.json.
+
+**Consequences**: Malformed session settings cannot silently turn off the Stop
+guard, and doctor reports the same fallbacks runtime uses. Native TOML semantics
+handle multiline prose and escaped keys without a second parser. Backend
+adoption leaves config and PLAN.md bytes alone while status reports one
+consistent backend identity.
