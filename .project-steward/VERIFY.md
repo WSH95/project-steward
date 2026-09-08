@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 199 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 203 passed (199-test full run preceded four focused review regressions) |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -18,7 +18,16 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-09-08 (0.4.1 reliability Task 1, ADR 0025) — 199 tests on
+Fix-round verification: 2026-09-08 (Task 1 independent review) — all six direct
+covering tests passed in 0.23s and `tests/test_migrate.py` passed 31 tests in
+1.36s. Regressions cover the distinct original-instruction backup directory,
+ignore behavior after originals are copied, structured runtime-file conflicts,
+preflight rejection of a symlinked runtime parent, and the same parent changing
+after preflight. Self doctor reported 40 checks / 3 warnings / 0 failures, and
+`git diff --check` passed. The full suite was not repeated by controller
+instruction.
+
+Previous entry: 2026-09-08 (0.4.1 reliability Task 1, ADR 0025) — 199 tests on
 Python 3.12.3; focused migration/init/managed-block/workflow checks passed,
 including fault injection for backup-copy and mid-write legacy changes;
 `git diff --check`; self doctor 40 checks / 3 warnings / 0 failures. The warnings

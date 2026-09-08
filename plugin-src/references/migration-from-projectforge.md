@@ -7,11 +7,13 @@ project-steward migrate --dry-run
 ```
 
 The dry run validates the legacy UTF-8 files, config values, managed-marker
-structure, and every destination. It prints the planned writes, copies,
-conflicts, and the `AGENTS.md` diff without writing anything. A normal
-`project-steward migrate` runs the same preflight and shows the same
-instruction diff before asking for confirmation. `--yes` skips that prompt;
-it does not skip validation.
+structure, every destination, and each destination ancestor. Regular files or
+symlinks in a required directory path are reported as conflicts. It prints the
+planned writes, copies, conflicts, and the `AGENTS.md` diff without writing
+anything. A normal `project-steward migrate` runs the same preflight and shows
+the same instruction diff before asking for confirmation. `--yes` skips that
+prompt; it does not skip validation. Apply rechecks those paths after the
+confirmation and before creating a backup.
 
 Each migration attempt then:
 
@@ -22,8 +24,9 @@ Each migration attempt then:
    unchanged.
 2. Copies the raw `.projectforge/` tree into the attempt, preserving unknown
    files, binary bytes, symlinks, and the legacy journal. Original
-   `AGENTS.md` and `.gitignore` files are stored beside it when migration will
-   update them.
+   `AGENTS.md` and `.gitignore` files are stored under
+   `original-instructions/` when migration will update them. This keeps those
+   raw copies distinct from the attempt's own `.gitignore`.
 3. Writes converted PROJECT/PLAN/PROGRESS/HANDOFF/DECISIONS files under
    `.project-steward/`; converts the shell-style config to `config.toml`;
    creates `state.json` and `backend.json`; and copies the journal to

@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -89,8 +90,10 @@ def test_full_migration(git_repo):
     if (backup / ".projectforge/plan-link").exists():
         assert (backup / ".projectforge/plan-link").is_symlink()
         assert os.readlink(str(backup / ".projectforge/plan-link")) == "PLAN.md"
-    assert (backup / "AGENTS.md").read_bytes() == original_agents
-    assert (backup / ".gitignore").read_bytes() == original_gitignore
+    originals = backup / "original-instructions"
+    assert (backup / ".gitignore").read_bytes() == b"*\n"
+    assert (originals / "AGENTS.md").read_bytes() == original_agents
+    assert (originals / ".gitignore").read_bytes() == original_gitignore
     assert (old_backup / "sentinel").read_text(encoding="utf-8") == "older backup"
     plan = (sdir / "PLAN.md").read_text(encoding="utf-8")
     assert ".project-steward/" in plan
@@ -331,6 +334,35 @@ def test_partial_backup_is_self_ignored_before_raw_copy(git_repo, monkeypatch):
     assert "migration-backup-projectforge" not in status
 
 
+def test_backup_stays_ignored_after_original_instructions_are_copied(
+        git_repo, monkeypatch):
+    _make_legacy(git_repo)
+    real_write = migrate_module.write_text_atomic
+    first_destination = state_dir(git_repo) / "PLAN.md"
+
+    def fail_before_destination_writes(path, text):
+        if Path(path) == first_destination:
+            raise OSError("simulated destination write failure")
+        return real_write(path, text)
+
+    monkeypatch.setattr(
+        migrate_module, "write_text_atomic", fail_before_destination_writes)
+
+    report = migrate(git_repo)
+
+    assert not report["ok"]
+    assert (git_repo / ".projectforge").is_dir()
+    backup = _backup_attempts(git_repo)[0]
+    assert (backup / ".gitignore").read_bytes() == b"*\n"
+    assert (backup / "original-instructions/.gitignore").read_bytes() == \
+        b".projectforge/journal/\n"
+    status = subprocess.run(
+        ["git", "status", "--short", "--untracked-files=all"],
+        cwd=str(git_repo), check=True, text=True, stdout=subprocess.PIPE,
+    ).stdout
+    assert "migration-backup-projectforge" not in status
+
+
 def test_fresh_backup_does_not_modify_existing_flat_backup_bytes(git_repo):
     _make_legacy(git_repo)
     backup_root = state_dir(git_repo) / "migration-backup-projectforge"
@@ -402,7 +434,70 @@ def test_gitignore_preserves_unrelated_crlf_lines_and_blank_space(git_repo):
     )
     assert b".projectforge/journal/" not in updated
     backup = _backup_attempts(git_repo)[0]
-    assert (backup / ".gitignore").read_bytes() == original
+    assert (backup / "original-instructions/.gitignore").read_bytes() == original
+
+
+def test_dry_run_reports_runtime_file_conflict_without_changes(
+        git_repo, capsys):
+    _make_legacy(git_repo)
+    runtime = state_dir(git_repo) / "runtime"
+    runtime.parent.mkdir()
+    runtime.write_bytes(b"user runtime file\x00")
+    before = _visible_tree(git_repo)
+
+    assert main([
+        "migrate", "--root", str(git_repo), "--dry-run", "--json",
+    ]) == 1
+
+    report = json.loads(capsys.readouterr().out)
+    assert not report["ok"]
+    assert "runtime" in report["error"]
+    assert _visible_tree(git_repo) == before
+
+
+def test_migration_rejects_symlinked_runtime_parent_without_external_write(
+        git_repo):
+    _make_legacy(git_repo)
+    external = git_repo.parent / "external-runtime"
+    external.mkdir()
+    runtime = state_dir(git_repo) / "runtime"
+    runtime.parent.mkdir()
+    try:
+        os.symlink(str(external), str(runtime), target_is_directory=True)
+    except OSError:
+        pytest.skip("test account cannot create directory symlinks")
+
+    report = migrate(git_repo)
+
+    assert not report["ok"]
+    assert "symlink" in report["error"].lower()
+    assert (git_repo / ".projectforge").is_dir()
+    assert list(external.iterdir()) == []
+    assert _backup_attempts(git_repo) == []
+
+
+def test_apply_rechecks_runtime_parent_before_copying_journal(git_repo):
+    _make_legacy(git_repo)
+    state_dir(git_repo).mkdir()
+    migration_plan = plan_migration(git_repo)
+    assert migration_plan.ok, migration_plan.report()
+    external = git_repo.parent / "late-external-runtime"
+    external.mkdir()
+    try:
+        os.symlink(
+            str(external), str(state_dir(git_repo) / "runtime"),
+            target_is_directory=True,
+        )
+    except OSError:
+        pytest.skip("test account cannot create directory symlinks")
+
+    report = apply_migration(migration_plan)
+
+    assert not report["ok"]
+    assert "changed after preflight" in report["error"]
+    assert (git_repo / ".projectforge").is_dir()
+    assert list(external.iterdir()) == []
+    assert _backup_attempts(git_repo) == []
 
 
 def test_interrupted_migration_retries_matching_outputs_once(

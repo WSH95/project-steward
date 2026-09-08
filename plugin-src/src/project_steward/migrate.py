@@ -59,6 +59,7 @@ KNOWN_LEGACY_GITIGNORE_RULES = {
     "/.projectforge/journal/",
 }
 FRESH_BACKUP_GITIGNORE = "*\n"
+BACKUP_ORIGINALS_DIR = "original-instructions"
 
 
 class MarkerError(ValueError):
@@ -194,6 +195,31 @@ def _observe(plan, path):
     if rel not in plan.observed:
         plan.observed[rel] = _path_snapshot(path)
     return plan.observed[rel]
+
+
+def _observe_destination(plan, path, label):
+    """Snapshot a destination after rejecting unsafe ancestor entries."""
+    path = Path(path)
+    try:
+        relative = path.relative_to(plan.root)
+    except ValueError:
+        raise OSError("%s is outside the project root" % label)
+    ancestor = plan.root
+    for part in relative.parts[:-1]:
+        ancestor = ancestor / part
+        snapshot = _observe(plan, ancestor)
+        if snapshot[0] == "missing":
+            continue
+        ancestor_label = _relative(plan, ancestor)
+        if snapshot[0] == "link":
+            raise OSError(
+                "%s has symlinked destination ancestor %s"
+                % (label, ancestor_label))
+        if snapshot[0] != "dir":
+            raise OSError(
+                "%s has non-directory destination ancestor %s"
+                % (label, ancestor_label))
+    return _observe(plan, path)
 
 
 def _read_utf8(plan, path, label, missing_ok=False):
@@ -546,7 +572,7 @@ def _backend_retry_matches(text):
 
 def _queue_exact_text(plan, rel, intended, source_label, moved_label=None):
     target = plan.root / rel
-    snapshot = _observe(plan, target)
+    snapshot = _observe_destination(plan, target, rel)
     if snapshot[0] == "missing":
         plan.writes[rel] = intended
         if moved_label:
@@ -567,7 +593,7 @@ def _queue_exact_text(plan, rel, intended, source_label, moved_label=None):
 
 def _queue_machine_text(plan, rel, intended, retry_matcher):
     target = plan.root / rel
-    snapshot = _observe(plan, target)
+    snapshot = _observe_destination(plan, target, rel)
     if snapshot[0] == "missing":
         plan.writes[rel] = intended
         return
@@ -591,13 +617,27 @@ def plan_migration(root, project_name=""):
         plan.ok = False
         plan.error = "No regular .projectforge/ directory found."
         return plan
-    sdir_snapshot = _path_snapshot(state_dir(root))
+    try:
+        sdir_snapshot = _observe_destination(
+            plan, state_dir(root), ".project-steward/")
+    except Exception as exc:
+        plan.ok = False
+        plan.error = "Migration preflight failed: %s" % exc
+        return plan
     if sdir_snapshot[0] not in ("missing", "dir"):
         plan.ok = False
         plan.error = ".project-steward/ is not a regular directory."
         return plan
     backup_root = state_dir(root) / "migration-backup-projectforge"
-    backup_snapshot = _path_snapshot(backup_root)
+    try:
+        backup_snapshot = _observe_destination(
+            plan, backup_root,
+            ".project-steward/migration-backup-projectforge/",
+        )
+    except Exception as exc:
+        plan.ok = False
+        plan.error = "Migration preflight failed: %s" % exc
+        return plan
     if backup_snapshot[0] not in ("missing", "dir"):
         plan.ok = False
         plan.error = (
@@ -696,43 +736,51 @@ def plan_migration(root, project_name=""):
     except Exception as exc:
         issues.append(str(exc))
 
-    state = default_state(project_name)
-    state["migrated_from"] = "projectforge"
-    state["migrated_at"] = now
-    _queue_machine_text(
-        plan,
-        ".project-steward/state.json",
-        _json_text(state),
-        lambda text: _state_retry_matches(text, project_name),
-    )
-    backend = {
-        "schema_version": 1,
-        "name": "markdown",
-        "adopted_at": now,
-        "notes": MIGRATION_BACKEND_NOTE,
-    }
-    _queue_machine_text(
-        plan,
-        ".project-steward/backend.json",
-        _json_text(backend),
-        _backend_retry_matches,
-    )
+    try:
+        state = default_state(project_name)
+        state["migrated_from"] = "projectforge"
+        state["migrated_at"] = now
+        _queue_machine_text(
+            plan,
+            ".project-steward/state.json",
+            _json_text(state),
+            lambda text: _state_retry_matches(text, project_name),
+        )
+    except Exception as exc:
+        issues.append("Cannot prepare .project-steward/state.json: %s" % exc)
+    try:
+        backend = {
+            "schema_version": 1,
+            "name": "markdown",
+            "adopted_at": now,
+            "notes": MIGRATION_BACKEND_NOTE,
+        }
+        _queue_machine_text(
+            plan,
+            ".project-steward/backend.json",
+            _json_text(backend),
+            _backend_retry_matches,
+        )
+    except Exception as exc:
+        issues.append("Cannot prepare .project-steward/backend.json: %s" % exc)
 
     progress_base = transformed_progress
     if progress_base is None:
         progress_base = "# Progress log\n\nNewest first.\n"
     progress_path = state_dir(root) / "PROGRESS.md"
-    progress_snapshot = _observe(plan, progress_path)
-    if progress_snapshot[0] == "missing":
-        plan.writes[".project-steward/PROGRESS.md"] = _append_progress_text(
-            progress_base, now)
-        if transformed_progress is not None:
-            plan.moved.append("PROGRESS.md")
-    elif progress_snapshot[0] != "file":
-        plan.conflicts.append(
-            ".project-steward/PROGRESS.md is not a regular file")
-    else:
-        try:
+    try:
+        progress_snapshot = _observe_destination(
+            plan, progress_path, ".project-steward/PROGRESS.md")
+        if progress_snapshot[0] == "missing":
+            plan.writes[
+                ".project-steward/PROGRESS.md"
+            ] = _append_progress_text(progress_base, now)
+            if transformed_progress is not None:
+                plan.moved.append("PROGRESS.md")
+        elif progress_snapshot[0] != "file":
+            plan.conflicts.append(
+                ".project-steward/PROGRESS.md is not a regular file")
+        else:
             current_progress = progress_snapshot[1].decode("utf-8")
             if transformed_progress is not None:
                 if current_progress == progress_base:
@@ -752,16 +800,21 @@ def plan_migration(root, project_name=""):
                 plan.conflicts.append(
                     ".project-steward/PROGRESS.md is not recognized "
                     "migration-generated progress")
-        except UnicodeDecodeError:
-            plan.conflicts.append(
-                ".project-steward/PROGRESS.md is not valid UTF-8")
+    except UnicodeDecodeError:
+        plan.conflicts.append(
+            ".project-steward/PROGRESS.md is not valid UTF-8")
+    except Exception as exc:
+        issues.append("Cannot inspect .project-steward/PROGRESS.md: %s" % exc)
 
     journal = plan.legacy / "journal"
-    journal_snapshot = _path_snapshot(journal)
-    if journal_snapshot[0] == "dir":
-        target = state_dir(root) / "runtime/journal-legacy"
-        target_snapshot = _observe(plan, target)
-        try:
+    try:
+        journal_snapshot = _path_snapshot(journal)
+        if journal_snapshot[0] == "dir":
+            target = state_dir(root) / "runtime/journal-legacy"
+            target_snapshot = _observe_destination(
+                plan, target,
+                ".project-steward/runtime/journal-legacy/",
+            )
             journal_manifest = _tree_manifest(journal)
             if target_snapshot[0] == "missing":
                 plan.copies.append((journal, target, journal_manifest))
@@ -778,10 +831,10 @@ def plan_migration(root, project_name=""):
                     plan.conflicts.append(
                         ".project-steward/runtime/journal-legacy/ conflicts "
                         "with .projectforge/journal/")
-        except Exception as exc:
-            issues.append("Cannot preserve legacy journal: %s" % exc)
-    elif journal_snapshot[0] not in ("missing",):
-        issues.append(".projectforge/journal is not a regular directory")
+        elif journal_snapshot[0] not in ("missing",):
+            issues.append(".projectforge/journal is not a regular directory")
+    except Exception as exc:
+        issues.append("Cannot preserve legacy journal: %s" % exc)
 
     if issues:
         plan.ok = False
@@ -821,12 +874,13 @@ def _fresh_backup(plan):
             plan, attempt_ignore))
     shutil.copytree(
         str(plan.legacy), str(attempt / ".projectforge"), symlinks=True)
+    originals_root = attempt / BACKUP_ORIGINALS_DIR
     for rel in plan.backup_originals:
-        _copy_raw_path(plan.root / rel, attempt / rel)
+        _copy_raw_path(plan.root / rel, originals_root / rel)
     if _tree_manifest(attempt / ".projectforge") != plan.legacy_manifest:
         raise OSError("raw legacy backup verification failed")
     for rel in plan.backup_originals:
-        if _path_snapshot(attempt / rel) != plan.observed[rel]:
+        if _path_snapshot(originals_root / rel) != plan.observed[rel]:
             raise OSError("backup verification failed for %s" % rel)
     return attempt
 

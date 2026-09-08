@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-09-08T09:14:31Z
+updated_at: 2026-09-08T09:33:14Z
 updated_by: codex
 session_status: closed
 branch: fix/reliability-0.4.1
@@ -12,16 +12,20 @@ Task 1 of the approved 0.4.1 reliability plan is complete (ADR 0025). Migration
 now preflights all inputs and destinations, preserves every raw attempt, rejects
 conflicting retries, and verifies the live legacy tree before removal. Init
 waits for migration, and partial Build/Test/Lint updates retain other command
-rows and custom managed-block lines.
+rows and custom managed-block lines. Independent review fixes keep original
+instructions below `original-instructions/` so the per-attempt ignore file
+survives, and reject unsafe or changed destination ancestors before copying.
 
-Validation passed: 199 tests on Python 3.12.3, focused preservation and init
-regressions, `git diff --check`, and self doctor with 40 checks, 3 expected
-upgrade warnings, and 0 failures. Native Python 3.7 and Windows/macOS execution
-were not available in this task.
+Validation passed: the pre-review full suite had 199 tests on Python 3.12.3;
+all 31 migration tests pass after the review fixes, including six direct
+covering cases. The focused fix round did not repeat the full suite by
+controller instruction. Self doctor remains at 40 checks, 3 expected warnings,
+and 0 failures; `git diff --check` passes. Native Python 3.7 and Windows/macOS
+execution were not available in this task.
 
 ## In flight
 
-- The controller's independent Task 1 review and integration remain.
+- The controller's Task 1 re-review and integration remain.
 - Tasks 2-5 in `docs/plans/2026-09-08-reliability-fixes.md` are still open.
 
 ## Next steps
@@ -50,7 +54,8 @@ were not available in this task.
 ## Tried and rejected
 
 - Reusing the shared backup root can modify or obscure an older flat backup.
-  Each new attempt carries its own ignore file before raw copying starts.
+  Each new attempt carries its own ignore file before raw copying starts, and
+  original instruction files live in a distinct subdirectory.
 - Treating any pre-existing task document as a completed retry can discard
   changed legacy tasks. Documents must match the current transformed legacy
   bytes; only generated metadata timestamps have narrow equivalence rules.

@@ -2,6 +2,14 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T09:33:14Z — codex
+Resolved the three Task 1 independent-review findings: instruction originals no
+longer replace the per-attempt ignore file, filesystem destination errors return
+preflight reports, and runtime parent symlinks are rejected and rechecked before
+apply. The six covering regressions failed before the fixes and now pass; all 31
+migration tests, self doctor 40/3/0, and diff checks pass. The full suite was not
+repeated by controller instruction.
+
 ### 2026-09-08T09:14:31Z — codex
 Completed 0.4.1 reliability Task 1 (ADR 0025): migration preflight and dry-run,
 unique byte-preserving backups, strict destination/retry checks, verified

@@ -473,9 +473,15 @@ not the exact intended transformation. Only narrowly shaped migration metadata
 and the single generated progress entry may differ by timestamp on retry.
 
 Every apply creates a unique self-ignored attempt directory, preserves the raw
-legacy tree plus original instruction files, then verifies the backup, writes,
-copied journal, and live legacy manifest before removal. Existing attempts are
-never changed. Init refuses to run while `.projectforge/` remains. Partial
+legacy tree plus original instruction files under `original-instructions/`,
+then verifies the backup, writes, copied journal, and live legacy manifest
+before removal. Keeping raw instructions below that distinct directory means
+the attempt's own `.gitignore` cannot be overwritten. Existing attempts are
+never changed.
+
+Preflight rejects non-directory and symlinked destination ancestors, including
+the runtime journal path, and records their types for another check immediately
+before apply. Init refuses to run while `.projectforge/` remains. Partial
 Build/Test/Lint re-init options update only the supplied command rows.
 
 **Consequences**: Failed and interrupted migrations retain the legacy tree and
