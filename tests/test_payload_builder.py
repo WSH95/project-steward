@@ -441,7 +441,9 @@ def test_builder_rejects_unsafe_output_ancestor_before_mutation(
     assert not physical_output.exists()
 
 
-def test_builder_allows_trusted_parent_path_alias(tmp_path, monkeypatch):
+def test_builder_rejects_caller_parent_alias_shared_with_repository(
+    tmp_path, monkeypatch
+):
     module = _load_builder_module()
     real_parent = tmp_path / "real-parent"
     repository = real_parent / "project"
@@ -458,6 +460,45 @@ def test_builder_allows_trusted_parent_path_alias(tmp_path, monkeypatch):
         pytest.skip("symlinks unavailable")
     module.ROOT = repository
     module.SOURCE = source
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    with pytest.raises(SystemExit, match="symlink"):
+        module.build(alias / "payload")
+
+    assert mutation_calls == []
+    assert not (real_parent / "payload").exists()
+
+
+def test_builder_allows_system_temp_alias_outside_repository(
+    tmp_path, monkeypatch
+):
+    module = _load_builder_module()
+    repository = tmp_path / "Users" / "user" / "project"
+    source = repository / "plugin-src"
+    source.mkdir(parents=True)
+    (source / "metadata.json").write_text(
+        json.dumps(_json(ROOT / "plugin-src" / "metadata.json")),
+        encoding="utf-8",
+    )
+    private_temp = tmp_path / "private" / "tmp"
+    private_temp.mkdir(parents=True)
+    system_temp = tmp_path / "tmp"
+    try:
+        system_temp.symlink_to(private_temp, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    module.ROOT = repository
+    module.SOURCE = source
+    monkeypatch.setattr(
+        module, "_filesystem_anchor", lambda path: tmp_path, raising=False
+    )
     build_calls = []
 
     def record_build(out, meta):
@@ -466,11 +507,50 @@ def test_builder_allows_trusted_parent_path_alias(tmp_path, monkeypatch):
     monkeypatch.setattr(module, "_build_claude", record_build)
     monkeypatch.setattr(module, "_build_codex", record_build)
 
-    result = module.build(alias / "payload")
+    result = module.build(system_temp / "payload")
 
-    expected = real_parent / "payload"
+    expected = private_temp / "payload"
     assert result == expected
     assert build_calls == [expected, expected]
+
+
+@pytest.mark.parametrize("clean", [False, True])
+def test_builder_rejects_system_alias_resolving_into_git_metadata(
+    tmp_path, monkeypatch, clean
+):
+    module = _load_builder_module()
+    repository = tmp_path / "Users" / "user" / "project"
+    source = repository / "plugin-src"
+    source.mkdir(parents=True)
+    (source / "metadata.json").write_text(
+        json.dumps(_json(ROOT / "plugin-src" / "metadata.json")),
+        encoding="utf-8",
+    )
+    git_metadata = tmp_path / "external" / ".git"
+    git_metadata.mkdir(parents=True)
+    system_temp = tmp_path / "tmp"
+    try:
+        system_temp.symlink_to(git_metadata, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    module.ROOT = repository
+    module.SOURCE = source
+    monkeypatch.setattr(module, "_filesystem_anchor", lambda path: tmp_path)
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    physical_output = git_metadata / "objects" / "payload"
+    with pytest.raises(SystemExit, match="Git metadata"):
+        module.build(system_temp / "objects" / "payload", clean=clean)
+
+    assert mutation_calls == []
+    assert not physical_output.exists()
 
 
 @pytest.mark.parametrize("clean", [False, True])

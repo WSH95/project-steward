@@ -40,8 +40,8 @@ available.
 Task 3 review correction: 2026-09-08 — the initial direct batch reproduced all
 five cases: an ignored file inside the artifact was accepted, and parent
 symlinks plus external `.git` ancestors were accepted in clean and non-clean
-builds. The final direct set passed 7 tests, including an allowed trusted parent
-alias and an ignored file outside the artifact. The full payload-builder and
+builds. The final direct set passed 7 tests, including path-alias coverage and
+an ignored file outside the artifact. The full payload-builder and
 publisher set passed 38 tests in 3.17s. The default ignored payload rebuilt
 successfully from its earlier generated version, and the modified
 artifact-maintainer skill passed schema validation. Self doctor reported 40
@@ -49,6 +49,18 @@ checks, 3 expected warnings, and 0 failures; tracked and staged diff checks
 passed. The full suite was not repeated by controller instruction; the
 controller will run it after review and integration in the actual source
 checkout.
+
+Task 3 review correction round 2: 2026-09-08 — two direct regressions failed
+against `3c5f043`: shared-ancestor inference accepted a caller-controlled link
+to the repository's parent and rejected the simulated macOS layout of a
+repository under `/Users` with output through `/tmp -> /private/tmp`. After
+that initial RED, two clean-mode regressions showed that an allowed root alias
+could conceal resolved `.git` ancestry. Replacing the heuristic with
+filesystem-root alias recognition and checking canonical ancestors made the
+direct set pass 8 tests; the complete builder/publisher set passed 41 tests in
+3.32s. The default payload rebuild and skill schema validator passed; self
+doctor reported 40 checks, 3 expected warnings, and 0 failures, and diff checks
+passed. The full suite was reserved for post-review source integration.
 
 Task 2 verification: 2026-09-08 (ADR 0026) — 217 tests passed on Python
 3.12.3. The 31 focused Git path, root discovery, and session tests cover

@@ -2,6 +2,14 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T11:19:05Z — codex
+Corrected Task 3's remaining alias-boundary review finding (ADR 0027).
+Regressions proved that shared-ancestor inference trusted a caller link,
+rejected simulated macOS `/tmp` outside the repository layout, and could hide
+resolved `.git` ancestry. Filesystem-root alias recognition plus canonical Git
+checks handle all cases; the 8-test direct set, all 41 focused tests, payload
+rebuild, skill validation, self doctor (40/3/0), and diff checks pass.
+
 ### 2026-09-08T11:08:51Z — codex
 Resolved the two Task 3 independent-review findings (ADR 0027): publication now
 refuses ignored local files within the artifact destination, and payload builds

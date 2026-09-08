@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-09-08T11:08:51Z
+updated_at: 2026-09-08T11:19:05Z
 updated_by: codex
 session_status: closed
 branch: fix/reliability-0.4.1
@@ -16,17 +16,19 @@ failures.
 Task 3 and its first independent-review correction are complete on the separate
 `fix/reliability-0.4.1` implementation branch (ADR 0027). Payload builds
 validate every destination before mutation, including parent symlinks and
-external `.git` ancestors, while preserving platform path aliases. Publication
-rejects ignored local files within the artifact destination before replacement,
-uses an isolated temporary preview for dry-run, and verifies commit scope.
+external `.git` ancestors. A non-final system alias directly below the
+filesystem root remains supported regardless of repository location, while
+caller-controlled links remain rejected. Publication rejects ignored local
+files within the artifact destination before replacement, uses an isolated
+temporary preview for dry-run, and verifies commit scope.
 
 The pre-review full suite passed 234 tests on Python 3.12.3. The correction's
 five direct regressions failed before implementation; its final direct set
-passes 7 tests and the full builder/publisher set passes 38. The existing
-payload rebuild and the artifact-maintainer skill schema check pass. The local
-98-file preview and compileall remain valid; post-correction self doctor reports
-40 checks, 3 expected warnings, and 0 failures, and diff checks pass. No remote
-operation ran.
+passes 7 tests and the full builder/publisher set passes 38. Round 2 reproduced
+the remaining alias gap and its resolved `.git` interaction, then passed its
+8-test direct set and all 41 focused builder/publisher tests. The existing
+payload rebuild, skill schema check, self doctor (40/3/0), and diff checks pass;
+the local 98-file preview and compileall remain valid. No remote operation ran.
 
 ## In flight
 

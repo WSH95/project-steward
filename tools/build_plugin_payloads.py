@@ -95,41 +95,30 @@ def _unsafe_output_entry(path):
     return None
 
 
-def _output_trust_boundary(lexical, target, root):
-    """Return the lexical ancestor shared with the resolved repository.
-
-    Resolving the shared boundary before inspecting its descendants allows
-    platform path aliases such as macOS /tmp -> /private/tmp while still
-    exposing symlinks in the caller-controlled portion of the output path.
-    """
-    try:
-        resolved_boundary = Path(
-            os.path.commonpath([str(target), str(root)])
-        )
-    except ValueError:
-        return Path(lexical.anchor)
-
-    for candidate in (lexical,) + tuple(lexical.parents):
-        if candidate.resolve() == resolved_boundary:
-            return candidate
-    return Path(lexical.anchor)
+def _filesystem_anchor(path):
+    return Path(path.anchor)
 
 
-def _unsafe_output_ancestor(lexical, target, root):
-    for candidate in (lexical,) + tuple(lexical.parents):
-        if candidate.name.lower() == ".git":
-            return candidate, "Git metadata"
+def _unsafe_output_ancestor(lexical, target):
+    for path in (lexical, target):
+        for candidate in (path,) + tuple(path.parents):
+            if candidate.name.lower() == ".git":
+                return candidate, "Git metadata"
 
-    boundary = _output_trust_boundary(lexical, target, root)
+    boundary = _filesystem_anchor(lexical)
     try:
         relative = lexical.relative_to(boundary)
     except ValueError:
         relative = lexical
-        boundary = Path(lexical.anchor)
     candidate = boundary
     for part in relative.parts:
         candidate = candidate / part
         if candidate.is_symlink():
+            if candidate != lexical and candidate.parent == boundary:
+                # Filesystem-root aliases are system controlled (for example,
+                # macOS /tmp -> /private/tmp). Links below that boundary are
+                # part of the caller-selected output path and remain unsafe.
+                continue
             return candidate, "symlink"
     return None
 
@@ -213,7 +202,7 @@ def _validate_output(path, meta):
     root = ROOT.resolve()
     source = SOURCE.resolve()
 
-    unsafe_ancestor = _unsafe_output_ancestor(lexical, target, root)
+    unsafe_ancestor = _unsafe_output_ancestor(lexical, target)
     if unsafe_ancestor:
         unsafe_path, reason = unsafe_ancestor
         raise SystemExit(

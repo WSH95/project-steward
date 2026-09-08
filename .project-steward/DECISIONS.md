@@ -529,9 +529,11 @@ publication commit.
 empty directory, or an existing generated payload whose Claude and Codex
 manifests match the artifact's stable identity. Ignore version differences so
 an earlier release remains rebuildable. Reject repository ancestors, Git
-metadata anywhere in the requested path, source overlaps, symlinks below the
-shared resolved source/output boundary, and unrecognized nonempty directories.
-The resolved boundary preserves platform path aliases such as macOS `/tmp`.
+metadata in the requested or resolved path, source overlaps, caller-controlled
+output-path symlinks, and unrecognized nonempty directories. Preserve a
+non-final system alias directly below the filesystem root, such as macOS
+`/tmp`, independently of the repository's location. Resolve the output before
+checking Git-metadata ancestors so an allowed system alias cannot conceal one.
 
 Require supplied publication checkouts to be clean. Inspect them with Git's
 optional locks disabled, then create dry-run previews in temporary local

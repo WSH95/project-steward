@@ -63,10 +63,10 @@ than a simple copy. The script must:
 Validate the output before any cleanup or copy. Accept new and empty
 directories, plus an existing generated payload whose platform manifests match
 the artifact's stable identity. A version difference is valid when rebuilding
-an earlier release. Reject repository ancestors, Git metadata, source-tree
-overlaps, output-path symlinks below the shared resolved boundary, and
-unrecognized nonempty directories. Preserve platform path aliases above that
-boundary.
+an earlier release. Reject repository ancestors, Git metadata in the requested
+or resolved path, source-tree overlaps, caller-controlled output-path symlinks,
+and unrecognized nonempty directories. Preserve a non-final system alias
+directly below the filesystem root.
 
 Examples: Claude Code may need commands, hooks, and bundled runtime fallback
 files; Codex may need skills, references, marketplace metadata, optional

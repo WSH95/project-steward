@@ -77,9 +77,9 @@ The builder validates the output before creating, replacing, or copying files.
 It accepts a new or empty directory, or an existing Project Steward payload
 whose Claude and Codex manifests identify the same artifact. This permits a
 payload from an earlier release to be rebuilt. Repository ancestors, Git
-metadata anywhere in the requested path, source overlaps, output-path
-symlinks below the shared resolved boundary, and other nonempty directories
-are rejected. Platform path aliases above that boundary remain supported.
+metadata in the requested or resolved path, source overlaps, caller-controlled
+output-path symlinks, and other nonempty directories are rejected. A non-final
+system alias directly below the filesystem root remains supported.
 
 **Claude Code (generated plugin: skills + commands + hooks in one step):**
 
