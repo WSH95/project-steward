@@ -12,7 +12,7 @@ Committed (durable, travels via git): `.project-steward/WORKFLOW.md`, `PROJECT.m
 optional `sessions/*.md`.
 
 Local (gitignored, device-scoped forensics): `.project-steward/runtime/`
-— `session.json` (active-session claim), `activity.log` (event-based
+— `session.json` (the current session claim), `activity.log` (event-based
 heartbeat, rotated), `events.log`, `last_snapshot.md`, `stop_guard.json`.
 
 **Invariant: starting or resuming a session never dirties the git
@@ -22,11 +22,14 @@ Projectforge v0.1 flaw where resume edited HANDOFF.md front matter.)
 
 ## Lifecycle
 
-1. **Start**: read WORKFLOW.md when present, then HANDOFF.md -> recap -> crash check (see below) ->
-   claim runtime session. Hook: SessionStart injects the recap
-   automatically.
+1. **Start**: read WORKFLOW.md when present, then HANDOFF.md -> recap -> crash
+   check (see below) -> claim or reuse the runtime session. Hook: SessionStart
+   injects the recap automatically.
 2. **Work**: updates at semantic boundaries (see the progress-tracking
-   skill's event table); PostToolUse hooks feed the activity log.
+   skill's event table); PostToolUse hooks feed the activity log. Claude,
+   Codex, and Grok edit tools are recognized. Shell commands supplied through
+   `command` or `cmd` are treated as modifying when they contain unquoted
+   redirection or chaining, even if their first command is read-only.
 3. **Checkpoint**: PROGRESS append + HANDOFF front-matter refresh. Git history,
    not a self-referential front-matter field, identifies the handoff commit;
    triggered manually, by the wrap-language detector, or by the Stop
@@ -35,15 +38,28 @@ Projectforge v0.1 flaw where resume edited HANDOFF.md front matter.)
 4. **Wrap**: full HANDOFF rewrite for a zero-context successor;
    `session_status: closed`; follow commit_policy. Under auto, commit coherent
    verified work and its project records; under ask, propose it; under never,
-   skip commits and nudges. Hooks never commit.
+   skip commits and nudges. Hooks never commit. Explicit CLI wrap and close
+   operations close the current project marker.
 
-## Crash detection signals (any one suffices)
+Hook payloads store a session ID in the current marker when one is available.
+Repeated starts for that ID reuse the marker and retain its start time.
+PostToolUse heartbeats and automated SessionEnd closes apply only when their
+ID owns the current marker, so a delayed event cannot change a newer session's
+claim. ID-less legacy markers and hook payloads remain supported. CLI resume
+reuses an active current marker, including one created by a hook. This is still
+one lightweight current marker, not a session registry.
 
-- HANDOFF front matter `session_status: active`
-- runtime/session.json active with no close event
+## Recovery signals
+
+- HANDOFF front matter says `session_status: active`
 - activity.log entries newer than HANDOFF.md's mtime
 - dirty files or commits the handoff does not mention
 - git merge/rebase/cherry-pick in progress
+
+An active `runtime/session.json` marker by itself is advisory. Recap JSON lists
+it under `runtime_notes`, not `crash_signals`, because current, repeated, and
+overlapping hook delivery can all produce a live marker. Use the recovery
+signals above to decide whether reconstruction is needed.
 
 Reconstruction uses `git diff`/`git log` since the commit that last changed
 `HANDOFF.md`, plus runtime logs. The CLI reports that derived commit as

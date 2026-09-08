@@ -10,7 +10,7 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [x] Respect Git paths, repository boundaries, and worktrees, including
       scoped commits from a managed root below the Git top level.
 - [x] Make build and publication previews safe.
-- [ ] Correct handoff hook bookkeeping and edit detection.
+- [x] Correct handoff hook bookkeeping and edit detection.
 - [ ] Validate configuration and release 0.4.1.
 
 ## M3: 0.4.0 workflow improvements

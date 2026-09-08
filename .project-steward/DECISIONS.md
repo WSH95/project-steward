@@ -549,3 +549,26 @@ Dry-run can regenerate ignored source payloads, but it leaves the target
 checkout's files, index, branch, and commits unchanged while printing the
 proposed diff. Normal publication refuses local target work and unrelated
 staged paths before pushing or opening a PR.
+
+## 0028 — 2026-09-08 — Keep one owner-aware runtime session marker
+
+**Context**: Lifecycle hooks discarded their session IDs. Every start and CLI
+resume replaced the current marker, while every heartbeat and automated end
+updated it without checking ownership. A delayed event could therefore change
+or close a newer session. An active marker was also treated as proof of an
+abnormal ending, and Codex shell activity could be missed.
+
+**Decision**: Keep one current runtime marker and store the hook session ID
+when supplied. Reuse an active marker for repeated same-ID starts and CLI
+resume. Apply hook heartbeats and automated closes only when the event owns the
+current ID; deliberate CLI wrap and close remain project-level operations.
+Read ID-less legacy markers. Report an active marker under recap
+`runtime_notes`, while durable handoff, activity, dirty-work, commit, and Git
+operation evidence remains under `crash_signals`. Recognize Codex
+`exec_command` and `shell_command`, both command payload keys, and unquoted
+shell redirection or chaining.
+
+**Consequences**: Repeated and overlapping hook delivery no longer corrupts
+the current claim or causes recovery from marker state alone. Existing
+Claude/Grok and ID-less records remain compatible. The runtime remains a
+lightweight current marker rather than a session registry.

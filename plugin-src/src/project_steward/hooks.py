@@ -76,6 +76,13 @@ def _resolve_agent(agent):
     return agent
 
 
+def _session_id(payload):
+    value = _field(payload, "session_id", "sessionId")
+    if value is None:
+        value = os.environ.get("GROK_SESSION_ID")
+    return value if isinstance(value, str) and value else None
+
+
 def _emit(obj):
     try:
         sys.stdout.write(json.dumps(obj))
@@ -107,14 +114,10 @@ def _handle_session_start(root, agent, payload):
                 "to .project-steward/, then follow the session-resume skill.",
             ))
         return
-    previous, _record = sessions.claim_session(root, agent)
+    previous, _record = sessions.claim_session(
+        root, agent, session_id=_session_id(payload))
     recap = sessions.build_recap(root, runtime_record=previous)
     text = sessions.format_recap(recap)
-    if previous.get("status") == "active" and previous.get("host"):
-        text += (
-            "\nNote: a previous runtime claim on this device (%s) was still "
-            "marked active." % previous.get("agent", "?")
-        )
     text += (
         "\nACTION REQUIRED: follow the session-resume skill — give the user "
         "this recap, investigate any abnormal-termination signals before "
@@ -133,11 +136,13 @@ def _handle_post_tool_use(root, agent, payload):
         tool_input = {}
     detail = (
         tool_input.get("command")
+        or tool_input.get("cmd")
         or tool_input.get("file_path")
         or tool_input.get("path")
         or ""
     )
-    sessions.record_activity(root, tool, detail)
+    sessions.record_activity(
+        root, tool, detail, session_id=_session_id(payload))
 
 
 def _handle_user_prompt_submit(root, agent, payload):
@@ -230,7 +235,8 @@ def _handle_session_end(root, agent, payload):
     if not is_steward_project(root):
         return
     sessions.write_snapshot(root, "session-end")
-    sessions.close_runtime_session(root, "ended")
+    sessions.close_runtime_session(
+        root, "ended", session_id=_session_id(payload))
 
 
 HANDLERS = {

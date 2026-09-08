@@ -167,7 +167,8 @@ def cmd_resume(args):
     root = _root(args)
     if not is_steward_project(root):
         return cmd_status(args)
-    previous, _record = sessions.claim_session(root, args.agent)
+    previous, _record = sessions.claim_session(
+        root, args.agent, reuse_current=True)
     recap = sessions.build_recap(root, runtime_record=previous)
     if args.json:
         recap["previous_runtime_claim"] = previous

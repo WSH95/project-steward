@@ -32,7 +32,9 @@ MUTATING_TOOLS = {
 }
 SHELL_TOOLS = {
     "bash",
+    "exec_command",
     "run_terminal_command",
+    "shell_command",
 }
 READ_ONLY_COMMAND_PREFIXES = (
     "cat ",
@@ -82,6 +84,8 @@ RECOMMENDED_HANDOFF_SECTIONS = [
     "## Warnings",
 ]
 
+_UNSPECIFIED_SESSION_ID = object()
+
 
 # --------------------------------------------------------------------------
 # Runtime (gitignored) session records
@@ -95,34 +99,65 @@ def load_runtime_session(root):
     return read_json(_session_file(root), {})
 
 
-def claim_session(root, agent):
+def claim_session(root, agent, session_id=None, reuse_current=False):
+    """Claim the single current marker without replacing its owner blindly.
+
+    Hook starts reuse an active marker with the same session ID. CLI resume
+    passes ``reuse_current=True`` so it can join an already active marker.
+    """
     runtime_dir(root, create=True)
     previous = load_runtime_session(root)
+    active = previous.get("status") == "active"
+    same_hook_session = (
+        session_id is not None
+        and previous.get("session_id") == session_id
+    )
+    if active and (reuse_current or same_hook_session):
+        record = dict(previous)
+        record["updated_at"] = utcnow_iso()
+        write_json_atomic(_session_file(root), record)
+        return previous, record
+
+    now = utcnow_iso()
     record = {
         "status": "active",
         "agent": agent or "unknown",
         "host": socket.gethostname(),
         "pid": os.getpid(),
-        "started_at": utcnow_iso(),
-        "updated_at": utcnow_iso(),
+        "started_at": now,
+        "updated_at": now,
     }
+    if session_id is not None:
+        record["session_id"] = session_id
     write_json_atomic(_session_file(root), record)
     return previous, record
 
 
-def close_runtime_session(root, status="closed"):
+def close_runtime_session(root, status="closed",
+                          session_id=_UNSPECIFIED_SESSION_ID):
+    """Close the current marker, optionally only for its hook session ID.
+
+    Calls that omit ``session_id`` are deliberate project-level operations.
+    Passing ``None`` ownership-checks a legacy ID-less hook session.
+    """
     record = load_runtime_session(root)
-    if record:
-        record["status"] = status
-        record["updated_at"] = utcnow_iso()
-        write_json_atomic(_session_file(root), record)
+    if not record:
+        return False
+    if (session_id is not _UNSPECIFIED_SESSION_ID
+            and record.get("session_id") != session_id):
+        return False
+    record["status"] = status
+    record["updated_at"] = utcnow_iso()
+    write_json_atomic(_session_file(root), record)
+    return True
 
 
-def record_activity(root, tool, detail=""):
-    """Heartbeat + rotating activity log. Called by PostToolUse hooks."""
+def record_activity(root, tool, detail="", session_id=None):
+    """Log PostToolUse activity and heartbeat only its owned marker."""
     runtime_dir(root, create=True)
     record = load_runtime_session(root)
-    if record.get("status") == "active":
+    if (record.get("status") == "active"
+            and record.get("session_id") == session_id):
         record["updated_at"] = utcnow_iso()
         write_json_atomic(_session_file(root), record)
     detail_text = (detail or "")[:200].replace("\n", " ")
@@ -246,10 +281,36 @@ def _strip_env_assignments(command):
     return " ".join(tokens)
 
 
+def _has_shell_control_operator(command):
+    quote = ""
+    escaped = False
+    for char in command or "":
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote != "'":
+            escaped = True
+            continue
+        if quote:
+            if char == quote:
+                quote = ""
+            continue
+        if char in ("'", '"'):
+            quote = char
+            continue
+        if char in "&|;<>":
+            return True
+        if char in "\r\n":
+            return True
+    return False
+
+
 def activity_is_handoff_relevant(tool, detail=""):
     """Return True for activity that should pressure a handoff update."""
     tool_name = (tool or "").strip().lower()
     detail_text = detail or ""
+    if tool_name in SHELL_TOOLS and _has_shell_control_operator(detail_text):
+        return True
     if STEWARD_STATE_MARKER in detail_text.replace("\\", "/"):
         return False
     if tool_name in MUTATING_TOOLS:
@@ -295,9 +356,8 @@ def _handoff_commit(root):
 def detect_crash_signals(root, runtime_record=None):
     """Independent signals that the previous session ended abnormally.
 
-    Callers that have already claimed this session must pass the
-    pre-claim record as ``runtime_record`` — otherwise the fresh claim
-    itself reads as a crash marker.
+    ``runtime_record`` remains accepted for callers using the earlier API.
+    Active runtime markers are advisory and are reported by ``build_recap``.
     """
     signals = []
     meta, body, handoff_mtime = handoff_meta(root)
@@ -306,15 +366,6 @@ def detect_crash_signals(root, runtime_record=None):
         signals.append(
             "HANDOFF.md front matter says `session_status: active` — the "
             "previous session never wrapped."
-        )
-
-    runtime = (load_runtime_session(root) if runtime_record is None
-               else runtime_record)
-    if runtime.get("status") == "active":
-        signals.append(
-            "Local runtime marker shows an active session on this device "
-            "(%s, %s) with no close event."
-            % (runtime.get("agent", "?"), runtime.get("updated_at", "?"))
         )
 
     edits_after_handoff = handoff_relevant_activity_count_since(
@@ -353,6 +404,18 @@ def detect_crash_signals(root, runtime_record=None):
         signals.append("A git %s is in progress." % op)
 
     return signals
+
+
+def _runtime_notes(runtime_record):
+    if runtime_record.get("status") != "active":
+        return []
+    return [
+        "Local runtime marker is active on this device (%s, %s); this is "
+        "advisory and may represent the current, repeated, or overlapping "
+        "hook session."
+        % (runtime_record.get("agent", "?"),
+           runtime_record.get("updated_at", "?"))
+    ]
 
 
 def _plan_current(root):
@@ -401,13 +464,15 @@ def _open_questions(root):
 def build_recap(root, runtime_record=None):
     """Structured recap for session start. Read-only.
 
-    ``runtime_record`` is forwarded to ``detect_crash_signals`` (pass the
-    pre-claim record after ``claim_session``).
+    Pass the pre-claim record after ``claim_session`` so its advisory runtime
+    note describes what was present before the claim or reuse.
     """
     from .state import load_backend
     meta, body, _ = handoff_meta(root)
     milestone, open_tasks = _plan_current(root)
     section = _extract_section(body, "## Next steps")
+    runtime = (load_runtime_session(root) if runtime_record is None
+               else runtime_record)
     recap = {
         "handoff": {
             "updated_at": meta.get("updated_at", "unknown"),
@@ -430,6 +495,7 @@ def build_recap(root, runtime_record=None):
         "open_questions": _open_questions(root),
         "next_steps_excerpt": section[:600],
         "crash_signals": detect_crash_signals(root, runtime_record),
+        "runtime_notes": _runtime_notes(runtime),
     }
     return recap
 
@@ -485,6 +551,8 @@ def format_recap(recap):
         lines.append("Next steps (from handoff):")
         for step in recap["next_steps_excerpt"].splitlines()[:6]:
             lines.append("  " + step)
+    for note in recap.get("runtime_notes", []):
+        lines.append("Runtime note: " + note)
     if recap["crash_signals"]:
         lines.append("ABNORMAL TERMINATION SUSPECTED:")
         for signal in recap["crash_signals"]:

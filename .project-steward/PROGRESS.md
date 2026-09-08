@@ -2,6 +2,13 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T11:56:26Z — codex
+Completed Task 4 session ownership and edit detection (ADR 0028). The required
+three-case lifecycle batch failed before implementation and now passes. All 48
+session/hook tests and the full 261-test suite pass; self doctor reports 40
+checks, 3 existing setup warnings, and 0 failures. Independent review and
+source-checkout delivery remain with the controller.
+
 ### 2026-09-08T11:30:55Z — codex
 Task 3 passed scoped re-review with no open findings and was delivered locally
 through `394d029`. The actual source checkout passed 244 tests in 12.14s;

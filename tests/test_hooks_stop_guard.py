@@ -5,6 +5,7 @@ import sys
 import time
 
 from project_steward import hooks, sessions
+from project_steward.cli import main as cli_main
 from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
 from project_steward.state import write_json_atomic, write_text_atomic
@@ -164,6 +165,181 @@ def test_session_start_injects_recap(git_repo, capsys, monkeypatch):
     assert rc == 0
     ctx = out["hookSpecificOutput"]["additionalContext"]
     assert "session recap" in ctx and "ACTION REQUIRED" in ctx
+
+
+def test_hook_start_then_cli_resume_reuses_current_marker(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    rc, _out = _run_hook(
+        ["session-start", "--agent", "codex"],
+        {"cwd": str(git_repo), "session_id": "hook-a"},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0
+    before = sessions.load_runtime_session(git_repo)
+
+    rc = cli_main([
+        "resume", "--agent", "codex", "--root", str(git_repo), "--json",
+    ])
+    assert rc == 0
+    recap = json.loads(capsys.readouterr().out)
+    after = sessions.load_runtime_session(git_repo)
+
+    assert after["session_id"] == "hook-a"
+    assert after["started_at"] == before["started_at"]
+    assert recap["previous_runtime_claim"]["session_id"] == "hook-a"
+    assert not any("runtime marker" in item for item in recap["crash_signals"])
+    assert any("runtime marker" in item for item in recap["runtime_notes"])
+
+
+def test_repeated_start_for_same_hook_session_is_idempotent(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    stamps = iter(
+        "2026-09-08T12:00:%02dZ" % second for second in range(10)
+    )
+    monkeypatch.setattr(sessions, "utcnow_iso", lambda: next(stamps))
+    payload = {
+        "cwd": str(git_repo),
+        "session_id": "hook-a",
+        "source": "startup",
+    }
+    rc, _out = _run_hook(
+        ["session-start", "--agent", "claude"], payload, capsys, monkeypatch,
+    )
+    assert rc == 0
+    first = sessions.load_runtime_session(git_repo)
+
+    payload["source"] = "compact"
+    rc, out = _run_hook(
+        ["session-start", "--agent", "claude"], payload, capsys, monkeypatch,
+    )
+    assert rc == 0
+    second = sessions.load_runtime_session(git_repo)
+
+    assert second["session_id"] == "hook-a"
+    assert second["started_at"] == first["started_at"]
+    context = out["hookSpecificOutput"]["additionalContext"]
+    assert "Runtime note:" in context
+    recap = sessions.build_recap(git_repo, runtime_record=first)
+    assert not any("runtime marker" in item
+                   for item in recap["crash_signals"])
+
+
+def test_stale_session_end_cannot_close_new_current_marker(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    for session_id in ("hook-a", "hook-b"):
+        rc, _out = _run_hook(
+            ["session-start", "--agent", "claude"],
+            {"cwd": str(git_repo), "session_id": session_id},
+            capsys,
+            monkeypatch,
+        )
+        assert rc == 0
+    current = sessions.load_runtime_session(git_repo)
+    assert current["session_id"] == "hook-b"
+
+    rc, out = _run_hook(
+        ["session-end", "--agent", "claude"],
+        {"cwd": str(git_repo), "session_id": "hook-a"},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0 and out == {}
+    assert sessions.load_runtime_session(git_repo) == current
+
+
+def test_current_session_end_closes_current_marker(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    rc, _out = _run_hook(
+        ["session-start", "--agent", "claude"],
+        {"cwd": str(git_repo), "sessionId": "hook-a"},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0
+
+    rc, out = _run_hook(
+        ["session-end", "--agent", "claude"],
+        {"cwd": str(git_repo), "sessionId": "hook-a"},
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0 and out == {}
+    record = sessions.load_runtime_session(git_repo)
+    assert record["status"] == "ended"
+    assert record["session_id"] == "hook-a"
+
+
+def test_stale_post_tool_event_cannot_heartbeat_new_current_marker(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    for session_id in ("hook-a", "hook-b"):
+        rc, _out = _run_hook(
+            ["session-start", "--agent", "codex"],
+            {"cwd": str(git_repo), "session_id": session_id},
+            capsys,
+            monkeypatch,
+        )
+        assert rc == 0
+    current = sessions.load_runtime_session(git_repo)
+    current["updated_at"] = "2026-09-08T12:00:00Z"
+    write_json_atomic(runtime_dir(git_repo) / "session.json", current)
+
+    rc, out = _run_hook(
+        ["post-tool-use", "--agent", "codex"],
+        {
+            "cwd": str(git_repo),
+            "session_id": "hook-a",
+            "tool_name": "edit",
+            "tool_input": {"file_path": "src/a.py"},
+        },
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0 and out == {}
+    assert sessions.load_runtime_session(git_repo) == current
+
+
+def test_current_post_tool_event_heartbeats_current_marker(
+        git_repo, capsys, monkeypatch):
+    _init(git_repo)
+    rc, _out = _run_hook(
+        ["session-start", "--agent", "codex"],
+        {"cwd": str(git_repo), "sessionId": "hook-a"},
+        capsys,
+        monkeypatch,
+    )
+    assert rc == 0
+    current = sessions.load_runtime_session(git_repo)
+    current["updated_at"] = "2026-09-08T12:00:00Z"
+    write_json_atomic(runtime_dir(git_repo) / "session.json", current)
+
+    rc, out = _run_hook(
+        ["post-tool-use", "--agent", "codex"],
+        {
+            "cwd": str(git_repo),
+            "sessionId": "hook-a",
+            "toolName": "exec_command",
+            "toolInput": {"cmd": "git status --short"},
+        },
+        capsys,
+        monkeypatch,
+    )
+
+    assert rc == 0 and out == {}
+    after = sessions.load_runtime_session(git_repo)
+    assert after["session_id"] == "hook-a"
+    assert after["updated_at"] != current["updated_at"]
+    activity = (runtime_dir(git_repo) / "activity.log").read_text(
+        encoding="utf-8")
+    assert "exec_command\tgit status --short" in activity
 
 
 def test_wrap_language_detector(git_repo, capsys, monkeypatch):

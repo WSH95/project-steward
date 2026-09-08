@@ -22,7 +22,9 @@ Read HANDOFF.md, then run `project-steward resume` when the CLI is available.
 Recap the task, next step, blockers, open questions, Git state, and crash signals.
 Without the CLI, read PROGRESS.md, PLAN.md, QUESTIONS.md, the selected backend,
 and recent Git history. Label reconstructed state as inferred. Resume does not
-rewrite committed project records.
+rewrite committed project records. Treat an active local runtime marker as an
+advisory note; use separate handoff, activity, dirty-work, commit, or
+Git-operation evidence to decide whether recovery is needed.
 
 ## Record meaningful changes
 

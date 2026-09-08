@@ -6,10 +6,12 @@ follow it; condensed protocol:
    read .project-steward/HANDOFF.md (front matter + body), PROGRESS.md
    top entry, `git log --oneline -5`, `git status`, PLAN.md current
    milestone, QUESTIONS.md open items.
-2. Crash check - previous session was abnormal if: handoff says
-   session_status: active; runtime/session.json is active; tool activity
-   or commits/dirty files postdate the handoff; git merge/rebase in
-   progress. If so, reconstruct from git diff/log + runtime logs and
+2. Crash check - an active runtime/session.json marker by itself is advisory;
+   report it from `runtime_notes` without starting recovery. The previous
+   session was abnormal if: handoff says session_status: active; relevant tool
+   activity or commits/dirty files postdate the handoff; or a git
+   merge/rebase/cherry-pick is in progress. If so, reconstruct from git
+   diff/log + runtime logs and
    label claims "(inferred)"; update the handoff only after the user
    confirms. Write the reconstruction in plain, factual language. If a
    `humanizer` skill is available, apply it only to the new prose and preserve

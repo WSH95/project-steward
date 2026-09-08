@@ -37,7 +37,8 @@ Keep every verified fact and all required headings.
 3. **Finalize bookkeeping**:
    `project-steward wrap --summary "one-line session summary"` — sets
    `session_status: closed`, syncs branch into the front matter,
-   appends the `PROGRESS.md` entry, closes the runtime claim, and prints
+   appends the `PROGRESS.md` entry, deliberately closes the current runtime
+   claim even when a hook supplied its session ID, and prints
    dirty-file warnings plus the commit suggestion. (No CLI: do those
    steps by hand; PROGRESS.md is newest-first.)
 4. **Follow the commit policy** in config.toml: under `auto`, review relevant
