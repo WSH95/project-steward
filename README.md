@@ -77,8 +77,9 @@ The builder validates the output before creating, replacing, or copying files.
 It accepts a new or empty directory, or an existing Project Steward payload
 whose Claude and Codex manifests identify the same artifact. This permits a
 payload from an earlier release to be rebuilt. Repository ancestors, Git
-metadata, source overlaps, symlinks, and other nonempty directories are
-rejected.
+metadata anywhere in the requested path, source overlaps, output-path
+symlinks below the shared resolved boundary, and other nonempty directories
+are rejected. Platform path aliases above that boundary remain supported.
 
 **Claude Code (generated plugin: skills + commands + hooks in one step):**
 
@@ -135,10 +136,12 @@ python3 tools/publish_agent_artifact_pr.py \
   --dry-run
 ```
 
-Remove `--dry-run` only after reviewing the copied output. The script
-requires a clean target checkout. Dry-run builds the source payload, copies the
-target checkout to a temporary preview, and prints the proposed Git diff. It
-does not change the target's files, index, branch, or commits. With
+Remove `--dry-run` only after reviewing the copied output. The script requires
+a clean target checkout and refuses ignored local files within the configured
+artifact path before replacing it; ignored files elsewhere in the checkout do
+not block publication. Dry-run builds the source payload, copies the target
+checkout to a temporary preview, and prints the proposed Git diff. It does not
+change the target's files, index, branch, or commits. With
 `--save-target-repo`, dry-run reports the proposed manifest update without
 writing it. A publication commit is scoped to the configured artifact path;
 the script opens a PR and never merges it.

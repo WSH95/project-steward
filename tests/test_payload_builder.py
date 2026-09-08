@@ -392,6 +392,88 @@ def test_builder_rejects_unsafe_output_before_cleanup(
 
 
 @pytest.mark.parametrize("clean", [False, True])
+@pytest.mark.parametrize(
+    "kind, reason",
+    [("symlink-parent", "symlink"), ("external-git-ancestor", "Git metadata")],
+)
+def test_builder_rejects_unsafe_output_ancestor_before_mutation(
+    tmp_path, monkeypatch, clean, kind, reason
+):
+    module = _load_builder_module()
+    repository = tmp_path / "workspace" / "project"
+    source = repository / "plugin-src"
+    source.mkdir(parents=True)
+    (source / "metadata.json").write_text(
+        json.dumps(_json(ROOT / "plugin-src" / "metadata.json")),
+        encoding="utf-8",
+    )
+    module.ROOT = repository
+    module.SOURCE = source
+
+    if kind == "symlink-parent":
+        real_parent = tmp_path / "real-output"
+        real_parent.mkdir()
+        alias = tmp_path / "output-link"
+        try:
+            alias.symlink_to(real_parent, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pytest.skip("symlinks unavailable")
+        output = alias / "payload"
+        physical_output = real_parent / "payload"
+    else:
+        output = tmp_path / "unrelated" / ".git" / "objects" / "payload"
+        output.parent.mkdir(parents=True)
+        physical_output = output
+
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    with pytest.raises(SystemExit, match=reason):
+        module.build(output, clean=clean)
+
+    assert mutation_calls == []
+    assert not physical_output.exists()
+
+
+def test_builder_allows_trusted_parent_path_alias(tmp_path, monkeypatch):
+    module = _load_builder_module()
+    real_parent = tmp_path / "real-parent"
+    repository = real_parent / "project"
+    source = repository / "plugin-src"
+    source.mkdir(parents=True)
+    (source / "metadata.json").write_text(
+        json.dumps(_json(ROOT / "plugin-src" / "metadata.json")),
+        encoding="utf-8",
+    )
+    alias = tmp_path / "parent-alias"
+    try:
+        alias.symlink_to(real_parent, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    module.ROOT = repository
+    module.SOURCE = source
+    build_calls = []
+
+    def record_build(out, meta):
+        build_calls.append(out)
+
+    monkeypatch.setattr(module, "_build_claude", record_build)
+    monkeypatch.setattr(module, "_build_codex", record_build)
+
+    result = module.build(alias / "payload")
+
+    expected = real_parent / "payload"
+    assert result == expected
+    assert build_calls == [expected, expected]
+
+
+@pytest.mark.parametrize("clean", [False, True])
 def test_builder_rejects_unrecognized_nonempty_output_before_mutation(
     tmp_path, monkeypatch, clean
 ):

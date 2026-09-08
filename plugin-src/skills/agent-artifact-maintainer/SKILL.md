@@ -64,7 +64,9 @@ Validate the output before any cleanup or copy. Accept new and empty
 directories, plus an existing generated payload whose platform manifests match
 the artifact's stable identity. A version difference is valid when rebuilding
 an earlier release. Reject repository ancestors, Git metadata, source-tree
-overlaps, symlinks, and unrecognized nonempty directories.
+overlaps, output-path symlinks below the shared resolved boundary, and
+unrecognized nonempty directories. Preserve platform path aliases above that
+boundary.
 
 Examples: Claude Code may need commands, hooks, and bundled runtime fallback
 files; Codex may need skills, references, marketplace metadata, optional
@@ -83,8 +85,10 @@ project-local publish script. Preferred defaults:
 On first publish, if `target_repo` is missing, ask for the target repository
 and save it only after confirmation. Require an existing target checkout to be
 clean before changing branches or copying files. Reject Git metadata and any
-symlink in the configured artifact destination. Stage and commit only that
-destination, and verify the staged scope before committing.
+symlink in the configured artifact destination. Also reject ignored local files
+inside that destination before replacing it without treating ignored files
+elsewhere in the checkout as dirty. Stage and commit only that destination,
+and verify the staged scope before committing.
 
 The script must support `--dry-run`. A dry-run builds the source artifact,
 creates a temporary preview from a supplied checkout or clone, and prints the

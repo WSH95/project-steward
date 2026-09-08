@@ -32,9 +32,23 @@ the target remained on `main` at `65d18fc`; its index SHA-256 remained
 `12525d40003f5d0d5b62dc2426bc63a507b5cc4f0291d3c8a3188d9ab65d09c6`,
 and its only worktree file remained `README.md`. No pull, push, PR, or other
 network operation ran. Compileall and `git diff --check` exited 0. Self doctor
-reported 40 checks, 3 expected warnings, and 0 failures. The optional skill
-schema validator could not start in the required venv because PyYAML is not
-installed. Native Python 3.7 and Windows/macOS execution was not available.
+reported 40 checks, 3 expected warnings, and 0 failures. The skill schema
+validator passed under `/usr/bin/python3` with the existing system PyYAML; no
+dependency was installed. Native Python 3.7 and Windows/macOS execution was not
+available.
+
+Task 3 review correction: 2026-09-08 — the initial direct batch reproduced all
+five cases: an ignored file inside the artifact was accepted, and parent
+symlinks plus external `.git` ancestors were accepted in clean and non-clean
+builds. The final direct set passed 7 tests, including an allowed trusted parent
+alias and an ignored file outside the artifact. The full payload-builder and
+publisher set passed 38 tests in 3.17s. The default ignored payload rebuilt
+successfully from its earlier generated version, and the modified
+artifact-maintainer skill passed schema validation. Self doctor reported 40
+checks, 3 expected warnings, and 0 failures; tracked and staged diff checks
+passed. The full suite was not repeated by controller instruction; the
+controller will run it after review and integration in the actual source
+checkout.
 
 Task 2 verification: 2026-09-08 (ADR 0026) — 217 tests passed on Python
 3.12.3. The 31 focused Git path, root discovery, and session tests cover

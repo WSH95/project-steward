@@ -183,6 +183,24 @@ def _require_clean_checkout(checkout):
         )
 
 
+def _require_no_ignored_destination_files(checkout, target_path):
+    raw = _run(
+        [
+            "git", "ls-files", "--others", "--ignored",
+            "--exclude-standard", "-z", "--", target_path.as_posix(),
+        ],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
+    ignored = [path for path in raw.split("\0") if path]
+    if ignored:
+        raise UsageError(
+            "target_path contains ignored local files; preserve or remove "
+            "them before publishing:\n%s" % "\n".join(ignored)
+        )
+
+
 def _prepare_checkout(target_repo, args, supplied_checkout=None):
     if supplied_checkout is not None:
         if not args.dry_run:
@@ -355,6 +373,9 @@ def publish(args):
         supplied_checkout = _validate_checkout(args.target_checkout)
         _require_clean_checkout(supplied_checkout)
         _destination_path(supplied_checkout, target_path)
+        _require_no_ignored_destination_files(
+            supplied_checkout, target_path
+        )
 
     build_command = artifact.get("build_command", "")
 
@@ -379,6 +400,7 @@ def publish(args):
             _run(["git", "checkout", "-b", branch], checkout)
 
         destination = _destination_path(checkout, target_path)
+        _require_no_ignored_destination_files(checkout, target_path)
         _copy_source(source, destination)
 
         if args.dry_run:

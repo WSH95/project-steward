@@ -379,6 +379,79 @@ def test_publish_script_rejects_dirty_target_before_preview_copy(tmp_path):
     ) == "demo skill old\n"
 
 
+def test_publish_script_rejects_ignored_file_inside_artifact(
+    tmp_path, monkeypatch, capsys
+):
+    project = _project_with_source(tmp_path)
+    target = _init_target(tmp_path / "agent-skills")
+    (target / ".gitignore").write_text("*.local\n", encoding="utf-8")
+    _seed_target(target)
+    note = target / "skills" / "demo-skill" / "notes.local"
+    note.write_text("keep me\n", encoding="utf-8")
+    manifest = _manifest(
+        project, target_repo="git@github.com:example/agent-skills.git"
+    )
+    head_before = _git(target, "rev-parse", "HEAD")
+    branch_before = _git(target, "branch", "--show-current")
+    module = _load_publish_module()
+    remote_calls = _mock_remote_commands(module, monkeypatch)
+
+    result = module.main(
+        [
+            "--manifest",
+            str(manifest),
+            "--artifact",
+            "demo-skill",
+            "--target-checkout",
+            str(target),
+            "--branch",
+            "publish/demo-skill/test",
+            "--non-interactive",
+        ]
+    )
+
+    assert result == 2
+    assert "ignored local" in capsys.readouterr().err
+    assert note.read_text(encoding="utf-8") == "keep me\n"
+    assert _git(target, "rev-parse", "HEAD") == head_before
+    assert _git(target, "branch", "--show-current") == branch_before
+    assert remote_calls == []
+
+
+def test_publish_script_allows_ignored_file_outside_artifact(tmp_path):
+    project = _project_with_source(tmp_path)
+    target = _init_target(tmp_path / "agent-skills")
+    (target / ".gitignore").write_text("*.local\n", encoding="utf-8")
+    _seed_target(target)
+    note = target / "notes.local"
+    note.write_text("keep me\n", encoding="utf-8")
+    manifest = _manifest(
+        project, target_repo="git@github.com:example/agent-skills.git"
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--manifest",
+            str(manifest),
+            "--artifact",
+            "demo-skill",
+            "--dry-run",
+            "--target-checkout",
+            str(target),
+            "--non-interactive",
+        ],
+        cwd=str(project),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert note.read_text(encoding="utf-8") == "keep me\n"
+
+
 def _mock_remote_commands(module, monkeypatch, after_add=None):
     real_run = module._run
     remote_calls = []

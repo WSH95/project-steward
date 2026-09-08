@@ -529,13 +529,17 @@ publication commit.
 empty directory, or an existing generated payload whose Claude and Codex
 manifests match the artifact's stable identity. Ignore version differences so
 an earlier release remains rebuildable. Reject repository ancestors, Git
-metadata, source overlaps, symlinks, and unrecognized nonempty directories.
+metadata anywhere in the requested path, source overlaps, symlinks below the
+shared resolved source/output boundary, and unrecognized nonempty directories.
+The resolved boundary preserves platform path aliases such as macOS `/tmp`.
 
 Require supplied publication checkouts to be clean. Inspect them with Git's
 optional locks disabled, then create dry-run previews in temporary local
 clones. Validate the configured artifact destination within the checkout,
-reject symlinks and Git metadata, stage only the artifact, verify the complete
-index scope, and commit with an artifact pathspec. During dry-run,
+reject symlinks, Git metadata, and ignored local files within that destination,
+stage only the artifact, verify the complete index scope, and commit with an
+artifact pathspec. Ignored files outside the destination do not block the
+operation. During dry-run,
 `--save-target-repo` reports the manifest change without writing it.
 
 **Consequences**: Build cleanup is limited to recognized disposable output.

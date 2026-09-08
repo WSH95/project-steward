@@ -2,6 +2,15 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T11:08:51Z — codex
+Resolved the two Task 3 independent-review findings (ADR 0027): publication now
+refuses ignored local files within the artifact destination, and payload builds
+reject parent symlinks and external `.git` ancestors while retaining trusted
+platform aliases. Five direct regressions failed before the fixes; the final
+direct set passes 7 tests and all 38 builder/publisher tests pass. The default
+payload rebuild, artifact-maintainer skill schema validation, self doctor
+(40/3/0), and diff checks also pass.
+
 ### 2026-09-08T10:44:39Z — codex
 Completed Task 3 build and publication safety (ADR 0027). The full suite passes
 234 tests; the focused 31-test set, clean and non-clean payload rebuilds, local
