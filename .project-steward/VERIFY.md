@@ -3,13 +3,13 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 217 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 234 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
 | Payload build | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` | exits 0 |
 | Skill schema | `python3 /home/wsh/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugin-src/skills/agent-artifact-maintainer` | exits 0 |
-| Publish dry-run | `python3 tools/publish_agent_artifact_pr.py --artifact project-steward-plugin --target-repo git@github.com:WSH95/agent-plugins.git --dry-run --target-checkout /tmp/project-steward-artifact-publish-dry-run --non-interactive` | copies artifact; no commit/push/PR |
+| Publish dry-run | `python3 tools/publish_agent_artifact_pr.py --artifact project-steward-plugin --dry-run --target-checkout <clean-local-checkout> --non-interactive` | prints a temporary preview diff; target files/index/branch/commits unchanged |
 | JSON configs | `python3 -m json.tool plugin-src/claude/hooks/hooks.json && python3 -m json.tool plugin-src/src/project_steward/templates/codex-hooks.json.template` | valid |
 | Claude manifests | `claude plugin validate dist/project-steward/claude/plugins/project-steward --strict && claude plugin validate dist/project-steward/claude --strict` | both pass (manifest-only: hooks.json schema is covered by `doctor --self`) |
 | Claude hook wrapper | `printf '' \| sh dist/project-steward/claude/plugins/project-steward/hooks/run-hook.cmd --version` | prints the payload's own version (bundled launcher ran, not a fallback) |
@@ -17,6 +17,24 @@
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+
+Task 3 verification: 2026-09-08 (ADR 0027) — 234 tests passed on Python
+3.12.3 in 9.59s. The focused builder and publisher set passed 31 tests in
+2.80s after the initial 28-test RED run reproduced 13 failures. Coverage
+includes repository ancestors, source overlaps, Git metadata, symlinks,
+unrecognized and older generated outputs, dirty and staged target work,
+temporary preview immutability, dry-run manifest reporting, and commit scope.
+The existing default payload rebuilt with and without `--clean`.
+
+A local dry-run printed a 98-file proposed diff from
+`/tmp/project-steward-reliability-publish-target`. Before and after the run,
+the target remained on `main` at `65d18fc`; its index SHA-256 remained
+`12525d40003f5d0d5b62dc2426bc63a507b5cc4f0291d3c8a3188d9ab65d09c6`,
+and its only worktree file remained `README.md`. No pull, push, PR, or other
+network operation ran. Compileall and `git diff --check` exited 0. Self doctor
+reported 40 checks, 3 expected warnings, and 0 failures. The optional skill
+schema validator could not start in the required venv because PyYAML is not
+installed. Native Python 3.7 and Windows/macOS execution was not available.
 
 Task 2 verification: 2026-09-08 (ADR 0026) — 217 tests passed on Python
 3.12.3. The 31 focused Git path, root discovery, and session tests cover

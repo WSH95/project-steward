@@ -1,10 +1,13 @@
-import os
+import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,6 +16,15 @@ BUILDER = ROOT / "tools" / "build_plugin_payloads.py"
 
 def _json(path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_builder_module():
+    spec = importlib.util.spec_from_file_location(
+        "project_steward_payload_builder_test", BUILDER
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _run_builder(tmp_path):
@@ -320,9 +332,8 @@ def test_builder_does_not_emit_a_third_grok_payload(tmp_path):
 
 
 def test_builder_clean_replaces_previous_output(tmp_path):
-    out = tmp_path / "payloads"
+    out = _run_builder(tmp_path)
     stale = out / "claude" / "stale.txt"
-    stale.parent.mkdir(parents=True)
     stale.write_text("old", encoding="utf-8")
 
     subprocess.run(
@@ -336,3 +347,151 @@ def test_builder_clean_replaces_previous_output(tmp_path):
 
     assert not stale.exists()
     assert (out / "claude" / "plugins" / "project-steward").is_dir()
+
+
+@pytest.mark.parametrize(
+    "kind", ["repository-ancestor", "git", "external-git", "source"]
+)
+def test_builder_rejects_unsafe_output_before_cleanup(
+    tmp_path, monkeypatch, kind
+):
+    module = _load_builder_module()
+    repository = tmp_path / "workspace" / "project"
+    source = repository / "plugin-src"
+    source.mkdir(parents=True)
+    (source / "metadata.json").write_text(
+        json.dumps(_json(ROOT / "plugin-src" / "metadata.json")),
+        encoding="utf-8",
+    )
+    module.ROOT = repository
+    module.SOURCE = source
+
+    if kind == "repository-ancestor":
+        output = repository.parent
+    elif kind == "git":
+        output = repository / ".git" / "generated"
+        output.mkdir(parents=True)
+    elif kind == "external-git":
+        output = tmp_path / "unrelated" / ".git"
+        output.mkdir(parents=True)
+    else:
+        output = source / "generated"
+        output.mkdir()
+
+    cleanup_calls = []
+
+    def record_cleanup(path, *args, **kwargs):
+        cleanup_calls.append(path)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_cleanup)
+
+    with pytest.raises(SystemExit, match="unsafe output path"):
+        module.build(output, clean=True)
+
+    assert cleanup_calls == []
+
+
+@pytest.mark.parametrize("clean", [False, True])
+def test_builder_rejects_unrecognized_nonempty_output_before_mutation(
+    tmp_path, monkeypatch, clean
+):
+    module = _load_builder_module()
+    output = tmp_path / "payloads"
+    output.mkdir()
+    note = output / "local-note.txt"
+    note.write_text("keep me\n", encoding="utf-8")
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    with pytest.raises(SystemExit, match="unrecognized nonempty"):
+        module.build(output, clean=clean)
+
+    assert mutation_calls == []
+    assert note.read_text(encoding="utf-8") == "keep me\n"
+
+
+def test_builder_rejects_generated_output_containing_git_metadata(
+    tmp_path, monkeypatch
+):
+    out = _run_builder(tmp_path)
+    nested_git = out / "claude" / ".git"
+    nested_git.mkdir()
+    (nested_git / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    module = _load_builder_module()
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    with pytest.raises(SystemExit, match="Git metadata"):
+        module.build(out, clean=True)
+
+    assert mutation_calls == []
+    assert (nested_git / "HEAD").is_file()
+
+
+def test_builder_treats_malformed_payload_manifests_as_unrecognized(
+    tmp_path, monkeypatch
+):
+    out = _run_builder(tmp_path)
+    marketplace = out / "claude" / ".claude-plugin" / "marketplace.json"
+    data = _json(marketplace)
+    data["plugins"] = ["not-an-object"]
+    marketplace.write_text(
+        json.dumps(data, indent=2) + "\n", encoding="utf-8"
+    )
+    module = _load_builder_module()
+    mutation_calls = []
+
+    def record_mutation(*args, **kwargs):
+        mutation_calls.append(args)
+
+    monkeypatch.setattr(module.shutil, "rmtree", record_mutation)
+    monkeypatch.setattr(module, "_build_claude", record_mutation)
+    monkeypatch.setattr(module, "_build_codex", record_mutation)
+
+    with pytest.raises(SystemExit, match="unrecognized nonempty"):
+        module.build(out, clean=True)
+
+    assert mutation_calls == []
+
+
+def test_builder_accepts_generated_output_from_an_older_version(tmp_path):
+    out = _run_builder(tmp_path)
+    manifests = [
+        out / "claude" / "plugins" / "project-steward"
+        / ".claude-plugin" / "plugin.json",
+        out / "codex" / "plugins" / "project-steward"
+        / ".codex-plugin" / "plugin.json",
+        out / "claude" / ".claude-plugin" / "marketplace.json",
+    ]
+    for path in manifests:
+        data = _json(path)
+        if "version" in data:
+            data["version"] = "0.3.9"
+        if "metadata" in data:
+            data["metadata"]["version"] = "0.3.9"
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+    subprocess.run(
+        [sys.executable, str(BUILDER), "--clean", "--out", str(out)],
+        cwd=str(ROOT),
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert _json(manifests[0])["version"] == _json(
+        ROOT / "plugin-src" / "metadata.json"
+    )["version"]

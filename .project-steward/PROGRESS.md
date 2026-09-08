@@ -2,6 +2,19 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T10:44:39Z — codex
+Completed Task 3 build and publication safety (ADR 0027). The full suite passes
+234 tests; the focused 31-test set, clean and non-clean payload rebuilds, local
+98-file publication preview, compileall, self doctor (40/3/0), and diff checks
+pass. The preview left the target checkout's files, index, branch, and commit
+unchanged, and no remote operation ran.
+
+### 2026-09-08T10:36:46Z — codex
+Task 3 build and publication safety is focused-green. All 29 payload-builder
+and publisher tests pass after reproducing 13 unsafe-path, dirty-target,
+preview-mutation, manifest-write, and commit-scope failures. The existing
+generated `dist/project-steward` payload rebuilt successfully.
+
 ### 2026-09-08T10:05:34Z — codex
 Completed Task 2 Git path, repository-boundary, and worktree fixes. The full
 suite passes 217 tests; compileall, self doctor (40/3/0), and diff checks pass.

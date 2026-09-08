@@ -73,6 +73,13 @@ pipx install git+ssh://git@github.com/WSH95/project-steward.git
 python3 tools/build_plugin_payloads.py --clean --out dist/project-steward
 ```
 
+The builder validates the output before creating, replacing, or copying files.
+It accepts a new or empty directory, or an existing Project Steward payload
+whose Claude and Codex manifests identify the same artifact. This permits a
+payload from an earlier release to be rebuilt. Repository ancestors, Git
+metadata, source overlaps, symlinks, and other nonempty directories are
+rejected.
+
 **Claude Code (generated plugin: skills + commands + hooks in one step):**
 
 ```
@@ -129,7 +136,12 @@ python3 tools/publish_agent_artifact_pr.py \
 ```
 
 Remove `--dry-run` only after reviewing the copied output. The script
-opens a PR and never merges it.
+requires a clean target checkout. Dry-run builds the source payload, copies the
+target checkout to a temporary preview, and prints the proposed Git diff. It
+does not change the target's files, index, branch, or commits. With
+`--save-target-repo`, dry-run reports the proposed manifest update without
+writing it. A publication commit is scoped to the configured artifact path;
+the script opens a PR and never merges it.
 
 **Distribution repositories:**
 

@@ -60,6 +60,10 @@ def _validate_rel_path(value, label):
         raise UsageError("unsafe %s: %s" % (label, value))
     if any(part == ".." for part in path.parts):
         raise UsageError("unsafe %s: %s" % (label, value))
+    if label == "target_path" and any(
+        part.lower() == ".git" for part in path.parts
+    ):
+        raise UsageError("unsafe %s: %s" % (label, value))
     return path
 
 
@@ -69,11 +73,15 @@ def _is_under(child, parent):
     return child_s == parent_s or child_s.startswith(parent_s + os.sep)
 
 
-def _run(command, cwd, capture=False):
+def _run(command, cwd, capture=False, read_only=False):
     if isinstance(command, str):
         shell = True
     else:
         shell = False
+    env = None
+    if read_only:
+        env = os.environ.copy()
+        env["GIT_OPTIONAL_LOCKS"] = "0"
     if capture:
         result = subprocess.run(
             command,
@@ -83,9 +91,12 @@ def _run(command, cwd, capture=False):
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            env=env,
         )
         return result.stdout.strip()
-    subprocess.run(command, cwd=str(cwd), shell=shell, check=True)
+    subprocess.run(
+        command, cwd=str(cwd), shell=shell, check=True, env=env
+    )
     return ""
 
 
@@ -93,8 +104,14 @@ def _ensure_target_repo(manifest_path, manifest, artifact, args):
     repo = args.target_repo or artifact.get("target_repo", "")
     if repo:
         if args.target_repo and args.save_target_repo:
-            artifact["target_repo"] = repo
-            _write_json(manifest_path, manifest)
+            if args.dry_run:
+                sys.stdout.write(
+                    "DRY RUN: would save target_repo %s to %s\n"
+                    % (repo, manifest_path)
+                )
+            else:
+                artifact["target_repo"] = repo
+                _write_json(manifest_path, manifest)
         return repo
 
     if args.non_interactive:
@@ -112,19 +129,77 @@ def _ensure_target_repo(manifest_path, manifest, artifact, args):
         raise UsageError("target_repo is required")
     answer = input("Save target_repo to %s? [y/N] " % manifest_path).strip()
     if answer.lower() in ("y", "yes"):
-        artifact["target_repo"] = repo
-        _write_json(manifest_path, manifest)
+        if args.dry_run:
+            sys.stdout.write(
+                "DRY RUN: would save target_repo %s to %s\n"
+                % (repo, manifest_path)
+            )
+        else:
+            artifact["target_repo"] = repo
+            _write_json(manifest_path, manifest)
     return repo
 
 
-def _prepare_checkout(target_repo, args):
-    if args.target_checkout:
-        checkout = Path(args.target_checkout).expanduser().resolve()
-        if args.dry_run:
-            checkout.mkdir(parents=True, exist_ok=True)
-        elif not (checkout / ".git").is_dir():
-            raise UsageError("--target-checkout must be a git checkout")
-        return checkout, None
+def _validate_checkout(value):
+    supplied = Path(value).expanduser()
+    if supplied.is_symlink():
+        raise UsageError("--target-checkout must not be a symlink")
+    checkout = supplied.resolve()
+    if not checkout.is_dir():
+        raise UsageError("--target-checkout must be a git checkout")
+    try:
+        inside = _run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            checkout,
+            capture=True,
+            read_only=True,
+        )
+        top_level = Path(
+            _run(
+                ["git", "rev-parse", "--show-toplevel"],
+                checkout,
+                capture=True,
+                read_only=True,
+            )
+        ).resolve()
+    except subprocess.CalledProcessError:
+        raise UsageError("--target-checkout must be a git checkout")
+    if inside != "true" or top_level != checkout:
+        raise UsageError("--target-checkout must be a git checkout root")
+    return checkout
+
+
+def _require_clean_checkout(checkout):
+    status = _run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
+    if status:
+        raise UsageError(
+            "target checkout is not clean; preserve or remove local changes "
+            "before publishing:\n%s" % status
+        )
+
+
+def _prepare_checkout(target_repo, args, supplied_checkout=None):
+    if supplied_checkout is not None:
+        if not args.dry_run:
+            return supplied_checkout, None
+        temp_dir = tempfile.mkdtemp(prefix="agent-artifact-preview-")
+        checkout = Path(temp_dir) / "target"
+        _run(
+            [
+                "git",
+                "clone",
+                "--no-hardlinks",
+                str(supplied_checkout),
+                str(checkout),
+            ],
+            Path.cwd(),
+        )
+        return checkout, temp_dir
 
     temp_dir = tempfile.mkdtemp(prefix="agent-artifact-pr-")
     checkout = Path(temp_dir) / "target"
@@ -132,19 +207,53 @@ def _prepare_checkout(target_repo, args):
     return checkout, temp_dir
 
 
-def _copy_source(project_root, checkout, artifact):
-    source_path = _validate_rel_path(artifact.get("source_path"), "source_path")
-    target_path = _validate_rel_path(artifact.get("target_path"), "target_path")
+def _source_path(project_root, source_path):
     source = (project_root / source_path).resolve()
-    destination = (checkout / target_path).resolve()
-
     if not _is_under(source, project_root):
         raise UsageError("unsafe source_path: %s" % source_path)
     if not source.exists():
         raise UsageError("source_path does not exist: %s" % source_path)
-    if not _is_under(destination, checkout):
-        raise UsageError("unsafe target_path: %s" % target_path)
+    return source
 
+
+def _unsafe_destination_entry(path):
+    if path.is_symlink():
+        return path, "symlink"
+    if not path.is_dir():
+        return None
+    for current, directories, files in os.walk(str(path), followlinks=False):
+        current_path = Path(current)
+        for name in directories + files:
+            candidate = current_path / name
+            if name.lower() == ".git":
+                return candidate, "Git metadata"
+            if candidate.is_symlink():
+                return candidate, "symlink"
+    return None
+
+
+def _destination_path(checkout, target_path):
+    checkout = checkout.resolve()
+    destination = checkout
+    for part in target_path.parts:
+        destination = destination / part
+        if destination.is_symlink():
+            raise UsageError(
+                "unsafe symlinked target_path: %s" % target_path
+            )
+    resolved = destination.resolve()
+    if not _is_under(resolved, checkout):
+        raise UsageError("unsafe target_path: %s" % target_path)
+    unsafe = _unsafe_destination_entry(destination)
+    if unsafe:
+        unsafe_path, reason = unsafe
+        raise UsageError(
+            "unsafe target_path contains %s: %s" % (reason, unsafe_path)
+        )
+    return destination
+
+
+def _copy_source(source, destination):
     if destination.exists():
         if destination.is_dir():
             shutil.rmtree(str(destination))
@@ -155,26 +264,76 @@ def _copy_source(project_root, checkout, artifact):
         shutil.copytree(str(source), str(destination))
     else:
         shutil.copy2(str(source), str(destination))
-    return target_path
 
 
 def _branch_name(artifact):
-    stamp = _datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    stamp = _datetime.datetime.now(_datetime.timezone.utc).strftime(
+        "%Y%m%d%H%M%S"
+    )
     raw = str(artifact.get("name", "artifact"))
     safe = re.sub(r"[^A-Za-z0-9._-]+", "-", raw).strip("-").lower()
     return "publish/%s/%s" % (safe or "artifact", stamp)
 
 
 def _git_has_changes(checkout, target_path):
-    output = _run(["git", "status", "--short", "--", str(target_path)],
-                  checkout, capture=True)
+    output = _run(
+        ["git", "status", "--short", "--", target_path.as_posix()],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
     return bool(output)
+
+
+def _assert_index_scope(checkout, target_path):
+    raw = _run(
+        ["git", "diff", "--cached", "--name-only", "-z"],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
+    staged = [path for path in raw.split("\0") if path]
+    expected = target_path.as_posix().rstrip("/")
+    outside = [
+        path for path in staged
+        if path != expected and not path.startswith(expected + "/")
+    ]
+    if outside:
+        raise UsageError(
+            "refusing to commit paths outside target_path %s: %s"
+            % (target_path, ", ".join(outside))
+        )
+    if not staged:
+        raise UsageError("no staged changes for target_path %s" % target_path)
+
+
+def _print_preview_diff(checkout, target_path):
+    git_path = target_path.as_posix()
+    summary = _run(
+        ["git", "diff", "--cached", "--stat", "--", git_path],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
+    diff = _run(
+        ["git", "diff", "--cached", "--no-ext-diff", "--", git_path],
+        checkout,
+        capture=True,
+        read_only=True,
+    )
+    if diff:
+        sys.stdout.write("DRY RUN: proposed artifact diff\n")
+        if summary:
+            sys.stdout.write(summary + "\n")
+        sys.stdout.write(diff + "\n")
+    else:
+        sys.stdout.write("DRY RUN: no artifact changes proposed.\n")
 
 
 def _source_commit(project_root):
     try:
         return _run(["git", "rev-parse", "--short", "HEAD"],
-                    project_root, capture=True)
+                    project_root, capture=True, read_only=True)
     except Exception:
         return "unknown"
 
@@ -185,38 +344,71 @@ def publish(args):
     manifest = _load_json(manifest_path)
     artifact = _select_artifact(manifest, args.artifact)
     target_repo = _ensure_target_repo(manifest_path, manifest, artifact, args)
+    source_rel = _validate_rel_path(
+        artifact.get("source_path"), "source_path"
+    )
+    target_path = _validate_rel_path(
+        artifact.get("target_path"), "target_path"
+    )
+    supplied_checkout = None
+    if args.target_checkout:
+        supplied_checkout = _validate_checkout(args.target_checkout)
+        _require_clean_checkout(supplied_checkout)
+        _destination_path(supplied_checkout, target_path)
+
     build_command = artifact.get("build_command", "")
 
     if build_command:
         sys.stdout.write("Running build command: %s\n" % build_command)
         _run(build_command, project_root)
 
-    checkout, temp_dir = _prepare_checkout(target_repo, args)
+    source = _source_path(project_root, source_rel)
+    checkout, temp_dir = _prepare_checkout(
+        target_repo, args, supplied_checkout=supplied_checkout
+    )
     try:
         base_branch = args.base or artifact.get("base_branch", "main")
-        branch = args.branch or _branch_name(artifact)
-        if not args.dry_run:
+        if args.dry_run:
+            _run(["git", "checkout", base_branch], checkout)
+        else:
+            _require_clean_checkout(checkout)
             _run(["git", "checkout", base_branch], checkout)
             _run(["git", "pull", "--ff-only", "origin", base_branch], checkout)
+            _require_clean_checkout(checkout)
+            branch = args.branch or _branch_name(artifact)
             _run(["git", "checkout", "-b", branch], checkout)
 
-        target_path = _copy_source(project_root, checkout, artifact)
+        destination = _destination_path(checkout, target_path)
+        _copy_source(source, destination)
 
         if args.dry_run:
-            sys.stdout.write(
-                "DRY RUN: copied %s to %s in %s; no commit, push, or PR\n"
-                % (artifact["source_path"], target_path, checkout)
-            )
+            if _git_has_changes(checkout, target_path):
+                _run(["git", "add", "--", target_path.as_posix()], checkout)
+                _assert_index_scope(checkout, target_path)
+            _print_preview_diff(checkout, target_path)
+            if args.keep_temp:
+                sys.stdout.write("DRY RUN: preview retained at %s\n" % checkout)
+            else:
+                sys.stdout.write(
+                    "DRY RUN: target checkout unchanged; preview was temporary.\n"
+                )
             return 0
 
         if not _git_has_changes(checkout, target_path):
             sys.stdout.write("No changes after copy; no PR created.\n")
             return 0
 
-        _run(["git", "add", str(target_path)], checkout)
+        _run(["git", "add", "--", target_path.as_posix()], checkout)
+        _assert_index_scope(checkout, target_path)
         title = args.pr_title or "Update %s" % artifact.get("name", "artifact")
         commit_message = args.commit_message or title
-        _run(["git", "commit", "-m", commit_message], checkout)
+        _run(
+            [
+                "git", "commit", "-m", commit_message,
+                "--only", "--", target_path.as_posix(),
+            ],
+            checkout,
+        )
         _run(["git", "push", "-u", "origin", branch], checkout)
         body = args.pr_body or (
             "Published from %s at %s." % (Path.cwd().name,
@@ -248,14 +440,28 @@ def main(argv=None):
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--artifact")
     parser.add_argument("--target-repo")
-    parser.add_argument("--save-target-repo", action="store_true")
+    parser.add_argument(
+        "--save-target-repo",
+        action="store_true",
+        help=(
+            "save an explicit target repo to the manifest; with --dry-run, "
+            "report the proposed update without writing it"
+        ),
+    )
     parser.add_argument("--target-checkout")
     parser.add_argument("--base")
     parser.add_argument("--branch")
     parser.add_argument("--pr-title")
     parser.add_argument("--pr-body")
     parser.add_argument("--commit-message")
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "build in the source checkout, create a temporary publication "
+            "preview, and print its diff without changing the target checkout"
+        ),
+    )
     parser.add_argument("--keep-temp", action="store_true")
     parser.add_argument("--non-interactive", action="store_true")
     args = parser.parse_args(argv)

@@ -516,3 +516,30 @@ Managed roots below a larger repository accept their own staged paths and
 still reject staged entries elsewhere in that repository.
 Merge, rebase, and cherry-pick detection works in ordinary repositories and
 `.git`-file layouts such as linked worktrees and submodules.
+
+## 0027 — 2026-09-08 — Validate build outputs and isolate publication previews
+
+**Context**: The payload builder validated only a small set of paths during a
+clean build and performed no destination check without `--clean`. The
+publication dry-run copied directly into a supplied target checkout. A dirty
+checkout or unrelated staged file could also be changed or included in the
+publication commit.
+
+**Decision**: Validate every build output before mutation. Accept only a new or
+empty directory, or an existing generated payload whose Claude and Codex
+manifests match the artifact's stable identity. Ignore version differences so
+an earlier release remains rebuildable. Reject repository ancestors, Git
+metadata, source overlaps, symlinks, and unrecognized nonempty directories.
+
+Require supplied publication checkouts to be clean. Inspect them with Git's
+optional locks disabled, then create dry-run previews in temporary local
+clones. Validate the configured artifact destination within the checkout,
+reject symlinks and Git metadata, stage only the artifact, verify the complete
+index scope, and commit with an artifact pathspec. During dry-run,
+`--save-target-repo` reports the manifest change without writing it.
+
+**Consequences**: Build cleanup is limited to recognized disposable output.
+Dry-run can regenerate ignored source payloads, but it leaves the target
+checkout's files, index, branch, and commits unchanged while printing the
+proposed diff. Normal publication refuses local target work and unrelated
+staged paths before pushing or opening a PR.

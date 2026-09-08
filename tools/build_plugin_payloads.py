@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -54,18 +55,161 @@ def _copy_file(src, dst):
     shutil.copy2(str(src), str(dst))
 
 
-def _safe_clean(path):
-    target = path.expanduser().resolve()
-    forbidden = {
-        ROOT.resolve(),
-        SOURCE.resolve(),
-        Path.home().resolve(),
-        Path(target.anchor).resolve(),
-    }
-    if target in forbidden:
-        raise SystemExit("refusing to clean unsafe output path: %s" % target)
-    if target.exists():
-        shutil.rmtree(str(target))
+def _is_under(path, parent):
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _git_metadata_paths():
+    marker = ROOT.resolve() / ".git"
+    paths = [marker.resolve()]
+    if marker.is_file() and not marker.is_symlink():
+        try:
+            first_line = marker.read_text(encoding="utf-8").splitlines()[0]
+        except (OSError, UnicodeError, IndexError):
+            first_line = ""
+        if first_line.lower().startswith("gitdir:"):
+            git_dir = Path(first_line.split(":", 1)[1].strip())
+            if not git_dir.is_absolute():
+                git_dir = marker.parent / git_dir
+            paths.append(git_dir.resolve())
+    return paths
+
+
+def _unsafe_output_entry(path):
+    if path.is_symlink():
+        return path, "symlink"
+    if not path.is_dir():
+        return None
+    for current, directories, files in os.walk(str(path), followlinks=False):
+        current_path = Path(current)
+        for name in directories + files:
+            candidate = current_path / name
+            if name.lower() == ".git":
+                return candidate, "Git metadata"
+            if candidate.is_symlink():
+                return candidate, "symlink"
+    return None
+
+
+def _read_generated_manifest(path):
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _is_generated_output(path, meta):
+    name = meta.get("name")
+    marketplace = meta.get("marketplace")
+    if not isinstance(name, str) or not isinstance(marketplace, dict):
+        return False
+
+    claude_plugin = _read_generated_manifest(
+        path / "claude" / "plugins" / name
+        / ".claude-plugin" / "plugin.json"
+    )
+    codex_plugin = _read_generated_manifest(
+        path / "codex" / "plugins" / name
+        / ".codex-plugin" / "plugin.json"
+    )
+    claude_marketplace = _read_generated_manifest(
+        path / "claude" / ".claude-plugin" / "marketplace.json"
+    )
+    codex_marketplace = _read_generated_manifest(
+        path / "codex" / ".agents" / "plugins" / "marketplace.json"
+    )
+    if not all((claude_plugin, codex_plugin,
+                claude_marketplace, codex_marketplace)):
+        return False
+
+    stable_fields = ("name", "author", "homepage", "license")
+    if any(claude_plugin.get(field) != meta.get(field)
+           for field in stable_fields):
+        return False
+    if any(codex_plugin.get(field) != meta.get(field)
+           for field in stable_fields):
+        return False
+    if codex_plugin.get("repository") != meta.get("repository"):
+        return False
+
+    marketplace_name = marketplace.get("name")
+    if claude_marketplace.get("name") != marketplace_name:
+        return False
+    if codex_marketplace.get("name") != marketplace_name:
+        return False
+    expected_path = "./plugins/%s" % name
+    claude_entries = claude_marketplace.get("plugins")
+    codex_entries = codex_marketplace.get("plugins")
+    if not isinstance(claude_entries, list) or len(claude_entries) != 1:
+        return False
+    if not isinstance(codex_entries, list) or len(codex_entries) != 1:
+        return False
+    if not isinstance(claude_entries[0], dict):
+        return False
+    if not isinstance(codex_entries[0], dict):
+        return False
+    if claude_entries[0].get("name") != name:
+        return False
+    if claude_entries[0].get("source") != expected_path:
+        return False
+    if codex_entries[0].get("name") != name:
+        return False
+    if codex_entries[0].get("source") != {
+        "source": "local",
+        "path": expected_path,
+    }:
+        return False
+    return True
+
+
+def _validate_output(path, meta):
+    expanded = path.expanduser()
+    lexical = Path(os.path.abspath(str(expanded)))
+    target = lexical.resolve()
+    root = ROOT.resolve()
+    source = SOURCE.resolve()
+
+    if lexical.is_symlink():
+        raise SystemExit("refusing unsafe output path (symlink): %s" % lexical)
+    if _is_under(root, target):
+        raise SystemExit(
+            "refusing unsafe output path (repository ancestor): %s" % target
+        )
+    if _is_under(target, source) or _is_under(source, target):
+        raise SystemExit(
+            "refusing unsafe output path (source-tree overlap): %s" % target
+        )
+    for git_path in _git_metadata_paths():
+        if _is_under(target, git_path) or _is_under(git_path, target):
+            raise SystemExit(
+                "refusing unsafe output path (Git metadata): %s" % target
+            )
+    if target == Path.home().resolve() or target == Path(target.anchor).resolve():
+        raise SystemExit("refusing unsafe output path: %s" % target)
+    if target.name.lower() == ".git":
+        raise SystemExit(
+            "refusing unsafe output path (Git metadata): %s" % target
+        )
+    if target.exists() and not target.is_dir():
+        raise SystemExit("refusing non-directory output path: %s" % target)
+
+    unsafe = _unsafe_output_entry(target)
+    if unsafe:
+        unsafe_path, reason = unsafe
+        raise SystemExit(
+            "refusing output containing %s: %s" % (reason, unsafe_path)
+        )
+    if target.exists() and any(target.iterdir()):
+        if not _is_generated_output(target, meta):
+            raise SystemExit(
+                "refusing unrecognized nonempty output directory: %s" % target
+            )
+    return target
 
 
 def _base_fields(meta, description):
@@ -166,10 +310,12 @@ def _build_codex(out, meta):
 
 
 def build(out, clean=False):
-    if clean:
-        _safe_clean(out)
-    out.mkdir(parents=True, exist_ok=True)
     meta = _load_metadata()
+    out = _validate_output(out, meta)
+    if clean:
+        if out.exists():
+            shutil.rmtree(str(out))
+    out.mkdir(parents=True, exist_ok=True)
     _build_claude(out, meta)
     _build_codex(out, meta)
     return out
