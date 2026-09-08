@@ -82,7 +82,13 @@ def run_checks(root, self_mode=False):
     cfg_path = sdir / "config.toml"
     if cfg_path.is_file():
         try:
-            load_toml_text(cfg_path.read_text(encoding="utf-8"))
+            parsed_config = load_toml_text(cfg_path.read_text(encoding="utf-8"))
+            git_config = parsed_config.get("git", {})
+            if not isinstance(git_config, dict) or git_config.get(
+                    "commit_policy", "ask") not in ("auto", "ask", "never"):
+                raise ValueError("git.commit_policy must be auto, ask, or never; using ask")
+            if not isinstance(parsed_config.get("init", {}), dict):
+                raise ValueError("init section must be a table; using defaults")
             _check(results, OK, "config.toml parses")
         except Exception as exc:
             _check(results, FAIL, "config.toml parses", str(exc))
@@ -108,6 +114,11 @@ def run_checks(root, self_mode=False):
     agents_path = root / "AGENTS.md"
     if agents_path.is_file():
         text = agents_path.read_text(encoding="utf-8")
+        if ".project-steward/WORKFLOW.md" in text:
+            workflow = sdir / "WORKFLOW.md"
+            readable = workflow.is_file() and bool(workflow.read_text(encoding="utf-8").strip())
+            _check(results, OK if readable else FAIL, "AGENTS.md workflow reference",
+                   "" if readable else "WORKFLOW.md is missing or empty")
         _check(results,
                OK if has_block(text, "agent-session-protocol") else WARN,
                "AGENTS.md session-protocol block",
@@ -131,6 +142,13 @@ def run_checks(root, self_mode=False):
     else:
         _check(results, WARN, "CLAUDE.md", "missing (Claude Code will not "
                                            "read AGENTS.md by itself)")
+
+    from .codex_setup import inspect_setup
+    init_config = load_config(root).get("init", {})
+    if not isinstance(init_config, dict):
+        init_config = {}
+    if init_config.get("codex_hooks") is not False:
+        results.extend(inspect_setup(root))
 
     # Gitignore for runtime state
     gi = root / ".gitignore"
@@ -188,7 +206,7 @@ def _self_checks(root):
         else:
             _check(results, WARN, "self: %s" % manifest, "missing")
     for hooks_file in ("plugin-src/claude/hooks/hooks.json",
-                       "plugin-src/codex/hooks/hooks.json"):
+                       "plugin-src/src/project_steward/templates/codex-hooks.json.template"):
         path = root / hooks_file
         if path.is_file():
             try:
@@ -240,7 +258,7 @@ def _self_checks(root):
                 else:
                     _check(results, OK, name,
                            "handlers run hooks/run-hook.cmd")
-            if hooks_file == "plugin-src/codex/hooks/hooks.json":
+            if hooks_file == "plugin-src/src/project_steward/templates/codex-hooks.json.template":
                 name = "self: %s schema" % hooks_file
                 if not isinstance(data, dict):
                     _check(results, FAIL, name, "root must be an object")

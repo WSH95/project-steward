@@ -16,9 +16,9 @@ def test_init_scaffold_creates_everything(git_repo):
     assert "PROJECT-STEWARD:BEGIN agent-session-protocol" in agents
     assert "$project_name" not in agents  # no unresolved placeholders
     assert len(agents.splitlines()) <= 50
-    assert "## Project context" in agents
+    assert ".project-steward/WORKFLOW.md" in agents
     assert "- Test: `pytest`" in agents
-    assert "write plain, factual updates" in agents
+    assert (state_dir(git_repo) / "WORKFLOW.md").is_file()
     assert "zero-context successor" not in agents
     claude = (git_repo / "CLAUDE.md").read_text(encoding="utf-8")
     assert "@AGENTS.md" in claude

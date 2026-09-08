@@ -2,6 +2,23 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T07:00:51Z — codex
+Completed the 0.4.0 workflow improvements and release-review fixes. Validation:
+174 tests; 48 simulated older-Python Codex checks (12 native-only skips);
+compileall, Python 3.7 syntax, self doctor 40/3/0, payload build, installed-wheel
+smoke, local publication dry-run, plugin manifests, changed skill schemas, and
+launcher smoke. Init suggestions include newly written Codex files and respect
+never. Version metadata and project records are synchronized; no push or
+publication was performed. Existing source file modes are preserved.
+
+### 2026-09-08T06:35:22Z — codex
+Implemented the 0.4.0 workflow changes (ADR 0024): concise AGENTS pointer,
+milestone commit policy, external-backend overviews, and project-local Codex
+setup. Initial validation passed 130 tests, compileall, payload build, and
+installed-wheel smoke. Release review reproduced three configuration/upgrade
+edge cases; fixes and final verification are in progress. Work is isolated
+from the source checkout's pre-existing file-mode changes.
+
 ### 2026-08-26T10:20:39Z — cli
 [auto-checkpoint] Recorded the merged Project Steward 0.3.4 distribution PR (agent-plugins #11, merge f969829).
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — 2026-09-08
+
+- Move generated stewardship instructions into `.project-steward/WORKFLOW.md`.
+  AGENTS.md retains project context, commands, and a required-reading pointer.
+  Reviewed re-init preserves user prose and existing project records.
+- Default new projects to agent-chosen milestone commits covering verified code
+  and project records. Add `init --commit-policy auto|ask|never`; existing
+  policies and the conservative legacy fallback remain unchanged. Hooks never
+  commit. `wrap --commit` rejects unrelated staged changes and returns Git errors.
+- Give external task backends a focused milestone/task overview and substantive
+  init/handoff guidance. Recaps identify the task backend and avoid presenting
+  Markdown checkbox counts as external task totals.
+- Configure project-local Codex hooks during init, with `--no-codex-hooks` to
+  opt out. Preserve existing configuration and custom hooks; report unsupported
+  setup without overwriting it. Init and payloads share one packaged hook source.
+  Codex project trust and `/hooks` review are still required.
+
 ## 0.3.4 — 2026-08-26
 
 ### Fixed

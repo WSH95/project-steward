@@ -8,6 +8,9 @@ description: Resume work in a Project Steward managed project. Use at the START 
 Continuity comes from files in git, not from any tool's native history.
 The user may arrive from Codex, Grok, from another device, or after a crash.
 
+Read `.project-steward/WORKFLOW.md` when present; older projects keep the
+protocol inline in AGENTS.md.
+
 ## 1. Read state (in this order)
 
 Prefer `project-steward resume --agent <tool> --json` — it claims the
@@ -17,7 +20,9 @@ dirties the working tree**) and returns the recap plus crash signals.
 Without the CLI, read: `HANDOFF.md` front matter and body →
 `PROGRESS.md` top entry → `git log --oneline -5` and `git status` →
 `PLAN.md` current milestone → `QUESTIONS.md` open items → the task
-backend's ready view if one is adopted (e.g. `bd ready`).
+backend's ready view if one is adopted (e.g. `bd ready`). For an external backend, PLAN.md is a dated overview,
+not an authoritative task count. If access fails, retain the last verified
+overview, report that limitation, and use HANDOFF.md for the next check.
 
 ## 2. Detect abnormal termination
 

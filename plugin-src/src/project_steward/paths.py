@@ -57,6 +57,7 @@ def has_legacy_state(root):
 
 # Durable, committed state files.
 DURABLE_FILES = [
+    "WORKFLOW.md",
     "PROJECT.md",
     "PLAN.md",
     "PROGRESS.md",

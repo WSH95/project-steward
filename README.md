@@ -27,9 +27,9 @@ plugin-src/        canonical source for plugin development
   references/      session-protocol, security-model, backend-selection,
                    cross-platform, self-hosting, migration docs
   src/project_steward/   Python 3.7+ stdlib-only CLI + hook dispatcher
-    templates/     AGENTS.md, CLAUDE.md adapter, and 11 state templates
+    templates/     instruction/state templates + canonical Codex hook JSON
   claude/          Claude Code commands + bin launcher + hook config
-  codex/           optional Codex prompts + manual Codex hook config
+  codex/           optional Codex prompts
   metadata.json    shared plugin/marketplace metadata
 agent-artifacts.json       publish target metadata for generated artifacts
 tools/
@@ -38,7 +38,7 @@ tools/
 dist/project-steward/     generated extraction output (gitignored)
   claude/          Claude marketplace + plugins/project-steward payload
   codex/           Codex marketplace + plugins/project-steward payload,
-                   optional prompts, and manual hooks.json
+                   optional prompts, and hooks.json for manual/global setups
 codex/             INSTALL.md for Codex-specific usage
 tests/  .github/workflows/ci.yml   unit tests; Ubuntu/Windows/macOS CI
 .project-steward/  this repo's own state (self-hosting) — never ships
@@ -46,10 +46,13 @@ tests/  .github/workflows/ci.yml   unit tests; Ubuntu/Windows/macOS CI
 
 Inside a managed project it creates `AGENTS.md` (canonical), `CLAUDE.md`
 (thin `@AGENTS.md` adapter — Claude Code does not read AGENTS.md
-natively), and `.project-steward/` with `PROJECT.md`, `PLAN.md`,
+natively), and `.project-steward/` with `WORKFLOW.md`, `PROJECT.md`, `PLAN.md`,
 `PROGRESS.md`, `HANDOFF.md`, `DECISIONS.md`, `QUESTIONS.md`, `RISKS.md`,
 `VERIFY.md`, `config.toml`, `state.json`, `backend.json`, plus a
 gitignored `runtime/` for device-local session claims and forensics.
+AGENTS.md keeps project identity, commands, and an instruction to read WORKFLOW.md;
+the detailed stewardship protocol lives there. Init also prepares `.codex/`
+configuration and hooks unless `--no-codex-hooks` is selected.
 
 ## Install
 
@@ -81,7 +84,8 @@ python3 tools/build_plugin_payloads.py --clean --out dist/project-steward
 `~/.agents/skills/` or install from the generated Codex marketplace under
 `dist/project-steward/codex` with
 `codex plugin add project-steward@project-steward-marketplace`. Codex
-hooks use `features.hooks` and remain a manual `hooks.json` install.
+hooks use `features.hooks`; init prepares the project-local hook files.
+Codex project trust and `/hooks` review are still required.
 
 **Grok Build (reuses the generated Claude plugin; no third payload):**
 
@@ -105,7 +109,7 @@ opens the native session picker — use `/session-resume` or
 `project-steward resume --agent grok`.
 
 **Generic agents:** any tool that reads `AGENTS.md` gets the session
-protocol from its managed block; any tool that runs shell commands can
+protocol through its required-reading pointer to WORKFLOW.md; any tool that runs shell commands can
 use the CLI directly.
 
 ### Writing style
@@ -140,7 +144,8 @@ opens a PR and never merges it.
 ## Quickstart flow
 
 ```
-project-steward init          # or /project-steward:init for the full interview
+project-steward init          # full interview: /project-steward:init
+# Optional: --commit-policy ask (or never), --no-codex-hooks
 project-steward resume        # session start: recap + crash detection
 project-steward checkpoint --note "..."      # semantic boundaries
 project-steward wrap --summary "..."         # session end (+ --commit)
@@ -159,7 +164,7 @@ the surface; `--json` and `--dry-run` are available where they matter.
    a discovery interview instead), then AGENTS.md/CLAUDE.md/state
    generation behind an approval gate. Git init is offered, never forced.
 2. **Real-time progress tracking** — event-table updates at semantic
-   boundaries, commit nudges per `commit_policy`, and hard guardrails:
+   boundaries, local milestone commits per `commit_policy`, and hard guardrails:
    AGENTS.md/CLAUDE.md are edited only inside `PROJECT-STEWARD` managed
    blocks, with diffs, explicit approval, and a DECISIONS.md audit trail.
 3. **Crash-resilient cross-tool resume** — wrap writes a
@@ -189,8 +194,12 @@ You should not need to already know
 [gh CLI](https://cli.github.com). `backend recommend` detects what is
 installed/in use, scores candidates from project signals, and explains in
 plain English; `backend adopt <name>` is approval-gated and rewrites only
-the AGENTS.md task-backend block. One system owns fine-grained tasks at a
-time — PLAN.md degrades to milestones + a pointer. Installs are assisted,
+the WORKFLOW.md task-backend block (AGENTS.md for legacy projects) and
+backend.json. One system owns detailed tasks. PLAN.md retains milestone goals
+and a dated overview of active, blocked, next, and recent work with task IDs;
+HANDOFF.md retains full context and validation evidence. Update the backend
+first, then these summaries. If access fails, preserve and qualify the last
+verified overview. Installs are assisted,
 never silent. Linear/Jira are honest stubs. Details:
 [plugin-src/references/backend-selection.md](plugin-src/references/backend-selection.md).
 
@@ -216,7 +225,14 @@ Safe-init never executes project scripts; `.env`-like files are flagged
 but never read; doctor fails on secret patterns in committed steward
 files; risky commands (installs, pushes, `curl | sh`, ...) always require
 explicit approval. The CLI **never pushes**; commits happen only via
-`wrap --commit` under a permitting `commit_policy`. Hooks always exit 0,
+`wrap --commit` under a permitting `commit_policy`; agents use ordinary Git
+commands for feature commits. New projects default to `auto`: after relevant
+checks pass, the agent commits coherent code, tests, task artifacts, and project
+records together using reviewed paths/hunks. `ask` proposes before committing;
+`never` skips commits and nudges. Existing policies remain unchanged, and missing
+or invalid legacy policies fall back to `ask`. The wrap helper retains its
+stewardship-file scope, rejects unrelated staged changes, and returns Git errors.
+Hooks never commit. They always exit 0,
 touch no network, and are ~250 auditable lines — review them before
 trusting, like any hook. Details:
 [plugin-src/references/security-model.md](plugin-src/references/security-model.md).
@@ -246,8 +262,10 @@ standard is the canonical instruction carrier.
   Codex hooks need `project-steward` on PATH, `features.hooks = true`,
   and trust in `/hooks`; some clients do not support hooks. Grok needs
   `grok plugin install project-steward --trust` (Claude-cache discovery
-  loads skills only). The AGENTS.md protocol still works.
-  `project-steward doctor` reports CLI availability.
+  loads skills only). The WORKFLOW.md protocol still works through AGENTS.md.
+  `project-steward doctor` reports installation and CLI availability separately
+  from activation. Existing disabled settings stay disabled; unsupported inline
+  hooks or malformed files are preserved and reported during init.
 - **"Not a Project Steward project"** → run `init`, or `--root` points
   elsewhere.
 - **Legacy `.projectforge/` warnings** → `project-steward migrate`.

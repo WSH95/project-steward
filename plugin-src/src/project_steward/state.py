@@ -93,7 +93,15 @@ def load_config(root):
         return copy.deepcopy(DEFAULT_CONFIG)
     try:
         text = cfg_path.read_text(encoding="utf-8")
-        return _deep_merge(DEFAULT_CONFIG, load_toml_text(text))
+        config = _deep_merge(DEFAULT_CONFIG, load_toml_text(text))
+        git = config.get("git")
+        if not isinstance(git, dict):
+            config["git"] = copy.deepcopy(DEFAULT_CONFIG["git"])
+        elif git.get("commit_policy") not in ("auto", "ask", "never"):
+            git["commit_policy"] = "ask"
+        if not isinstance(config.get("init"), dict):
+            config["init"] = copy.deepcopy(DEFAULT_CONFIG["init"])
+        return config
     except Exception:
         # Broken config must never break hooks; doctor reports it.
         return copy.deepcopy(DEFAULT_CONFIG)

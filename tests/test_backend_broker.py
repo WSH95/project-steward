@@ -29,12 +29,12 @@ def test_beads_wins_with_blockers_and_artifacts(git_repo):
     assert ranked[0]["name"] == "beads"
 
 
-def test_adopt_updates_agents_and_backend_json(git_repo):
+def test_adopt_updates_workflow_and_backend_json(git_repo):
     _init(git_repo)
     report = backend_broker.adopt(git_repo, "beads", assume_yes=True)
     assert report["ok"]
-    agents = (git_repo / "AGENTS.md").read_text(encoding="utf-8")
-    assert "beads owns the detailed task list" in agents
+    workflow = (state_dir(git_repo) / "WORKFLOW.md").read_text(encoding="utf-8")
+    assert "beads owns detailed tasks" in workflow
     assert load_backend(git_repo)["name"] == "beads"
     stub = backend_broker.adopt(git_repo, "jira", assume_yes=True)
     assert not stub["ok"]

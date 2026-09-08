@@ -404,6 +404,7 @@ def build_recap(root, runtime_record=None):
     ``runtime_record`` is forwarded to ``detect_crash_signals`` (pass the
     pre-claim record after ``claim_session``).
     """
+    from .state import load_backend
     meta, body, _ = handoff_meta(root)
     milestone, open_tasks = _plan_current(root)
     section = _extract_section(body, "## Next steps")
@@ -424,6 +425,7 @@ def build_recap(root, runtime_record=None):
         },
         "current_milestone": milestone,
         "open_tasks": open_tasks,
+        "task_backend": load_backend(root)["name"],
         "latest_progress": _progress_head(root),
         "open_questions": _open_questions(root),
         "next_steps_excerpt": section[:600],
@@ -465,11 +467,16 @@ def format_recap(recap):
         )
     else:
         lines.append("Git: not a repository")
-    if recap["current_milestone"]:
+    backend = recap.get("task_backend", "markdown")
+    if backend != "markdown":
+        lines.append("Task backend: %s (PLAN.md is a milestone overview)" % backend)
+    if recap["current_milestone"] and backend == "markdown":
         lines.append(
             "Milestone: %s (%d open task(s) in PLAN.md)"
             % (recap["current_milestone"], recap["open_tasks"])
         )
+    elif recap["current_milestone"]:
+        lines.append("Milestone: %s" % recap["current_milestone"])
     if recap["latest_progress"]:
         lines.append("Latest progress entry: %s" % recap["latest_progress"])
     if recap["open_questions"]:

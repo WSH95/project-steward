@@ -1,40 +1,38 @@
 ---
-updated_at: 2026-08-26T10:20:39Z
-updated_by: cli
+updated_at: 2026-09-08T07:00:51Z
+updated_by: codex
 session_status: closed
-branch: main
+branch: feat/workflow-improvements
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.3.4 removes the self-referential `last_commit` field from
-`HANDOFF.md`. Resume derives the handoff anchor from Git history and keeps the
-existing JSON key for compatibility. A clean clone no longer treats its own
-handoff commit as unexplained work. ADR 0023.
+Project Steward 0.4.0 implements the approved workflow improvements in
+`docs/plans/2026-09-08-workflow-improvements.md` (ADR 0024). Generated AGENTS.md
+points to WORKFLOW.md; new projects default to local milestone commits;
+external task backends retain task ownership with readable PLAN/HANDOFF
+context; init configures project-local Codex hooks with an opt-out.
 
-The Stop guard now handles each activity batch once. If no project state
-changed, the agent leaves tracked files alone instead of creating another
-checkpoint. The full release suite passes: 85 tests, compileall, self doctor
-36/0, payload build, publication dry-run, skill schema, Claude, Codex, and
-Grok validators, launcher smoke, and `git diff --check`.
-
-The 0.3.4 implementation is on `origin/main` at `4750e38`. Generated payload
-commit `13fc90f` was merged into `WSH95/agent-plugins` as `f969829` in PR #11:
-https://github.com/WSH95/agent-plugins/pull/11
+Validation passed: 174 tests, 48 tests under the simulated older-Python Codex
+fallback (12 native-parser cases skipped), compileall, Python 3.7 syntax checks,
+self doctor with zero failures, payload build, installed-wheel smoke, local
+publication dry-run, Claude/Codex/Grok manifests, changed skill schemas, and the
+bundled launcher. Full native OS/Python CI was not run in this session.
 
 ## In flight
 
-- No 0.3.4 release work remains in flight; `agent-plugins` PR #11 was merged
-  on 2026-08-26 at 10:19:01 UTC.
-- `dist/project-steward/` was rebuilt at 0.3.4 and remains gitignored.
+- No 0.4.0 implementation tasks remain. The changes are ready for local review;
+  no publication or push was requested.
+- The checkout's pre-existing file-mode-only differences are unrelated to this
+  implementation and must stay out of its commits.
 
 ## Next steps
 
-1. Update installed copies with the normal Claude, Codex, or Grok plugin
-   update flow when needed.
-2. Continue with the next open PLAN task: verify backend install commands
-   against their upstream READMEs.
+1. Review the local 0.4.0 change and use the normal release workflow if the user
+   requests publication. Rebuild payloads with the command in AGENTS.md.
+2. For future development, continue the open backlog in PLAN.md: verify backend
+   install commands against upstream documentation, then field-test thresholds.
 
 ## Blockers
 
@@ -42,27 +40,34 @@ https://github.com/WSH95/agent-plugins/pull/11
 
 ## Key files
 
-- `plugin-src/src/project_steward/sessions.py` derives the handoff anchor and
-  removes legacy metadata during lifecycle writes.
-- `plugin-src/src/project_steward/gitutil.py` provides path-specific Git
-  history and dirty-state checks.
-- `plugin-src/src/project_steward/hooks.py` tracks handled Stop-guard batches.
-- `tests/test_sessions.py` and `tests/test_hooks_stop_guard.py` cover the two
-  regressions.
+- `plugin-src/src/project_steward/scaffold.py` and packaged templates implement
+  the new documents, defaults, and reviewed re-init behavior.
+- `plugin-src/src/project_steward/codex_setup.py` plans and checks local hook
+  setup. `plugin-src/src/project_steward/templates/codex-hooks.json.template`
+  supplies both installed wheels and generated payloads.
+- `plugin-src/src/project_steward/gitutil.py` checks the staged scope and makes
+  literal path-scoped commits; CLI init suggestions include new Codex files.
+- `plugin-src/src/project_steward/backend_broker.py` and `sessions.py` keep
+  workflow instructions and recaps aligned with backend.json.
+- `plugin-src/skills/` contains the agent workflows that maintain document
+  bodies and choose semantic commits; the CLI does not make those judgments.
 
 ## Tried and rejected
 
-- Embedding the containing commit's SHA in a tracked file cannot converge:
-  changing the file changes the commit hash.
-- Renaming the resume JSON key was rejected because deriving its value fixes
-  the bug without breaking consumers.
-- A runtime-only acknowledgement command was unnecessary. The Stop guard can
-  remember the handled activity batch and tell the agent not to write files.
+- Exporting every external task into Markdown would create a second task
+  store. Keep a focused, dated overview with backend IDs instead.
+- A permissive TOML subset reader cannot validate arbitrary Codex settings.
+  Python 3.11+ uses tomllib; older runtimes auto-merge only a narrow, unambiguous
+  subset and explain when manual merging or a newer Python is needed.
+- Codex project files cannot establish trust or approve execution. Setup and
+  doctor leave those steps to Codex's project and /hooks UI.
 
 ## Warnings
 
-- Do not manually edit generated `dist/project-steward/` output; rebuild
-  from `plugin-src/`.
-- Local `python` points to an interpreter too old for
-  `from __future__ import annotations`; use `python3` here.
-- Do not push this source repo without explicit user approval.
+- Existing configurations keep their commit policy. This repo still uses ask;
+  the user's session Git instructions authorize the local implementation commit.
+- Root AGENTS.md/CLAUDE.md retain the supported legacy protocol. Self doctor
+  warns about the absent WORKFLOW.md and local Codex hooks; those are upgrade
+  notices, not failed checks. Adoption is through reviewed re-init.
+- Generated `dist/project-steward/` output is ignored; rebuild from plugin-src.
+- No push or publication is authorized. Preserve unrelated working-tree edits.

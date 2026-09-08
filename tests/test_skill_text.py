@@ -47,8 +47,8 @@ def test_init_guidance_pins_compact_agents_output():
     skill = _flat("plugin-src/skills/project-init/SKILL.md")
     prompt = _flat("plugin-src/codex/prompts/steward-init.md")
     for text in (skill, prompt):
-        assert "40-45 lines" in text
-        assert "below 50" in text
+        assert "below 35 lines" in text
+        assert "WORKFLOW.md" in text
 
 
 def test_handoff_guidance_does_not_require_a_noop_checkpoint():

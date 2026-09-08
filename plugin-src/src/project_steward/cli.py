@@ -87,6 +87,8 @@ def cmd_init(args):
         "lint_command": args.lint_command,
         "backend_name": args.backend,
         "first_milestone": args.first_milestone,
+        "commit_policy": args.commit_policy,
+        "codex_hooks": args.codex_hooks,
     }
     plan, mapping = scaffold.plan_files(root, answers)
     creates = [k for k, v in plan.items() if v[0] == "create"]
@@ -98,13 +100,19 @@ def cmd_init(args):
         for rel in sorted(creates):
             _print("  create: %s" % rel, False)
         for rel in sorted(updates):
-            _print("  update: %s (managed blocks only)" % rel, False)
+            _print("  update: %s" % rel, False)
         for rel in sorted(skips):
             _print("  keep:   %s (exists)" % rel, False)
-        for rel in ("AGENTS.md", "CLAUDE.md", ".gitignore"):
+        for rel in ("AGENTS.md", "CLAUDE.md", ".gitignore",
+                    ".project-steward/WORKFLOW.md", ".project-steward/config.toml",
+                    ".codex/config.toml", ".codex/hooks.json"):
             diff = plan.get(rel, ("", None, ""))[2]
+            if not diff and plan.get(rel, ("",))[0] == "create":
+                diff = plan[rel][1]
             if diff:
                 _print("\n--- diff for %s ---\n%s" % (rel, diff), False)
+    for warning in mapping.get("_warnings", []):
+        _print("warn: %s" % warning, False)
     if args.dry_run:
         return 0
     if not args.yes:
@@ -115,15 +123,23 @@ def cmd_init(args):
     written = scaffold.apply_plan(root, plan, mapping)
     _print("Wrote %d file(s): %s" % (len(written), ", ".join(sorted(written))),
            False)
+    if ".codex/hooks.json" in plan and plan[".codex/hooks.json"][0] != "skip":
+        _print("Codex hook files configured. Ensure project-steward is on PATH, "
+               "trust the project, and review hooks in Codex /hooks; "
+               "activation has not been verified.", False)
+    if load_config(root)["git"]["commit_policy"] == "never":
+        return 0
     if not gitutil.is_repo(root):
         _print("Note: not a git repository. Recommended (with user "
                "approval): git init && git add -A && git commit -m "
                "\"chore: initialize Project Steward project management\"",
                False)
     else:
+        commit_paths = ["AGENTS.md", "CLAUDE.md", ".gitignore"]
+        commit_paths.extend(path for path in written if path.startswith(".codex/"))
         _print("Suggested commit: %s" % gitutil.suggest_commit_command(
             root, "chore: initialize Project Steward project management",
-            ["AGENTS.md", "CLAUDE.md", ".gitignore"]), False)
+            commit_paths), False)
     return 0
 
 
@@ -189,6 +205,9 @@ def cmd_wrap(args):
                 [".project-steward", "AGENTS.md", "CLAUDE.md", ".gitignore"],
             )
             _print(out or ("commit rc=%d" % rc), False)
+            if rc:
+                _print("Session bookkeeping saved, but commit failed.", False)
+                return rc
         else:
             _print("suggested: %s" % report["commit_suggestion"], False)
             _print("(run with --commit to let the CLI perform it; never "
@@ -274,7 +293,7 @@ def cmd_backend(args):
         if rec["migration_hint"]:
             _print("hint: %s" % rec["migration_hint"], False)
         _print("Adopt with: project-steward backend adopt <name> "
-               "(shows an AGENTS.md diff and asks for approval)", False)
+               "(previews workflow/backend changes for approval)", False)
         return 0
     if action == "adopt":
         if not args.name:
@@ -282,7 +301,7 @@ def cmd_backend(args):
             return 2
         report = backend_broker.adopt(
             root, args.name, assume_yes=args.yes,
-            confirm=lambda diff: (_print("\nProposed AGENTS.md change:\n"
+            confirm=lambda diff: (_print("\nProposed backend changes:\n"
                                          + diff, False)
                                   or _confirm("Apply this change?")))
         if not report.get("ok"):
@@ -334,8 +353,13 @@ def build_parser():
     p.add_argument("--build-command")
     p.add_argument("--test-command")
     p.add_argument("--lint-command")
-    p.add_argument("--backend", default="markdown")
+    p.add_argument("--backend", choices=sorted(
+        set(backend_broker.BACKENDS) - backend_broker.STUBS))
     p.add_argument("--first-milestone")
+    p.add_argument("--commit-policy", choices=("auto", "ask", "never"),
+                   help="policy for a new config (default: auto; existing configs kept)")
+    p.add_argument("--no-codex-hooks", dest="codex_hooks", action="store_false",
+                   default=None, help="skip project-local Codex hook setup")
     p.add_argument("--yes", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_init)

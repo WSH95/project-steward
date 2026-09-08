@@ -6,7 +6,7 @@ native session histories are execution details.
 
 ## State model
 
-Committed (durable, travels via git): `.project-steward/PROJECT.md`,
+Committed (durable, travels via git): `.project-steward/WORKFLOW.md`, `PROJECT.md`,
 `PLAN.md`, `PROGRESS.md`, `HANDOFF.md`, `DECISIONS.md`, `QUESTIONS.md`,
 `RISKS.md`, `VERIFY.md`, `config.toml`, `state.json`, `backend.json`,
 optional `sessions/*.md`.
@@ -22,7 +22,7 @@ Projectforge v0.1 flaw where resume edited HANDOFF.md front matter.)
 
 ## Lifecycle
 
-1. **Start**: read HANDOFF.md -> recap -> crash check (see below) ->
+1. **Start**: read WORKFLOW.md when present, then HANDOFF.md -> recap -> crash check (see below) ->
    claim runtime session. Hook: SessionStart injects the recap
    automatically.
 2. **Work**: updates at semantic boundaries (see the progress-tracking
@@ -30,9 +30,12 @@ Projectforge v0.1 flaw where resume edited HANDOFF.md front matter.)
 3. **Checkpoint**: PROGRESS append + HANDOFF front-matter refresh. Git history,
    not a self-referential front-matter field, identifies the handoff commit;
    triggered manually, by the wrap-language detector, or by the Stop
-   guard.
+   guard. The agent also refreshes changed handoff bodies and external task
+   overviews; the CLI updates metadata only.
 4. **Wrap**: full HANDOFF rewrite for a zero-context successor;
-   `session_status: closed`; commit proposal.
+   `session_status: closed`; follow commit_policy. Under auto, commit coherent
+   verified work and its project records; under ask, propose it; under never,
+   skip commits and nudges. Hooks never commit.
 
 ## Crash detection signals (any one suffices)
 
@@ -58,3 +61,13 @@ did not change, the agent leaves tracked files unchanged. `stop_hook_active` /
 (default) / `remind`
 (`systemMessage` only; weaker on Grok) / `off`. Worst case after a hard
 crash: one cooldown window of work, still journaled in runtime logs.
+
+## External task backends
+
+backend.json names the task source of truth. PLAN.md still explains milestone
+goals and gives a dated overview of active, blocked, next, and recently completed
+work with task IDs. HANDOFF.md always records the complete session context and
+validation evidence. Update the backend first, then the overview and handoff.
+If access fails, retain the last verified overview, label the limitation, and
+record an executable reconciliation step. Recap JSON includes task_backend;
+open_tasks remains a count of Markdown checkboxes, not external backend totals.

@@ -20,20 +20,23 @@ world-writable chmod, shell-profile edits, package installation, cloud
 credential access, and any `git push` (force or not) are classified
 risky: agents must obtain explicit approval, and Project Steward itself
 never runs them. The CLI never pushes; commits happen only via
-`wrap --commit` under a permitting `commit_policy`.
+`wrap --commit` under a permitting `commit_policy`. Agents use ordinary Git
+commands for coherent feature commits after checking scope and validation.
+New projects default to auto; existing preferences remain unchanged.
 
 ## Hook trust
 
 Hooks are an execution surface. Claude Code plugin hooks ship with the
-plugin you chose to install; Codex requires the experimental flag and
-(for plugin-bundled hooks) an explicit trust review. Project Steward's
+plugin you chose to install; Codex enables hooks by default and requires project trust plus review of
+non-managed hooks through `/hooks`. Init prepares project-local files; it
+does not establish trust or override existing Codex configuration. Project Steward's
 hooks: never install dependencies, never touch the network, never edit
 AGENTS.md/CLAUDE.md, never read secrets, always exit 0. The Claude
 payload's `bin/project-steward` is a small Python launcher into the
 plugin-local source tree, not a native binary or bundled runtime. Inspect
 it with `plugin-src/src/project_steward/hooks.py` (~250 lines) and the
 canonical JSON configs under `plugin-src/claude/hooks/` and
-`plugin-src/codex/hooks/`.
+`plugin-src/src/project_steward/templates/codex-hooks.json.template`.
 
 ## Repo-local instructions
 
@@ -44,9 +47,12 @@ with diffs and explicit approval.
 
 ## Profiles
 
-- conservative (default): everything above.
-- solo-fast: `commit_policy = "auto"` allows unattended steward commits;
-  everything else unchanged.
+- default for new projects: `commit_policy = "auto"` allows the agent to
+  commit related code, tests, task artifacts, and project records at meaningful
+  milestones after relevant checks pass. Explicit paths/hunks and index review
+  keep unrelated work out. Failed checks or unclear ownership skip code commits.
+- existing or invalid legacy configuration: preserve explicit policies; missing
+  or invalid commit settings fall back to `ask`.
 - team-strict: `commit_policy = "ask"`, `auto_handoff_mode = "remind"`
   (no forced continuation), review-required for any AGENTS.md change.
 Never silently loosen permissions, and never bypass Claude Code or Codex

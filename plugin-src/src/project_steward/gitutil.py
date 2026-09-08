@@ -7,7 +7,7 @@ from pathlib import Path
 GIT_TIMEOUT = 10
 
 
-def run_git(args, cwd, timeout=GIT_TIMEOUT):
+def run_git(args, cwd, timeout=GIT_TIMEOUT, strip_output=True):
     """Run git and return (returncode, stdout). Never raises on failure."""
     try:
         proc = subprocess.run(
@@ -17,7 +17,10 @@ def run_git(args, cwd, timeout=GIT_TIMEOUT):
             stderr=subprocess.PIPE,
             timeout=timeout,
         )
-        return proc.returncode, proc.stdout.decode("utf-8", "replace").strip()
+        output = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode:
+            output += proc.stderr.decode("utf-8", "replace")
+        return proc.returncode, output.strip() if strip_output else output
     except (OSError, subprocess.TimeoutExpired):
         return 127, ""
 
@@ -152,7 +155,36 @@ def suggest_commit_command(root, message, extra_paths=None):
 
 def stage_and_commit(root, message, paths):
     """Explicitly requested commit of the given paths only. Never pushes."""
-    rc, out = run_git(["add", "--"] + list(paths), root)
+    relative = []
+    for path in paths:
+        name = _relative_path(root, path)
+        if not name or name == ".":
+            return 1, "Commit paths must name files or directories inside the repository."
+        if name not in relative:
+            relative.append(name)
+    if not relative:
+        return 1, "No commit paths selected."
+    rc, out = run_git(["diff", "--cached", "--name-only", "--no-renames", "-z"],
+                      root, strip_output=False)
+    if rc:
+        return rc, out
+    unrelated = [name for name in out.split("\0") if name and not any(
+        name == selected or name.startswith(selected + "/") for selected in relative)]
+    if unrelated:
+        return 1, "Refusing to commit unrelated staged changes: %s" % ", ".join(unrelated)
+
+    # Optional instruction files may not exist. Include tracked deletions.
+    selected = []
+    for name in relative:
+        rc, tracked = run_git(["--literal-pathspecs", "ls-files", "--", name], root)
+        if rc:
+            return rc, tracked
+        if (Path(root) / name).exists() or tracked:
+            selected.append(name)
+    if not selected:
+        return 1, "No existing or tracked commit paths selected."
+    rc, out = run_git(["--literal-pathspecs", "add", "--"] + selected, root)
     if rc != 0:
         return rc, out
-    return run_git(["commit", "-m", message], root)
+    return run_git(["--literal-pathspecs", "commit", "--only", "-m", message,
+                    "--"] + selected, root)

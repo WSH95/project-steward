@@ -2,7 +2,7 @@ Resume this Project Steward managed project from repo files only (never
 from native session history). If the session-resume skill is installed,
 follow it; condensed protocol:
 
-1. `project-steward resume --agent codex --json` if installed; otherwise
+1. Read .project-steward/WORKFLOW.md when present. `project-steward resume --agent codex --json` if installed; otherwise
    read .project-steward/HANDOFF.md (front matter + body), PROGRESS.md
    top entry, `git log --oneline -5`, `git status`, PLAN.md current
    milestone, QUESTIONS.md open items.
@@ -18,3 +18,7 @@ follow it; condensed protocol:
    state, next steps, blockers, crash note) and confirm the next step.
 Resume is read-only on committed files - do not rewrite HANDOFF.md at
 session start.
+
+With an external backend, use its task view and the dated PLAN.md overview.
+If access fails, preserve the last verified overview and report the limitation;
+do not present Markdown checkbox counts as external task totals.

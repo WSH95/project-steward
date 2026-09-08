@@ -415,3 +415,45 @@ leaves tracked files untouched.
 commits still mark a clean handoff as stale. Existing front matter remains
 readable and is removed on the next checkpoint, wrap, close, or Projectforge
 migration. The fix ships as version 0.3.4.
+
+## 0024 — 2026-09-08 — Separate workflow instructions and improve project defaults
+
+**Context**: The user requested a smaller AGENTS.md, useful local milestone
+commits, readable state alongside external task trackers, and automatic Codex
+hook setup. The implementation plan was approved, including a version bump.
+
+**Decision**: Ship these changes as 0.4.0. New AGENTS.md files point to
+`.project-steward/WORKFLOW.md` for session, Git, and task-backend instructions.
+Reviewed re-init changes managed blocks and preserves existing project records;
+ordinary work continues to accept the older inline protocol.
+
+New projects default to `commit_policy = "auto"`: the agent commits a coherent,
+verified milestone with its code, tests, task artifacts, and stewardship records.
+`--commit-policy ask|never` remains available. Existing configurations keep their
+policy; missing or invalid legacy policies fall back to ask. Hooks and lifecycle
+CLI commands never commit implicitly. The explicit wrap helper checks its path
+scope and reports Git failures.
+
+`backend.json` owns task-backend selection. External trackers own detailed task
+state; PLAN.md keeps milestone goals and a dated active/blocked/next/recent
+overview with IDs. Agents refresh document bodies and HANDOFF context at real
+checkpoints. An inaccessible tracker leaves the last verified view in place,
+with the limitation and reconciliation step recorded.
+
+Init creates project-local Codex hook files by default, with
+`--no-codex-hooks` as the opt-out. Existing config bytes and custom handlers
+are preserved. Unsupported inline hooks or malformed configuration skip Codex
+setup with an explanation while other initialization continues. One packaged
+hook template feeds both init and the distribution builder. The files cannot
+grant Codex project trust or hook approval; doctor reports installation and
+activation separately. The official hook manual was checked on 2026-09-08:
+https://learn.chatgpt.com/docs/hooks
+
+**Consequences**: No external backend is installed or treated as a second
+Markdown task store. Existing users can adopt the new managed instructions
+through reviewed re-init. This source repo retains its legacy AGENTS.md and
+explicit ask policy; the user's session Git instructions authorize a local
+implementation commit. Publication and pushing remain separate actions.
+The Python 3.7-3.10 standard library has no full TOML parser; automatic Codex
+merges there accept a narrow validated subset and explain when richer existing
+configuration needs Python 3.11+ or manual merging. Fresh setup remains supported.

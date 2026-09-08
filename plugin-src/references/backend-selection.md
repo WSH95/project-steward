@@ -1,7 +1,9 @@
 # Backend selection
 
 One system owns fine-grained tasks at a time; PLAN.md degrades to
-milestones + a pointer when an external backend is adopted.
+milestone goals and a dated overview with task IDs when an external backend
+is adopted. Keep active, blocked, next, and recently completed work readable;
+task status remains authoritative in the selected backend.
 
 ## Detection
 
@@ -30,7 +32,7 @@ backend doesn't track.
 ## Adoption procedure
 
 recommend -> plain-English explanation -> approval -> `backend adopt`
-(AGENTS.md task-backend block diff + backend.json) -> move open tasks
+(WORKFLOW.md task-backend block diff + backend.json (AGENTS.md for legacy projects)) -> move open tasks
 with the user -> DECISIONS.md entry. Installation is assisted, never
 silent, and install commands are labeled "verify against upstream README"
 because installers drift.

@@ -23,7 +23,7 @@ from pathlib import Path
 from .managed_blocks import (convert_legacy_markers, unified_diff,
                              upsert_block)
 from .paths import legacy_dir, runtime_dir, state_dir
-from .scaffold import gitignore_block, session_protocol_block
+from .scaffold import build_mapping, gitignore_block, session_protocol_block, workflow_text
 from .sessions import append_progress
 from .state import (default_state, parse_front_matter, update_front_matter,
                     utcnow_iso, write_json_atomic, write_text_atomic)
@@ -103,6 +103,11 @@ def migrate_agents_md(root):
             new = upsert_block(new, "agent-session-protocol",
                                session_protocol_block())
     if new != old:
+        workflow = state_dir(root) / "WORKFLOW.md"
+        if not workflow.exists():
+            from .state import load_backend
+            mapping = build_mapping({"backend_name": load_backend(root)["name"]})
+            write_text_atomic(workflow, workflow_text(mapping))
         write_text_atomic(path, new)
         return unified_diff(old, new, "AGENTS.md")
     return ""

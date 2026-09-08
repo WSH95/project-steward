@@ -23,9 +23,10 @@ def test_codex_install_docs_match_current_cli_and_hook_feature():
     docs = [
         (ROOT / "README.md").read_text(encoding="utf-8"),
         (ROOT / "codex" / "INSTALL.md").read_text(encoding="utf-8"),
-        (ROOT / "plugin-src" / "codex" / "hooks" / "hooks.json").read_text(
-            encoding="utf-8"
-        ),
+        (
+            ROOT / "plugin-src" / "src" / "project_steward" / "templates"
+            / "codex-hooks.json.template"
+        ).read_text(encoding="utf-8"),
     ]
     joined = "\n".join(docs)
     assert "codex plugin add project-steward@project-steward-marketplace" in joined
@@ -51,9 +52,10 @@ def test_docs_keep_claude_and_codex_commandwindows_claims_separate():
 
 def test_codex_hooks_json_uses_strict_root_schema():
     hooks = json.loads(
-        (ROOT / "plugin-src" / "codex" / "hooks" / "hooks.json").read_text(
-            encoding="utf-8"
-        )
+        (
+            ROOT / "plugin-src" / "src" / "project_steward" / "templates"
+            / "codex-hooks.json.template"
+        ).read_text(encoding="utf-8")
     )
     assert set(hooks) == {"hooks"}
     assert set(hooks["hooks"]) == {
@@ -62,3 +64,4 @@ def test_codex_hooks_json_uses_strict_root_schema():
         "UserPromptSubmit",
         "Stop",
     }
+    assert not (ROOT / "plugin-src" / "codex" / "hooks" / "hooks.json").exists()

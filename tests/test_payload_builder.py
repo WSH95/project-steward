@@ -121,6 +121,11 @@ def test_builder_outputs_codex_command_like_companions(tmp_path):
     } == expected_prompts
     assert (codex / "hooks" / "hooks.json").is_file()
     assert set(_json(codex / "hooks" / "hooks.json")) == {"hooks"}
+    canonical = (
+        ROOT / "plugin-src" / "src" / "project_steward" / "templates"
+        / "codex-hooks.json.template"
+    ).read_bytes()
+    assert (codex / "hooks" / "hooks.json").read_bytes() == canonical
     assert "project-steward hook stop --agent codex" in (
         codex / "hooks" / "hooks.json"
     ).read_text(encoding="utf-8")

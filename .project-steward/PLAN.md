@@ -2,6 +2,19 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M3: 0.4.0 workflow improvements
+
+- [x] Move generated stewardship instructions into WORKFLOW.md with a
+      concise required-reading pointer in AGENTS.md; preserve legacy projects.
+- [x] Default new projects to agent-selected milestone commits; retain
+      explicit policies and protect unrelated staged work in wrap --commit.
+- [x] Keep external task backends authoritative and maintain useful,
+      dated PLAN/HANDOFF overviews through the session skills.
+- [x] Configure project-local Codex hooks during init with an opt-out,
+      custom-hook preservation, one packaged source, and activation diagnostics.
+- [x] Bump package and plugin versions to 0.4.0; update docs and changelog.
+- [x] Resolve release-review edge cases and finish package validation.
+
 ## M1: v0.2 hardening
 
 - [x] Python core (CLI, hooks dispatcher, tests) replacing bash hooks
@@ -43,3 +56,6 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 - [ ] `sessions/*.md` per-session logs (optional verbosity tier)
 - [ ] GitHub Issues adapter beyond detection (create/close via gh)
 - [ ] Windows-native Codex hook support when upstream re-enables it
+
+- [ ] Preserve unspecified existing commands during partial re-init command updates
+      (pre-existing behavior found during the 0.4.0 review).

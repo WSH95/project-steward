@@ -154,7 +154,7 @@ def _handle_user_prompt_submit(root, agent, payload):
             "session. Before finishing, follow the session-handoff skill "
             "(rewrite .project-steward/HANDOFF.md for a zero-context "
             "successor, append PROGRESS.md, run `project-steward wrap "
-            "--summary \"...\"`, and propose a git commit).",
+            "--summary \"...\"`, and follow config.toml commit_policy).",
         ))
 
 

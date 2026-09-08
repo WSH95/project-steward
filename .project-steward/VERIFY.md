@@ -3,14 +3,14 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (bare checkout works; no install needed) | 85 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 174 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
 | Payload build | `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward` | exits 0 |
 | Skill schema | `python3 /home/wsh/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugin-src/skills/agent-artifact-maintainer` | exits 0 |
 | Publish dry-run | `python3 tools/publish_agent_artifact_pr.py --artifact project-steward-plugin --target-repo git@github.com:WSH95/agent-plugins.git --dry-run --target-checkout /tmp/project-steward-artifact-publish-dry-run --non-interactive` | copies artifact; no commit/push/PR |
-| JSON configs | `python3 -m json.tool plugin-src/claude/hooks/hooks.json && python3 -m json.tool plugin-src/codex/hooks/hooks.json` | valid |
+| JSON configs | `python3 -m json.tool plugin-src/claude/hooks/hooks.json && python3 -m json.tool plugin-src/src/project_steward/templates/codex-hooks.json.template` | valid |
 | Claude manifests | `claude plugin validate dist/project-steward/claude/plugins/project-steward --strict && claude plugin validate dist/project-steward/claude --strict` | both pass (manifest-only: hooks.json schema is covered by `doctor --self`) |
 | Claude hook wrapper | `printf '' \| sh dist/project-steward/claude/plugins/project-steward/hooks/run-hook.cmd --version` | prints the payload's own version (bundled launcher ran, not a fallback) |
 | Codex plugin schema | `python3 /home/wsh/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py dist/project-steward/codex/plugins/project-steward` | exits 0 |
@@ -18,7 +18,21 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
-Last verified: 2026-08-26 (0.3.4 handoff anchor and Stop-guard batch fix, ADR
+Last verified: 2026-09-08 (0.4.0 workflow defaults, ADR 0024) — 174 tests on
+Python 3.12.3; 48 Codex setup tests with the older-Python fallback forced (12
+native-parser cases skipped); compileall; Python 3.7 grammar check on all 20
+runtime/tool Python files; self doctor 40 checks / 3 warnings / 0 failures;
+payload build; wheel build and non-editable install; fresh external-backend
+init, preview-only init, repeated-init byte stability, read-only resume, doctor,
+and projectforge alias from the installed wheel. Claude plugin/marketplace
+strict validation, Codex plugin schema, Grok validation, all five changed
+skill schemas, bundled launcher, local publication dry-run, and diff whitespace
+checks pass. The three self-doctor warnings are the supported legacy repo's
+missing WORKFLOW.md and unconfigured local Codex hooks/activation. Native
+Python 3.7 and Windows/macOS CI execution was not available in this session.
+No remote publication was performed.
+
+Previous entry: 2026-08-26 (0.3.4 handoff anchor and Stop-guard batch fix, ADR
 0023) — 85 tests via bare `python3 -m pytest -q`, compileall, self doctor
 (36 checks / 0 failures), payload build, publish dry-run, skill schema check,
 `grok plugin validate`, Claude plugin and marketplace validation with

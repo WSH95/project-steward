@@ -126,7 +126,8 @@ def _build_codex(out, meta):
     )
     _copy_tree(SOURCE / "codex" / "prompts", out / "codex" / "prompts")
     _copy_file(
-        SOURCE / "codex" / "hooks" / "hooks.json",
+        SOURCE / "src" / "project_steward" / "templates"
+        / "codex-hooks.json.template",
         out / "codex" / "hooks" / "hooks.json",
     )
 

@@ -21,10 +21,13 @@ it deliberately, explain it plainly, and switch it safely.
    expert view (signals, scores, trade-offs, migration consequences) only
    if asked or if the user is clearly expert.
 3. **Get approval**, then `project-steward backend adopt <name>` — it
-   shows the AGENTS.md `task-backend` block diff, requires confirmation,
-   and records `backend.json`. Then trim `PLAN.md` to milestones + a
-   pointer (never two task lists) and move existing open tasks into the
-   backend with the user.
+   shows workflow/backend diffs (AGENTS.md for legacy inline projects), requires confirmation,
+   and records `backend.json`. Move existing open tasks into the backend with the user; preserve them until
+   migration is confirmed. Keep milestone goals and a dated overview in PLAN.md:
+   active, blocked, next, and recently completed work with task IDs. Update task
+   status in the backend first, then refresh the overview and full HANDOFF.md.
+   If access fails, preserve the last verified overview and document the
+   limitation and next reconciliation step.
 4. **Install assistance**: print the install command/repo link for the
    user's OS and ask before running anything. Never `curl | sh`, never
    package-install, never `gh auth`, without explicit approval. Verify

@@ -41,7 +41,7 @@ def test_doctor_ok_after_init_and_fails_on_secret(git_repo):
 def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
     (tmp_path / "plugin-src" / "src" / "project_steward").mkdir(parents=True)
     (tmp_path / "plugin-src" / "claude" / "hooks").mkdir(parents=True)
-    (tmp_path / "plugin-src" / "codex" / "hooks").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "src" / "project_steward" / "templates").mkdir(parents=True)
     (tmp_path / "tests").mkdir()
     (tmp_path / "plugin-src" / "metadata.json").write_text(
         '{"name": "project-steward"}\n', encoding="utf-8"
@@ -50,7 +50,7 @@ def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
         '{"description": "ok for Claude", "hooks": {}}\n',
         encoding="utf-8",
     )
-    (tmp_path / "plugin-src" / "codex" / "hooks" / "hooks.json").write_text(
+    (tmp_path / "plugin-src" / "src" / "project_steward" / "templates" / "codex-hooks.json.template").write_text(
         '{"description": "not accepted by Codex", "hooks": {}}\n',
         encoding="utf-8",
     )
@@ -59,7 +59,7 @@ def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
 
     assert any(
         r["status"] == doctor.FAIL
-        and r["name"] == "self: plugin-src/codex/hooks/hooks.json schema"
+        and r["name"] == "self: plugin-src/src/project_steward/templates/codex-hooks.json.template schema"
         and "unexpected root key(s): description" in r["detail"]
         for r in results
     )
@@ -101,7 +101,7 @@ def test_claude_hooks_use_cross_platform_wrapper():
 def test_self_doctor_rejects_unknown_claude_hook_fields(tmp_path):
     (tmp_path / "plugin-src" / "src" / "project_steward").mkdir(parents=True)
     (tmp_path / "plugin-src" / "claude" / "hooks").mkdir(parents=True)
-    (tmp_path / "plugin-src" / "codex" / "hooks").mkdir(parents=True)
+    (tmp_path / "plugin-src" / "src" / "project_steward" / "templates").mkdir(parents=True)
     (tmp_path / "tests").mkdir()
     (tmp_path / "plugin-src" / "metadata.json").write_text(
         '{"name": "project-steward"}\n', encoding="utf-8"
@@ -120,7 +120,7 @@ def test_self_doctor_rejects_unknown_claude_hook_fields(tmp_path):
         }),
         encoding="utf-8",
     )
-    (tmp_path / "plugin-src" / "codex" / "hooks" / "hooks.json").write_text(
+    (tmp_path / "plugin-src" / "src" / "project_steward" / "templates" / "codex-hooks.json.template").write_text(
         '{"hooks": {}}\n', encoding="utf-8"
     )
 

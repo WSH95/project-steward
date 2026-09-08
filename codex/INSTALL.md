@@ -1,6 +1,7 @@
 # Project Steward on Codex
 
-Verified against the official Codex docs on 2026-07-08:
+Hook configuration rechecked on 2026-09-08; skills/plugin installation
+references last checked on 2026-07-08:
 skills — https://developers.openai.com/codex/skills ·
 plugins — https://developers.openai.com/codex/plugins ·
 hooks — https://developers.openai.com/codex/hooks
@@ -56,49 +57,62 @@ codex plugin add project-steward@project-steward-marketplace
 Installed skills appear with the `project-steward:` prefix, for example
 `$project-steward:session-resume`.
 
-This plugin intentionally does not bundle lifecycle hooks yet. Use the
-manual hooks.json route below until plugin-bundled hooks are field-tested.
+The plugin exposes skills; `project-steward init` sets up project-local
+hooks. Plugin installation alone does not configure or trust project hooks.
 
-## 4. Hooks (experimental — read this)
+## 4. Automatic project hook setup
 
-Codex lifecycle hooks are enabled by default in current Codex builds. If
-your config or admin policy disables them, use the canonical feature key
-in `~/.codex/config.toml`:
+Project Steward 0.4.0 includes Codex setup in every `project-steward init`.
+Preview it with `--dry-run`; the normal approval/apply step covers these files:
 
-```toml
-[features]
-hooks = true
-```
+- `.codex/config.toml`: created when absent with `[features] hooks = true`.
+  Existing configuration stays byte-for-byte unchanged.
+- `.codex/hooks.json`: created or merged with existing hooks. Custom handlers
+  and settings are preserved, and repeated init does not duplicate Steward hooks.
 
-`codex_hooks` still exists only as a deprecated alias. Then copy the
-generated `dist/project-steward/codex/hooks/hooks.json` to
-`<your-repo>/.codex/hooks.json` (project scope) or merge it into
-`~/.codex/hooks.json` (user scope). The canonical source is
-`plugin-src/codex/hooks/hooks.json`. Events wired: `SessionStart`
-(recap injection), `PostToolUse`
-(event-based activity heartbeat), `UserPromptSubmit` (wrap-language
-detector), `Stop` (stale-handoff guard).
+Use `--no-codex-hooks` to opt out. This preference is saved for later re-init;
+existing hook files are retained. Unsupported inline hooks, malformed TOML or JSON,
+and paths escaping the project are preserved and reported; unrelated project
+initialization still proceeds. Fix the reported issue before retrying setup.
 
-Known limitations (from the official docs, as of 2026-07):
+Python 3.11+ validates existing Codex TOML with the standard-library parser.
+On Python 3.7-3.10, automatic merging accepts a narrow subset of simple scalar
+settings and tables. Richer configuration is left untouched with a warning;
+use Python 3.11+ for setup or merge the exported hooks manually. Fresh projects
+can create the default configuration on every supported Python version.
 
-- Non-managed hooks must be reviewed and trusted in `/hooks` before they
-  run.
-- Codex currently documents `commandWindows` for Windows-specific hook
-  commands. Project Steward does not use it because the Codex companion
-  calls the installed `project-steward` CLI directly.
-- Heartbeat tracking is **event-based, not timer-based** — it advances
-  when hooks fire, so long tool-free thinking stretches don't tick.
-- `PostToolUse` matching covers the current supported tool names
-  documented by Codex, but Project Steward hooks must not be treated as a
-  security enforcement boundary.
+The installed `project-steward` CLI must be on PATH. Review and trust the project
+and the new hooks through Codex `/hooks`. Hooks are enabled by default in current
+Codex builds; `features.hooks` is the canonical setting and `codex_hooks` is a
+deprecated alias. Existing disabled settings and administrative restrictions
+remain in force. File creation does not prove activation. See the
+[official hook documentation](https://learn.chatgpt.com/docs/hooks).
+
+Events wired: SessionStart (recap), PostToolUse (activity heartbeat),
+UserPromptSubmit (wrap-language detector), and Stop (stale-handoff guard).
+`project-steward doctor` reports installed definitions, known disabled settings,
+CLI availability, and the remaining activation check. Hooks never commit.
+
+For a manual or user-wide installation, the builder still exports
+`dist/project-steward/codex/hooks/hooks.json`. Merge it into `~/.codex/hooks.json`
+and use `--no-codex-hooks` for projects that should rely on that global setup.
+Codex loads hooks from multiple sources, so avoid registering the same Steward
+handlers both globally and locally. The one canonical source is now
+`plugin-src/src/project_steward/templates/codex-hooks.json.template`; it ships
+inside the Python package and also supplies the distribution payload.
+
+Codex currently documents `commandWindows` for Windows-specific commands;
+Steward uses its cross-platform CLI directly. Heartbeats advance when hook events
+fire. Treat these lifecycle helpers as bookkeeping, not a security boundary.
 
 ## 5. Fallback protocol (no hooks — Windows, older Codex, or flag off)
 
 Everything still works through three carriers:
 
 1. The **Agent session protocol** managed block in your project's
-   `AGENTS.md` (Codex reads AGENTS.md natively) — resume/checkpoint/wrap
-   behavior rides along with the repo.
+   `AGENTS.md` requires reading `.project-steward/WORKFLOW.md` for
+   resume/checkpoint/wrap and commit behavior. Older projects keep the inline
+   protocol until reviewed re-init.
 2. Deprecated custom prompts in
    `dist/project-steward/codex/prompts/` (`steward-init`,
    `steward-resume`, `steward-wrap`, `steward-checkpoint`,
