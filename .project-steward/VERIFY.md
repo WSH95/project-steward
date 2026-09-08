@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 234 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 244 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -17,6 +17,13 @@
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+
+Delivered Task 3 verification: 2026-09-08 — after independent review resolved
+all findings, the actual source checkout at `394d029` passed 244 tests in
+12.14s on Linux/Python 3.12.3. Self doctor reported 40 checks, 3 existing setup
+warnings, and 0 failures. All 106 recorded file modes and the exact 97
+pre-existing mode-only differences were verified; root AGENTS.md and CLAUDE.md
+remain unchanged. No push or publication occurred.
 
 Task 3 verification: 2026-09-08 (ADR 0027) — 234 tests passed on Python
 3.12.3 in 9.59s. The focused builder and publisher set passed 31 tests in
@@ -46,9 +53,8 @@ publisher set passed 38 tests in 3.17s. The default ignored payload rebuilt
 successfully from its earlier generated version, and the modified
 artifact-maintainer skill passed schema validation. Self doctor reported 40
 checks, 3 expected warnings, and 0 failures; tracked and staged diff checks
-passed. The full suite was not repeated by controller instruction; the
-controller will run it after review and integration in the actual source
-checkout.
+passed. The correction used focused checks; the full suite passed in the actual
+source checkout after review and integration, as recorded above.
 
 Task 3 review correction round 2: 2026-09-08 — two direct regressions failed
 against `3c5f043`: shared-ancestor inference accepted a caller-controlled link

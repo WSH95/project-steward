@@ -2,6 +2,14 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T11:30:55Z — codex
+Task 3 passed scoped re-review with no open findings and was delivered locally
+through `394d029`. The actual source checkout passed 244 tests in 12.14s;
+self doctor reported 40 checks, 3 existing warnings, and 0 failures. All 106
+original file modes, the exact 97 mode-only differences, and root AGENTS/CLAUDE
+contents are preserved. Tasks 1–3 are delivered; Tasks 4–5 remain. No push or
+publication occurred.
+
 ### 2026-09-08T11:19:05Z — codex
 Corrected Task 3's remaining alias-boundary review finding (ADR 0027).
 Regressions proved that shared-ancestor inference trusted a caller link,
