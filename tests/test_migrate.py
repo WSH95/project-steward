@@ -307,6 +307,89 @@ def test_apply_rechecks_preflight_inputs_before_starting_backup(git_repo):
     assert _backup_attempts(git_repo) == []
 
 
+def test_apply_rechecks_destination_created_after_fresh_backup(
+        git_repo, monkeypatch):
+    _make_legacy(git_repo)
+    destination = state_dir(git_repo) / "PLAN.md"
+    concurrent_text = "# Concurrent plan\n\n- [ ] preserve me\n"
+    real_fresh_backup = migrate_module._fresh_backup
+
+    def create_destination_after_backup(plan):
+        backup = real_fresh_backup(plan)
+        destination.write_text(concurrent_text, encoding="utf-8")
+        return backup
+
+    monkeypatch.setattr(
+        migrate_module, "_fresh_backup", create_destination_after_backup)
+
+    report = migrate(git_repo)
+
+    assert not report["ok"]
+    assert "changed after backup" in report["error"]
+    assert (git_repo / ".projectforge").is_dir()
+    assert destination.read_text(encoding="utf-8") == concurrent_text
+    backup = _backup_attempts(git_repo)[0]
+    assert (backup / ".projectforge/PLAN.md").is_file()
+
+
+def test_apply_rechecks_destination_changed_after_fresh_backup(
+        git_repo, monkeypatch):
+    _make_legacy(git_repo)
+    destination = state_dir(git_repo) / "PLAN.md"
+    destination.parent.mkdir()
+    destination.write_text(
+        "# Plan (Projectforge)\n"
+        "- [ ] task in .project-steward/PLAN.md\n",
+        encoding="utf-8",
+    )
+    concurrent_text = "# Concurrent replacement\n\n- [ ] preserve me\n"
+    real_fresh_backup = migrate_module._fresh_backup
+
+    def change_destination_after_backup(plan):
+        backup = real_fresh_backup(plan)
+        destination.write_text(concurrent_text, encoding="utf-8")
+        return backup
+
+    monkeypatch.setattr(
+        migrate_module, "_fresh_backup", change_destination_after_backup)
+
+    report = migrate(git_repo)
+
+    assert not report["ok"]
+    assert "changed after backup" in report["error"]
+    assert (git_repo / ".projectforge").is_dir()
+    assert destination.read_text(encoding="utf-8") == concurrent_text
+    assert len(_backup_attempts(git_repo)) == 1
+
+
+def test_apply_rechecks_destination_ancestor_after_fresh_backup(
+        git_repo, monkeypatch):
+    _make_legacy(git_repo)
+    external = git_repo.parent / "late-backup-runtime"
+    external.mkdir()
+    runtime = state_dir(git_repo) / "runtime"
+    real_fresh_backup = migrate_module._fresh_backup
+
+    def link_runtime_after_backup(plan):
+        backup = real_fresh_backup(plan)
+        try:
+            os.symlink(str(external), str(runtime), target_is_directory=True)
+        except OSError:
+            pytest.skip("test account cannot create directory symlinks")
+        return backup
+
+    monkeypatch.setattr(
+        migrate_module, "_fresh_backup", link_runtime_after_backup)
+
+    report = migrate(git_repo)
+
+    assert not report["ok"]
+    assert "changed after backup" in report["error"]
+    assert (git_repo / ".projectforge").is_dir()
+    assert list(external.iterdir()) == []
+    assert len(_backup_attempts(git_repo)) == 1
+
+
 def test_partial_backup_is_self_ignored_before_raw_copy(git_repo, monkeypatch):
     _make_legacy(git_repo)
     real_copytree = migrate_module.shutil.copytree

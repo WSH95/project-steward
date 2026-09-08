@@ -18,6 +18,18 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
+Final-review correction verification: 2026-09-08 — six direct regressions
+failed against `81a612f` before production edits. They covered ignored-file
+preservation, real publication and immutable preview for the literal
+`:(glob)demo*` directory, destination creation and change during backup, and a
+late symlinked destination ancestor. The same six tests pass after the fixes,
+and all 53 migration and publisher tests pass in 3.10s on Linux/Python 3.12.3.
+Self doctor before and after the code changes reported 40 checks, 3 known local
+setup warnings, and 0 failures. `git diff --check` passed. The controller owns
+the scoped rereview, release artifact rebuilds, installed smoke, actual-source
+full suite, and final delivery checks. Native Python 3.7 and Windows/macOS did
+not run in this batch. No network operation or publication occurred.
+
 Task 5 implementation verification: 2026-09-08 (ADR 0029) — the Project
 Steward config RED slice failed 2 tests before implementation and passed after
 normalization was shared by runtime and doctor. The Codex semantic slice failed

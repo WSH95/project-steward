@@ -885,16 +885,31 @@ def _fresh_backup(plan):
     return attempt
 
 
-def _inputs_unchanged(plan):
+def _inputs_unchanged(plan, checkpoint="preflight",
+                      allowed_directory_creations=None):
+    allowed_directory_creations = set(allowed_directory_creations or ())
     if _tree_manifest(plan.legacy) != plan.legacy_manifest:
-        return False, ".projectforge/ changed after preflight"
+        return False, ".projectforge/ changed after %s" % checkpoint
     for rel, expected in plan.observed.items():
-        if _path_snapshot(plan.root / rel) != expected:
-            return False, "%s changed after preflight" % rel
+        current = _path_snapshot(plan.root / rel)
+        if current == expected:
+            continue
+        if rel in allowed_directory_creations \
+                and expected == ("missing",) and current == ("dir",):
+            continue
+        return False, "%s changed after %s" % (rel, checkpoint)
     for rel, expected in plan.observed_trees.items():
         if _tree_manifest(plan.root / rel) != expected:
-            return False, "%s changed after preflight" % rel
+            return False, "%s changed after %s" % (rel, checkpoint)
     return True, ""
+
+
+def _backup_created_directories(plan):
+    backup_root = state_dir(plan.root) / "migration-backup-projectforge"
+    return {
+        _relative(plan, state_dir(plan.root)),
+        _relative(plan, backup_root),
+    }
 
 
 def apply_migration(plan):
@@ -912,6 +927,17 @@ def apply_migration(plan):
         backup = _fresh_backup(plan)
         report["backup"] = _relative(plan, backup)
         report["notes"].append("Backup written to %s" % backup)
+
+        unchanged, detail = _inputs_unchanged(
+            plan,
+            checkpoint="backup",
+            allowed_directory_creations=_backup_created_directories(plan),
+        )
+        if not unchanged:
+            report["ok"] = False
+            report["error"] = "Migration stopped safely: %s." % detail
+            report["will_remove_legacy"] = False
+            return report
 
         for rel, text in plan.writes.items():
             write_text_atomic(plan.root / rel, text)

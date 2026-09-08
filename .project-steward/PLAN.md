@@ -11,9 +11,9 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
       scoped commits from a managed root below the Git top level.
 - [x] Make build and publication previews safe.
 - [x] Correct handoff hook bookkeeping and edit detection.
-- [ ] Validate configuration and release 0.4.1. Implementation is green in the
-      isolated branch; independent review, package checks, and local delivery
-      remain with the controller.
+- [ ] Validate configuration and release 0.4.1. Implementation and the final
+      review corrections are green in the isolated branch; scoped rereview,
+      package checks, and local delivery remain with the controller.
 
 ## M3: 0.4.0 workflow improvements
 

@@ -183,11 +183,16 @@ def _require_clean_checkout(checkout):
         )
 
 
+def _literal_pathspec(target_path):
+    return ":(literal)%s" % target_path.as_posix()
+
+
 def _require_no_ignored_destination_files(checkout, target_path):
     raw = _run(
         [
             "git", "ls-files", "--others", "--ignored",
-            "--exclude-standard", "-z", "--", target_path.as_posix(),
+            "--exclude-standard", "-z", "--",
+            _literal_pathspec(target_path),
         ],
         checkout,
         capture=True,
@@ -295,7 +300,7 @@ def _branch_name(artifact):
 
 def _git_has_changes(checkout, target_path):
     output = _run(
-        ["git", "status", "--short", "--", target_path.as_posix()],
+        ["git", "status", "--short", "--", _literal_pathspec(target_path)],
         checkout,
         capture=True,
         read_only=True,
@@ -326,7 +331,7 @@ def _assert_index_scope(checkout, target_path):
 
 
 def _print_preview_diff(checkout, target_path):
-    git_path = target_path.as_posix()
+    git_path = _literal_pathspec(target_path)
     summary = _run(
         ["git", "diff", "--cached", "--stat", "--", git_path],
         checkout,
@@ -405,7 +410,10 @@ def publish(args):
 
         if args.dry_run:
             if _git_has_changes(checkout, target_path):
-                _run(["git", "add", "--", target_path.as_posix()], checkout)
+                _run(
+                    ["git", "add", "--", _literal_pathspec(target_path)],
+                    checkout,
+                )
                 _assert_index_scope(checkout, target_path)
             _print_preview_diff(checkout, target_path)
             if args.keep_temp:
@@ -420,14 +428,17 @@ def publish(args):
             sys.stdout.write("No changes after copy; no PR created.\n")
             return 0
 
-        _run(["git", "add", "--", target_path.as_posix()], checkout)
+        _run(
+            ["git", "add", "--", _literal_pathspec(target_path)],
+            checkout,
+        )
         _assert_index_scope(checkout, target_path)
         title = args.pr_title or "Update %s" % artifact.get("name", "artifact")
         commit_message = args.commit_message or title
         _run(
             [
                 "git", "commit", "-m", commit_message,
-                "--only", "--", target_path.as_posix(),
+                "--only", "--", _literal_pathspec(target_path),
             ],
             checkout,
         )

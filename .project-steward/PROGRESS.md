@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T13:20:59Z — cli
+Corrected final-review literal pathspec and post-backup migration gaps; 53 focused tests pass.
+
 ### 2026-09-08T12:44:31Z — codex
 Implemented Task 5 configuration validation and the 0.4.1 source release
 changes (ADR 0029). Three RED batches reproduced unsafe Project Steward config,

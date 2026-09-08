@@ -84,6 +84,19 @@ def _seed_target(target, artifact_text="demo skill old\n"):
     _git(target, "commit", "-m", "seed target")
 
 
+def _seed_magic_target(target, artifact_text="demo skill old\n"):
+    artifact = target / ":(glob)demo*"
+    try:
+        artifact.mkdir()
+    except OSError:
+        pytest.skip("native filesystem cannot create Git pathspec characters")
+    (artifact / "SKILL.md").write_text(artifact_text, encoding="utf-8")
+    (target / "unrelated.txt").write_text("unchanged\n", encoding="utf-8")
+    _git(target, "add", ".")
+    _git(target, "commit", "-m", "seed magic target")
+    return artifact
+
+
 def test_agent_artifact_maintainer_skill_contract():
     skill = _flat("plugin-src/skills/agent-artifact-maintainer/SKILL.md")
 
@@ -416,6 +429,123 @@ def test_publish_script_rejects_ignored_file_inside_artifact(
     assert _git(target, "rev-parse", "HEAD") == head_before
     assert _git(target, "branch", "--show-current") == branch_before
     assert remote_calls == []
+
+
+def test_publish_script_guards_ignored_files_in_literal_magic_target(
+    tmp_path, monkeypatch, capsys
+):
+    project = _project_with_source(tmp_path)
+    target = _init_target(tmp_path / "agent-skills")
+    (target / ".gitignore").write_text("*.local\n", encoding="utf-8")
+    artifact = _seed_magic_target(target)
+    note = artifact / "notes.local"
+    note.write_text("keep me\n", encoding="utf-8")
+    manifest = _manifest(
+        project,
+        target_path=":(glob)demo*",
+        target_repo="git@github.com:example/agent-skills.git",
+    )
+    head_before = _git(target, "rev-parse", "HEAD")
+    branch_before = _git(target, "branch", "--show-current")
+    module = _load_publish_module()
+    remote_calls = _mock_remote_commands(module, monkeypatch)
+
+    result = module.main(
+        [
+            "--manifest",
+            str(manifest),
+            "--artifact",
+            "demo-skill",
+            "--target-checkout",
+            str(target),
+            "--branch",
+            "publish/demo-skill/test",
+            "--non-interactive",
+        ]
+    )
+
+    assert result == 2
+    assert "ignored local" in capsys.readouterr().err
+    assert note.read_text(encoding="utf-8") == "keep me\n"
+    assert _git(target, "rev-parse", "HEAD") == head_before
+    assert _git(target, "branch", "--show-current") == branch_before
+    assert remote_calls == []
+
+
+def test_publish_script_previews_literal_magic_target(tmp_path, capsys):
+    project = _project_with_source(tmp_path)
+    target = _init_target(tmp_path / "agent-skills")
+    artifact = _seed_magic_target(target)
+    manifest = _manifest(
+        project,
+        target_path=":(glob)demo*",
+        target_repo="git@github.com:example/agent-skills.git",
+    )
+    head_before = _git(target, "rev-parse", "HEAD")
+    module = _load_publish_module()
+
+    result = module.main(
+        [
+            "--manifest",
+            str(manifest),
+            "--artifact",
+            "demo-skill",
+            "--dry-run",
+            "--target-checkout",
+            str(target),
+            "--non-interactive",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert result == 0
+    assert "proposed artifact diff" in output
+    assert "+demo skill new" in output
+    assert artifact.joinpath("SKILL.md").read_text(
+        encoding="utf-8"
+    ) == "demo skill old\n"
+    assert _git(target, "rev-parse", "HEAD") == head_before
+
+
+def test_publish_script_publishes_literal_magic_target(
+    tmp_path, monkeypatch
+):
+    project = _project_with_source(tmp_path)
+    target = _init_target(tmp_path / "agent-skills")
+    artifact = _seed_magic_target(target)
+    manifest = _manifest(
+        project,
+        target_path=":(glob)demo*",
+        target_repo="git@github.com:example/agent-skills.git",
+    )
+    head_before = _git(target, "rev-parse", "HEAD")
+    module = _load_publish_module()
+    remote_calls = _mock_remote_commands(module, monkeypatch)
+
+    result = module.main(
+        [
+            "--manifest",
+            str(manifest),
+            "--artifact",
+            "demo-skill",
+            "--target-checkout",
+            str(target),
+            "--branch",
+            "publish/demo-skill/test",
+            "--non-interactive",
+        ]
+    )
+
+    assert result == 0
+    assert _git(target, "rev-parse", "HEAD") != head_before
+    assert _git(
+        target, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"
+    ) == ":(glob)demo*/SKILL.md"
+    assert artifact.joinpath("SKILL.md").read_text(
+        encoding="utf-8"
+    ) == "demo skill new\n"
+    assert any(call[:2] == ["git", "push"] for call in remote_calls)
+    assert any(call[:3] == ["gh", "pr", "create"] for call in remote_calls)
 
 
 def test_publish_script_allows_ignored_file_outside_artifact(tmp_path):
