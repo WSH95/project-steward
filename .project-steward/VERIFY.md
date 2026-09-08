@@ -18,6 +18,16 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
+Task 4 review correction: 2026-09-08 — two end-to-end regressions failed
+against `7c3ace0`: newline normalization hid `git status\ntouch changed.txt`,
+and the 200-character display limit hid a later `&& touch changed.txt`. New
+versioned activity records carry classification computed from the full original
+detail; legacy three-field records are classified when read. The direct set
+passes 3 tests in 0.32s and all 51 session/hook tests pass in 4.07s. Self doctor
+reports 40 checks, 3 existing warnings, and 0 failures; diff checks pass. The
+controller will run the actual-source full suite after scoped rereview and
+delivery, so the equivalent full suite was not repeated in this correction.
+
 Task 4 verification: 2026-09-08 (ADR 0028) — the initial lifecycle batch
 failed all 3 tests before implementation, covering hook start followed by CLI
 resume, repeated same-ID start/compact, and A-start/B-start/A-end. The next

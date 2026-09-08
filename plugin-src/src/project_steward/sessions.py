@@ -160,8 +160,10 @@ def record_activity(root, tool, detail="", session_id=None):
             and record.get("session_id") == session_id):
         record["updated_at"] = utcnow_iso()
         write_json_atomic(_session_file(root), record)
+    relevant = activity_is_handoff_relevant(tool, detail)
     detail_text = (detail or "")[:200].replace("\n", " ")
-    line = "%s\t%s\t%s\n" % (utcnow_iso(), tool, detail_text)
+    line = "%s\tv2\t%d\t%s\t%s\n" % (
+        utcnow_iso(), 1 if relevant else 0, tool, detail_text)
     log_path = runtime_dir(root) / "activity.log"
     try:
         with open(str(log_path), "a", encoding="utf-8", newline="\n") as fh:
@@ -247,19 +249,26 @@ def _activity_entries_newer_than(root, epoch):
     except OSError:
         return entries
     for line in lines:
-        parts = line.split("\t", 2)
-        if len(parts) < 2:
-            continue
-        ts = parts[0]
+        parts = line.split("\t", 4)
+        if (len(parts) == 5 and parts[1] == "v2"
+                and parts[2] in ("0", "1")):
+            ts, _version, relevant_text, tool, detail = parts
+            relevant = relevant_text == "1"
+        else:
+            parts = line.split("\t", 2)
+            if len(parts) < 2:
+                continue
+            ts = parts[0]
+            tool = parts[1]
+            detail = parts[2] if len(parts) > 2 else ""
+            relevant = None
         try:
             lt = time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
         except ValueError:
             continue
         if calendar.timegm(lt) <= epoch:
             continue
-        tool = parts[1]
-        detail = parts[2] if len(parts) > 2 else ""
-        entries.append((tool, detail))
+        entries.append((tool, detail, relevant))
     return entries
 
 
@@ -329,10 +338,13 @@ def activity_is_handoff_relevant(tool, detail=""):
 
 
 def handoff_relevant_activity_count_since(root, epoch):
-    return sum(
-        1 for tool, detail in _activity_entries_newer_than(root, epoch)
-        if activity_is_handoff_relevant(tool, detail)
-    )
+    count = 0
+    for tool, detail, relevant in _activity_entries_newer_than(root, epoch):
+        if relevant is None:
+            relevant = activity_is_handoff_relevant(tool, detail)
+        if relevant:
+            count += 1
+    return count
 
 
 def handoff_meta(root):

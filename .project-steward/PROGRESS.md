@@ -2,6 +2,13 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T12:08:46Z — codex
+Corrected Task 4's activity-log review finding. New log records preserve the
+handoff-relevance result computed from the full command, while legacy records
+remain readable. Both end-to-end regressions failed before the fix; the direct
+set now passes 3 tests and all 51 session/hook tests pass. Self doctor remains
+40 checks, 3 existing warnings, and 0 failures.
+
 ### 2026-09-08T11:56:26Z — codex
 Completed Task 4 session ownership and edit detection (ADR 0028). The required
 three-case lifecycle batch failed before implementation and now passes. All 48

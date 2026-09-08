@@ -143,6 +143,39 @@ def test_shell_control_operators_make_read_only_prefixes_relevant(
     assert sessions.activity_is_handoff_relevant(tool, command)
 
 
+def test_activity_log_preserves_multiline_shell_classification(git_repo):
+    _init(git_repo)
+    command = "git status\ntouch changed.txt"
+    assert sessions.activity_is_handoff_relevant("exec_command", command)
+
+    sessions.record_activity(git_repo, "exec_command", command)
+
+    assert sessions.handoff_relevant_activity_count_since(git_repo, 0) == 1
+
+
+def test_activity_log_preserves_classification_beyond_display_limit(git_repo):
+    _init(git_repo)
+    command = "git status " + ("x" * 220) + " && touch changed.txt"
+    assert len(command.split("&&", 1)[0]) > 200
+    assert sessions.activity_is_handoff_relevant("exec_command", command)
+
+    sessions.record_activity(git_repo, "exec_command", command)
+
+    assert sessions.handoff_relevant_activity_count_since(git_repo, 0) == 1
+
+
+def test_activity_log_reader_keeps_legacy_records_readable(git_repo):
+    _init(git_repo)
+    log_path = runtime_dir(git_repo, create=True) / "activity.log"
+    log_path.write_text(
+        "2026-09-08T12:00:00Z\tEdit\tsrc/legacy.py\n"
+        "2026-09-08T12:00:01Z\tBash\tgit status --short\n",
+        encoding="utf-8",
+    )
+
+    assert sessions.handoff_relevant_activity_count_since(git_repo, 0) == 1
+
+
 @pytest.mark.parametrize(
     "command",
     [
