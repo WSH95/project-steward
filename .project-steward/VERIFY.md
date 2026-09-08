@@ -18,6 +18,45 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
+0.4.2 delivery verification: 2026-09-08T15:05:41Z. Implementation commit
+`d911d32ff9aafca706fbcb771fa713f96ffe8261` was independently reviewed with no
+Critical, Important, or Minor findings, fast-forwarded into the original
+checkout's `main`, and pushed to `WSH95/project-steward`.
+[GitHub CI run 34241821486](https://github.com/WSH95/project-steward/actions/runs/34241821486)
+completed successfully with exactly **12 successful jobs**:
+
+| Native platform | Python versions | Result |
+| --- | --- | --- |
+| Windows latest | 3.10, 3.12, 3.13 | 3/3 passed |
+| macOS latest | 3.10, 3.12, 3.13 | 3/3 passed |
+| Ubuntu latest | 3.8, 3.10, 3.12, 3.13 | 4/4 passed |
+| Ubuntu 22.04 | 3.7 | 1/1 passed |
+| Packaged install | workflow's separate install check | passed |
+
+Controller release checks:
+
+- Built the 0.4.2 wheel offline with cached build tools and installed only
+  that wheel into a fresh temporary venv. No new dependency was installed.
+  Installed imports came from site-packages, not the editable checkout.
+- Installed CLI smoke passed version/templates, dry-run, Beads init and
+  effective backend identity, Codex files, repeated init, read-only resume,
+  doctor, legacy alias, and migration dry-run/apply.
+- Wheel metadata, installed module, source, and both generated plugin
+  manifests report 0.4.2. Wheel templates and source module bytes match;
+  `Requires-Python` remains `>=3.7`.
+- Wheel: `/tmp/project-steward-windows-ci-wheels/project_steward-0.4.2-py3-none-any.whl`
+  (72,515 bytes), SHA-256
+  `ca04650394025a2cc059b5ffe7b6613d942c336a34203c081384ae375e6e3756`.
+  Fresh venv: `/tmp/project-steward-windows-ci-wheel-venv`.
+  Payloads: `/tmp/project-steward-reliability/dist/project-steward`.
+- The integrated source imports 0.4.2 and self doctor reports 40 checks,
+  3 existing setup warnings, and 0 failures. The reviewed implementation
+  passed 278 local tests; native CI then validated all supported pairs.
+- All 108 saved source file modes, the exact 97 original permission-only
+  differences, and root AGENTS.md/CLAUDE.md were preserved. Source content
+  and index are clean when mode changes are ignored. No file-mode changes
+  were committed. This delivery checkpoint changes only project records.
+
 0.4.2 implementation verification: 2026-09-08T14:48:27Z. The CRLF case first
 failed against the old LF-only assertion while the copied bytes remained
 unchanged: 1 failed and 1 passed. After the assertion compared the copied file
@@ -34,8 +73,8 @@ and after the change reported 40 checks, 3 known local setup warnings, and 0
 failures; the final doctor imported version 0.4.2. Production migration,
 `gitutil.py`, shared fallback/parser code, AGENTS.md, and CLAUDE.md did not
 change. Native Windows/macOS runs, the fresh wheel/install smoke, independent
-review, source integration, push, and all 12 GitHub jobs remain with the
-controller.
+review, source integration, push, and all 12 GitHub jobs subsequently passed;
+see the delivery verification above.
 
 Main integration verification: 2026-09-08T13:49:23Z — after fetching GitHub main,
 local main fast-forwarded from `351c797` through `600dc24` without conflicts.

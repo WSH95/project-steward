@@ -2,6 +2,18 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T15:05:41Z — codex
+Completed and delivered the approved 0.4.2 Windows CI correction. Sol at max
+effort implemented `d911d32`; independent review found no defects. Main was
+fast-forwarded and pushed, and [GitHub CI run 34241821486](https://github.com/WSH95/project-steward/actions/runs/34241821486)
+passed all 11 requested native OS/Python jobs plus packaged-install. The local
+suite passed 278 tests; fresh-wheel installation and CLI smoke passed; doctor
+reported 40 checks, 3 existing setup warnings, and 0 failures. All 108 saved
+source file modes, the exact 97 pre-existing permission-only differences, and
+root AGENTS.md/CLAUDE.md were preserved. The LF/CRLF correction changes the
+regression test; production migration behavior is unchanged. PLAN.md and
+HANDOFF.md now record completion. Older backlog items remain outside scope.
+
 ### 2026-09-08T14:50:39Z — codex
 Prepared Project Steward 0.4.2 Windows CI correction for controller review.
 
