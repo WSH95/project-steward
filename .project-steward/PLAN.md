@@ -2,6 +2,34 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M6: 0.5.0 review remediation
+
+Review of the shipped plugin found data-loss paths in the write layer, a hook
+wrapper that could corrupt its own JSON output, and documentation that could
+not be followed. Projectforge removal was approved separately. Validation:
+284 tests, doctor --self 39/3/0, payload build, and the end-to-end checks in
+VERIFY.md.
+
+- [x] Preserve file modes on atomic writes; refuse to stub over an unreadable
+      PROGRESS.md or overwrite an unparseable state.json.
+- [x] Stop doctor reporting `[ok]` for files it could not read, and stop it
+      raising on a non-UTF-8 instruction file.
+- [x] Harden managed blocks (trailing whitespace, duplicate/unclosed refusal,
+      first-line-ending newline) and port the containment walk into paths.
+- [x] Remove Projectforge: migrate.py, the alias, detection, marker
+      conversion, docs, and tests. Version 0.5.0 (ADR 0031).
+- [x] Probe interpreters before running a hook, so a candidate that writes to
+      stdout and then fails can never concatenate JSON; add an end-to-end
+      wrapper test on all three OSes.
+- [x] Consult the read-only allowlist before the shell-operator heuristic and
+      require every pipeline segment to be allowlisted.
+- [x] Quote the suggested commit message; separate git timeout from "git
+      missing"; give commit/add a longer timeout.
+- [x] Surface config diagnostics through SessionStart; make tomlmini and
+      tomllib agree; preserve existing newlines; write through symlinks.
+- [x] Fix docs that could not be followed: backend identifiers, the Codex
+      manual install, security-model audit paths, README crash signals.
+
 ## M5: 0.4.2 Windows CI correction
 
 Complete, independently reviewed, merged into `main`, and pushed to GitHub.

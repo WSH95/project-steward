@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from project_steward import sessions
+from project_steward import StewardError, sessions
 from project_steward import gitutil
 from project_steward.paths import runtime_dir, state_dir
 from project_steward.scaffold import apply_plan, plan_files
@@ -366,3 +366,61 @@ def test_progress_is_newest_first(git_repo):
     sessions.append_progress(git_repo, "entry-two", "t")
     text = (state_dir(git_repo) / "PROGRESS.md").read_text(encoding="utf-8")
     assert text.index("entry-two") < text.index("entry-one")
+
+
+@pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0,
+                    reason="needs POSIX permissions as a non-root user")
+def test_append_progress_refuses_to_stub_over_unreadable_log(git_repo):
+    _init(git_repo)
+    progress = state_dir(git_repo) / "PROGRESS.md"
+    progress.write_text("# Progress log\n\n### old\nIMPORTANT HISTORY\n\n",
+                        encoding="utf-8")
+    os.chmod(str(progress), 0o000)
+    try:
+        with pytest.raises(StewardError):
+            sessions.append_progress(git_repo, "new note", "agent")
+    finally:
+        os.chmod(str(progress), 0o644)
+    assert "IMPORTANT HISTORY" in progress.read_text(encoding="utf-8")
+
+
+def test_append_progress_creates_log_when_missing(git_repo):
+    _init(git_repo)
+    progress = state_dir(git_repo) / "PROGRESS.md"
+    progress.unlink()
+    sessions.append_progress(git_repo, "first note", "agent")
+    assert "first note" in progress.read_text(encoding="utf-8")
+
+
+def test_checkpoint_does_not_overwrite_corrupt_state(git_repo):
+    _init(git_repo)
+    corrupt = state_dir(git_repo) / "state.json"
+    corrupt.write_text("{not json", encoding="utf-8")
+    with pytest.raises(StewardError):
+        sessions.checkpoint(git_repo, "note", "agent")
+    assert corrupt.read_text(encoding="utf-8") == "{not json"
+
+
+@pytest.mark.parametrize("command", [
+    "git status | head",
+    "git log --oneline -5 | head -3",
+    "rg TODO | wc -l",
+    "python3 -m pytest -q 2>&1 | tail",
+    "cat README.md | grep -n version | head",
+])
+def test_piped_read_only_commands_are_not_handoff_relevant(command):
+    # The allowlist is consulted before the operator heuristic; a pipe
+    # between read-only commands must not arm the Stop guard.
+    assert not sessions.activity_is_handoff_relevant("Bash", command)
+
+
+@pytest.mark.parametrize("command", [
+    "ls && rm -rf /tmp/x",
+    "git status | xargs rm",
+    "cat README.md > copy.txt",
+    "pwd; make install",
+])
+def test_one_non_read_only_segment_makes_the_whole_command_relevant(command):
+    # Every segment must be allowlisted — a read-only first command does
+    # not launder what follows it.
+    assert sessions.activity_is_handoff_relevant("Bash", command)

@@ -32,17 +32,16 @@ Primary language/stack: Python 3.7+ (stdlib only).
 2. Run `project-steward doctor --self` before and after changes; keep
    `python -m pytest` green (update tests when templates, hooks, the CLI
    surface, or the state schema change).
-3. Preserve migration compatibility: `.projectforge/` detection, marker
-   conversion, and the deprecated `projectforge` alias.
-4. Keep Ubuntu/Windows/macOS support and the Python 3.7 floor — stdlib
-   only, no Bash-only core behavior (see plugin-src/references/cross-platform.md).
-5. Checkpoint PROGRESS.md/HANDOFF.md at semantic boundaries; propose
+3. Keep Ubuntu (Python 3.7+) and Windows/macOS (Python 3.10+) support —
+   stdlib only, no Bash-only core behavior (see
+   plugin-src/references/cross-platform.md).
+4. Checkpoint PROGRESS.md/HANDOFF.md at semantic boundaries; propose
    Conventional Commits; never push without approval.
 
 <!-- PROJECT-STEWARD:BEGIN commands -->
 ## Commands
 
-- Build: `python -m pip install -e .`
+- Build: `python -m pip install -e ".[dev]"`
 - Test: `python3 -m pytest -q`
 - Lint: `python3 -m compileall -q plugin-src/src tools`
 - Payloads: `python3 tools/build_plugin_payloads.py --clean --out dist/project-steward`

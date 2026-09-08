@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.0 — 2026-09-08
+
+- Remove the Projectforge migration path. The `migrate` subcommand, the
+  deprecated `projectforge` console alias, `.projectforge/` detection, legacy
+  `PROJECTFORGE` marker conversion, and the migration reference are gone.
+  Projects created by Project Steward are unaffected; nothing else changes.
+- Preserve file permissions when writing state. Atomic writes carried
+  `mkstemp`'s owner-only mode onto the destination, so every checkpoint
+  narrowed HANDOFF.md, PROGRESS.md, and init-written AGENTS.md/CLAUDE.md/
+  .gitignore to 0600. Existing modes are now kept and new files are 0644.
+- Refuse to destroy unreadable state. `append_progress` replaced PROGRESS.md
+  with a fresh template on any read error, and `checkpoint`/`wrap` overwrote an
+  unparseable `state.json` with defaults. Both now fail with a message and
+  exit 1 instead of writing.
+- Report health honestly. `doctor` reported "no secrets in committed steward
+  files" when it could not read them, and raised an unhandled error on an
+  unreadable AGENTS.md or HANDOFF.md. Unreadable files are now named in a
+  warning.
+- Tolerate trailing whitespace on managed markers, and refuse duplicated,
+  nested, or unclosed blocks instead of appending a second copy. Managed blocks
+  now follow the file's first line ending rather than switching to CRLF
+  whenever any CRLF is present.
+
 ## 0.4.2 — 2026-09-08
 
 - Parameterize the migration backup regression with explicit LF and CRLF

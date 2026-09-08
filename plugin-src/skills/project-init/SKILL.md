@@ -12,8 +12,6 @@ cold. Interview first, generate second, approve before writing.
 
 - `.project-steward/` exists → offer **audit** (run `project-steward
   doctor`) or **re-init** (only fills gaps; never overwrites state files).
-- `.projectforge/` exists → propose `project-steward migrate` (approval
-  gated) before or alongside init.
 - Directory empty (no files, no git) → skip to Phase 2's empty-project
   interview.
 - Existing `CLAUDE.md`, `.cursorrules`, or Copilot instructions → read

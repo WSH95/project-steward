@@ -2,10 +2,19 @@
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 from pathlib import Path
 
+# Read-only queries stay snappy; a commit may run pre-commit hooks (lint,
+# format, tests), and killing git mid-commit can leave .git/index.lock.
 GIT_TIMEOUT = 10
+GIT_WRITE_TIMEOUT = 120
+
+# Distinct from each other and from any real git exit code: a timeout is not
+# "git is missing", and neither is a clean tree.
+GIT_MISSING = 127
+GIT_TIMED_OUT = 124
 
 
 def run_git(args, cwd, timeout=GIT_TIMEOUT, strip_output=True):
@@ -22,8 +31,10 @@ def run_git(args, cwd, timeout=GIT_TIMEOUT, strip_output=True):
         if proc.returncode:
             output += proc.stderr.decode("utf-8", "replace")
         return proc.returncode, output.strip() if strip_output else output
-    except (OSError, subprocess.TimeoutExpired):
-        return 127, ""
+    except subprocess.TimeoutExpired:
+        return GIT_TIMED_OUT, ""
+    except OSError:
+        return GIT_MISSING, ""
 
 
 def git_available(cwd="."):
@@ -100,9 +111,14 @@ def path_is_dirty(root, path):
 
 
 def dirty_files(root):
+    """Porcelain status lines, or None when git could not answer.
+
+    None is not "clean": callers must not report a clean tree because the
+    query timed out or git is unavailable.
+    """
     rc, out = run_git(["status", "--porcelain"], root)
-    if rc != 0 or not out:
-        return []
+    if rc != 0:
+        return None
     return [line for line in out.splitlines() if line.strip()]
 
 
@@ -168,13 +184,18 @@ def in_progress_operation(root):
 
 
 def suggest_commit_command(root, message, extra_paths=None):
-    """Return the commit command to PROPOSE to the user (never executed here)."""
+    """Return the commit command to PROPOSE to the user (never executed here).
+
+    The agent is instructed to run this string, so every interpolated value
+    is shell-quoted: a summary containing quotes or `;` must not become a
+    second command.
+    """
     paths = [".project-steward"]
     for p in extra_paths or []:
         if p not in paths:
             paths.append(p)
-    quoted = " ".join('"%s"' % p for p in paths)
-    return "git add %s && git commit -m \"%s\"" % (quoted, message)
+    quoted = " ".join(shlex.quote(str(p)) for p in paths)
+    return "git add %s && git commit -m %s" % (quoted, shlex.quote(message))
 
 
 def stage_and_commit(root, message, paths):
@@ -212,8 +233,9 @@ def stage_and_commit(root, message, paths):
             selected.append(name)
     if not selected:
         return 1, "No existing or tracked commit paths selected."
-    rc, out = run_git(["--literal-pathspecs", "add", "--"] + selected, root)
+    rc, out = run_git(["--literal-pathspecs", "add", "--"] + selected, root,
+                      timeout=GIT_WRITE_TIMEOUT)
     if rc != 0:
         return rc, out
     return run_git(["--literal-pathspecs", "commit", "--only", "-m", message,
-                    "--"] + selected, root)
+                    "--"] + selected, root, timeout=GIT_WRITE_TIMEOUT)

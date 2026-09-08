@@ -50,8 +50,9 @@ def test_init_commit_suggestion_includes_only_changed_codex_files(git_repo, caps
     assert main(args) == 0
     suggestion = next(line for line in capsys.readouterr().out.splitlines()
                       if line.startswith("Suggested commit:"))
-    assert '".codex/config.toml"' in suggestion
-    assert '".codex/hooks.json"' in suggestion
+    # Paths are shell-quoted with shlex, which leaves safe names bare.
+    assert ".codex/config.toml" in suggestion
+    assert ".codex/hooks.json" in suggestion
 
     assert main(args) == 0
     repeated = next(line for line in capsys.readouterr().out.splitlines()
@@ -325,14 +326,3 @@ def test_wrong_shaped_init_config_uses_safe_default_and_doctor_fails(
         "unsupported value" in config_checks[0]["detail"].lower()
     )
 
-
-def test_legacy_migration_creates_target_for_workflow_pointer(git_repo):
-    from project_steward.migrate import migrate
-    legacy = git_repo / ".projectforge"
-    legacy.mkdir()
-    (git_repo / "AGENTS.md").write_text(
-        "# Project\n\n## Agent session protocol (Projectforge)\n\nOld instructions.\n",
-        encoding="utf-8")
-    assert migrate(git_repo)["ok"]
-    assert ".project-steward/WORKFLOW.md" in (git_repo / "AGENTS.md").read_text(encoding="utf-8")
-    assert (git_repo / ".project-steward/WORKFLOW.md").is_file()

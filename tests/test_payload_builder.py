@@ -657,3 +657,77 @@ def test_builder_accepts_generated_output_from_an_older_version(tmp_path):
     assert _json(manifests[0])["version"] == _json(
         ROOT / "plugin-src" / "metadata.json"
     )["version"]
+
+
+def _steward_project(tmp_path):
+    """A minimal managed project the hook will actually act on."""
+    sys.path.insert(0, str(ROOT / "plugin-src" / "src"))
+    from project_steward.scaffold import apply_plan, plan_files
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=str(repo), check=True)
+    plan, mapping = plan_files(repo, {"project_name": "Hooked"})
+    apply_plan(repo, plan, mapping)
+    return repo
+
+
+def _run_wrapper(wrapper, repo, payload, extra_path=None):
+    """Run the wrapper as a hook. stdout and stderr stay SEPARATE — merging
+    them would hide exactly the contamination these tests look for."""
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    if extra_path:
+        env["PATH"] = str(extra_path) + os.pathsep + env.get("PATH", "")
+    if os.name == "nt":
+        cmd = ["cmd", "/c", str(wrapper), "hook", "session-start",
+               "--agent", "claude"]
+    else:
+        cmd = [shutil.which("sh") or "sh", str(wrapper), "hook",
+               "session-start", "--agent", "claude"]
+    return subprocess.run(
+        cmd, cwd=str(repo), env=env, input=json.dumps(payload), text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+def test_hook_through_wrapper_emits_exactly_one_json_document(tmp_path):
+    out = _run_builder(tmp_path)
+    wrapper = out / "claude" / "plugins" / "project-steward" / "hooks" / \
+        "run-hook.cmd"
+    repo = _steward_project(tmp_path)
+    proc = _run_wrapper(wrapper, repo, {"cwd": str(repo),
+                                        "session_id": "s1"})
+    assert proc.returncode == 0, proc.stderr
+    # One document, not two concatenated: json.loads is the whole assertion.
+    emitted = json.loads(proc.stdout)
+    assert emitted["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+    assert "Project Steward" in \
+        emitted["hookSpecificOutput"]["additionalContext"]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX interpreter stubs")
+def test_wrapper_never_retries_after_an_interpreter_writes_stdout(tmp_path):
+    """A candidate that prints to stdout and then fails must be skipped by
+    the probe, not run and retried — that is how the Windows Store `python`
+    alias used to concatenate junk in front of the hook's JSON."""
+    out = _run_builder(tmp_path)
+    plugin = out / "claude" / "plugins" / "project-steward"
+    wrapper = plugin / "hooks" / "run-hook.cmd"
+    repo = _steward_project(tmp_path)
+
+    fakebin = tmp_path / "storebin"
+    fakebin.mkdir()
+    for name in ("python3", "python", "py"):
+        stub = fakebin / name
+        stub.write_text(
+            "#!/bin/sh\n"
+            "echo 'Python was not found; run without arguments to install'\n"
+            "exit 9009\n",
+            encoding="utf-8")
+        stub.chmod(0o755)
+
+    proc = _run_wrapper(wrapper, repo, {"cwd": str(repo)},
+                        extra_path=fakebin)
+    assert proc.returncode == 0, proc.stderr
+    assert "Python was not found" not in proc.stdout, proc.stdout
+    if proc.stdout.strip():
+        json.loads(proc.stdout)

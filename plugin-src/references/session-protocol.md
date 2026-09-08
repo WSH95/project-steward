@@ -9,7 +9,7 @@ native session histories are execution details.
 Committed (durable, travels via git): `.project-steward/WORKFLOW.md`, `PROJECT.md`,
 `PLAN.md`, `PROGRESS.md`, `HANDOFF.md`, `DECISIONS.md`, `QUESTIONS.md`,
 `RISKS.md`, `VERIFY.md`, `config.toml`, `state.json`, `backend.json`,
-optional `sessions/*.md`.
+`runtime/` is device-local and never committed.
 
 Runtime commands and doctor use the same config normalization. Invalid known
 sections, values, or types use documented safe defaults and doctor reports the
@@ -23,8 +23,8 @@ heartbeat, rotated), `events.log`, `last_snapshot.md`, `stop_guard.json`.
 
 **Invariant: starting or resuming a session never dirties the git
 working tree.** Session claims go to runtime files; committed files
-change only at semantic checkpoints and wrap-up. (This fixes a
-Projectforge v0.1 flaw where resume edited HANDOFF.md front matter.)
+change only at semantic checkpoints and wrap-up. Resume never edits
+HANDOFF.md front matter.
 
 ## Lifecycle
 

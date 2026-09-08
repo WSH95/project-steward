@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T19:16:20Z — claude
+Completed the 0.5.0 review remediation across all six approved phases. Fixed two verified data-loss paths (append_progress stubbing over an unreadable log; atomic writes narrowing every file to 0600), made doctor honest about files it cannot read, hardened managed blocks and ported the strict validator and containment walk out of migrate.py before removing Projectforge (-2208 lines, version 0.5.0, ADR 0031), replaced the hook wrapper's retry loop with probe-then-single-launch, corrected the Stop guard's read-only classification, quoted the suggested commit message, aligned tomlmini with tomllib, preserved existing newlines and symlinks, and fixed the docs that could not be followed. 284 tests pass; doctor --self reports 39 checks, 3 known setup warnings, 0 failures.
+
 ### 2026-09-08T15:05:41Z — codex
 Completed and delivered the approved 0.4.2 Windows CI correction. Sol at max
 effort implemented `d911d32`; independent review found no defects. Main was

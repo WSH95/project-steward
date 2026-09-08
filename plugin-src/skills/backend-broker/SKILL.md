@@ -38,13 +38,13 @@ it deliberately, explain it plainly, and switch it safely.
 
 | Situation | Recommend |
 | --- | --- |
-| Tiny/solo, few tasks, zero-dependency preference | built-in Markdown |
-| Wants Kanban/structure but staying in Markdown | Backlog.md |
-| Dependency-heavy, many blockers, multi-agent, task claiming | beads |
-| GitHub Issues as source of truth, PRD → epic → issues | CCPM |
-| PRD-to-task decomposition focus | Taskmaster |
-| Formal spec/plan gate before code | Spec Kit |
-| Team already lives in GitHub Issues | GitHub Issues (gh) |
+| Tiny/solo, few tasks, zero-dependency preference | built-in Markdown (`markdown`) |
+| Wants Kanban/structure but staying in Markdown | Backlog.md (`backlog_md`) |
+| Dependency-heavy, many blockers, multi-agent, task claiming | beads (`beads`) |
+| GitHub Issues as source of truth, PRD → epic → issues | CCPM (`ccpm`) |
+| PRD-to-task decomposition focus | Taskmaster (`taskmaster`) |
+| Formal spec/plan gate before code | Spec Kit (`spec_kit`) |
+| Team already lives in GitHub Issues | GitHub Issues (`github_issues`) |
 | Linear / Jira | explicit stubs — not implemented; say so honestly |
 
 ## Migration triggers (proactive, once per threshold)

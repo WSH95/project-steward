@@ -3,7 +3,7 @@ description: Initialize a Project Steward project by surveying the repo, intervi
 ---
 
 Follow the **project-init** skill end to end: detect existing state
-(including legacy .projectforge/), run the read-only survey
+run the read-only survey
 (`project-steward survey --json` if available), interview the user about
 load-bearing unknowns only, preview with `project-steward init ...
 --dry-run` and paste the full AGENTS.md draft into your visible reply

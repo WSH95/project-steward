@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from project_steward import doctor
 from project_steward.cli import main as cli_main
 from project_steward.scaffold import apply_plan, plan_files
@@ -84,8 +86,17 @@ def test_claude_hooks_use_cross_platform_wrapper():
     assert 'call py -3 "%~dp0..\\bin\\project-steward" %*' in batch
     assert 'call python "%~dp0..\\bin\\project-steward" %*' in batch
     assert "call project-steward %*" in batch
-    assert "if not errorlevel 1 exit /b 0" in batch
+    assert "if not errorlevel 1 (" in batch
     assert "if %ERRORLEVEL% equ 0 exit /b 0" not in batch
+
+    # Every candidate is probed with its output discarded, so a stub that
+    # prints to stdout and then fails (the Microsoft Store `python` alias)
+    # can never contaminate the hook's JSON channel. The real run then
+    # happens exactly once — no retry after output has been written.
+    assert batch.count("--probe >nul 2>nul") == 3
+    posix = wrapper.read_text(encoding="utf-8").split("CMDBLOCK")[2]
+    assert posix.count("--probe >/dev/null 2>&1") == 2
+    assert "&& exit 0" not in posix
 
     for groups in hooks["hooks"].values():
         for group in groups:
@@ -155,3 +166,53 @@ def test_cli_version_runs():
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
     assert proc.returncode == 0
     assert b"project-steward" in proc.stdout
+
+
+@pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0,
+                    reason="needs POSIX permissions as a non-root user")
+def test_doctor_warns_when_a_durable_file_cannot_be_read(git_repo):
+    plan, mapping = plan_files(git_repo, {"project_name": "Demo"})
+    apply_plan(git_repo, plan, mapping)
+    handoff = git_repo / ".project-steward" / "HANDOFF.md"
+    os.chmod(str(handoff), 0o000)
+    try:
+        results = doctor.run_checks(git_repo)
+    finally:
+        os.chmod(str(handoff), 0o644)
+    hits = [r for r in results
+            if r["name"] == "no secrets in committed steward files"]
+    assert hits, "secrets check missing"
+    assert hits[0]["status"] == doctor.WARN
+    assert "HANDOFF.md" in hits[0]["detail"]
+
+
+def test_doctor_flags_an_unknown_hook_event_name(tmp_path, monkeypatch):
+    # The dispatcher silently ignores unknown events by contract, so a typo
+    # in hooks.json is only catchable at doctor time.
+    import shutil as _shutil
+    fake = tmp_path / "repo"
+    _shutil.copytree(str(ROOT / "plugin-src"), str(fake / "plugin-src"))
+    # _self_checks only runs for a project that has steward state.
+    (fake / ".project-steward").mkdir()
+    hooks_json = fake / "plugin-src" / "claude" / "hooks" / "hooks.json"
+    data = json.loads(hooks_json.read_text(encoding="utf-8"))
+    group = data["hooks"]["Stop"][0]["hooks"][0]
+    group["command"] = group["command"].replace("hook stop", "hook stahp")
+    hooks_json.write_text(json.dumps(data), encoding="utf-8")
+
+    results = doctor.run_checks(fake, self_mode=True)
+    schema = [r for r in results if r["name"].endswith("hooks.json schema")]
+    assert schema and schema[0]["status"] == doctor.FAIL
+    assert "stahp" in schema[0]["detail"]
+
+
+def test_checkpoint_wrap_close_honour_json(git_repo, capsys):
+    plan, mapping = plan_files(git_repo, {"project_name": "Demo"})
+    apply_plan(git_repo, plan, mapping)
+    root = str(git_repo)
+    assert cli_main(["checkpoint", "--root", root, "--note", "n", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is True
+    assert cli_main(["wrap", "--root", root, "--summary", "s", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["session_status"] == "closed"
+    assert cli_main(["close", "--root", root, "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["wrapped"] is False

@@ -1,5 +1,22 @@
 # Backend selection
 
+## Names the CLI accepts
+
+`project-steward backend adopt <name>` and `init --backend <name>` take
+the identifier, not the display name:
+
+| Identifier | Backend |
+| --- | --- |
+| `markdown` | Built-in Markdown (PLAN.md) |
+| `backlog_md` | Backlog.md |
+| `beads` | beads (bd) |
+| `ccpm` | CCPM |
+| `taskmaster` | Taskmaster |
+| `spec_kit` | GitHub Spec Kit |
+| `github_issues` | GitHub Issues (via gh) |
+
+`linear` and `jira` are stubs and cannot be adopted.
+
 One system owns fine-grained tasks at a time; PLAN.md degrades to
 milestone goals and a dated overview with task IDs when an external backend
 is adopted. Keep active, blocked, next, and recently completed work readable;

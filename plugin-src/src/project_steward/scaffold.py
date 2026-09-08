@@ -15,7 +15,7 @@ from pathlib import Path
 from . import __version__
 from .managed_blocks import (get_block, has_block, remove_block, unified_diff,
                              upsert_block)
-from .paths import DURABLE_FILES, GITIGNORE_ENTRIES, state_dir
+from .paths import assert_inside_root, DURABLE_FILES, GITIGNORE_ENTRIES, state_dir
 from .state import (default_state, load_backend, load_config, utcnow_iso, write_json_atomic,
                     write_text_atomic)
 
@@ -330,13 +330,16 @@ def plan_files(root, answers=None):
 def apply_plan(root, plan, mapping):
     """Write the planned files. state.json/backend.json get real content."""
     root = Path(root)
+    # A symlinked .project-steward/ would redirect every write out of the
+    # project; refuse before creating anything.
+    assert_inside_root(root, state_dir(root) / "runtime", ".project-steward/")
     state_dir(root).mkdir(parents=True, exist_ok=True)
     (state_dir(root) / "runtime").mkdir(parents=True, exist_ok=True)
     written = []
     for rel, (action, text, _diff) in sorted(plan.items()):
         if action in ("skip", "noop") or text is None:
             continue
-        target = root / rel
+        target = assert_inside_root(root, root / rel, rel)
         if rel == ".project-steward/state.json":
             state = default_state(mapping.get("project_name", ""))
             write_json_atomic(target, state)

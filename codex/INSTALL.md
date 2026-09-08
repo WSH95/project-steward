@@ -33,6 +33,9 @@ Install by copying:
 ```
 mkdir -p ~/.agents/skills
 cp -r plugin-src/skills/* ~/.agents/skills/
+# the skills read ../../references/*.md — copy those too
+mkdir -p ~/.agents/references
+cp -r plugin-src/references/* ~/.agents/references/
 ```
 
 Check with `/skills` inside Codex; invoke explicitly (`$project-init`) or

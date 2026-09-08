@@ -47,3 +47,32 @@ def test_windows_paths_use_literal_strings_on_all_pythons():
         load_toml_text('k = "C:\\Users\\bob"')
     assert load_toml_text("k = 'C:\\Users\\bob'")["k"] == "C:\\Users\\bob"
     assert load_toml_text('k = "a\\tb"')["k"] == "a\tb"
+
+
+@pytest.mark.parametrize("src", [
+    'x = 1\nx = 2\n',            # duplicate key
+    'x = True\n',                # booleans are lower case in TOML
+    'y = infinity\n',            # not a TOML float
+    'x = 007\n',                 # leading zeros
+    '[a]\nk = 1\n[a]\nj = 2\n',  # table defined twice
+    '[[items]]\nname = "a"\n',   # arrays of tables: unsupported on both paths
+])
+def test_rejects_everything_tomllib_rejects(src):
+    # Both readers raise a ValueError subclass: TomlMiniError below 3.11,
+    # tomllib's TOMLDecodeError above it. What matters is that neither
+    # silently returns a wrong answer.
+    with pytest.raises(ValueError):
+        load_toml_text(src)
+    with pytest.raises(TomlMiniError):
+        loads(src)
+
+
+@pytest.mark.parametrize(("src", "expected"), [
+    ('a.b = 1\n', {"a": {"b": 1}}),
+    ('["a.b"]\nk = 1\n', {"a.b": {"k": 1}}),
+    ('[session]\nauto_handoff_mode = "off"\n',
+     {"session": {"auto_handoff_mode": "off"}}),
+])
+def test_matches_tomllib_on_supported_documents(src, expected):
+    assert load_toml_text(src) == expected
+    assert loads(src) == expected

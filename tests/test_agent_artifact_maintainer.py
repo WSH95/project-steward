@@ -537,13 +537,22 @@ def test_publish_script_publishes_literal_magic_target(
     )
 
     assert result == 0
-    assert _git(target, "rev-parse", "HEAD") != head_before
+    # The commit lands on the publish branch; the user's checkout is put
+    # back on the branch they started on.
+    branch = "publish/demo-skill/test"
+    assert _git(target, "rev-parse", branch) != head_before
+    assert _git(target, "rev-parse", "HEAD") == head_before
+    assert _git(target, "rev-parse", "--abbrev-ref", "HEAD") != branch
     assert _git(
-        target, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"
+        target, "diff-tree", "--no-commit-id", "--name-only", "-r", branch
     ) == ":(glob)demo*/SKILL.md"
+    # The new content lives on the publish branch, not in the restored
+    # working tree — a literal pathspec target is committed verbatim.
+    assert _git(target, "show", "%s:%s" % (branch, ":(glob)demo*/SKILL.md")) \
+        == "demo skill new"
     assert artifact.joinpath("SKILL.md").read_text(
         encoding="utf-8"
-    ) == "demo skill new\n"
+    ) == "demo skill old\n"
     assert any(call[:2] == ["git", "push"] for call in remote_calls)
     assert any(call[:3] == ["gh", "pr", "create"] for call in remote_calls)
 
@@ -709,9 +718,10 @@ def test_publish_script_commits_only_the_artifact(tmp_path, monkeypatch):
     )
 
     assert result == 0
-    assert _git(target, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD") == (
-        "skills/demo-skill/SKILL.md"
-    )
+    branch = "publish/demo-skill/test"
+    assert _git(target, "rev-parse", "--abbrev-ref", "HEAD") != branch
+    assert _git(target, "diff-tree", "--no-commit-id", "--name-only", "-r",
+                branch) == "skills/demo-skill/SKILL.md"
     assert (target / "unrelated.txt").read_text(encoding="utf-8") == "unchanged\n"
     assert _git(target, "status", "--porcelain") == ""
 

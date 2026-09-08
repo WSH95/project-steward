@@ -32,7 +32,6 @@ jobs:
         run: |
           project-steward --version
           project-steward survey --json
-          projectforge --version
       - name: Hook JSON validation
         run: python -m json.tool plugin-src/claude/hooks/hooks.json && python -m json.tool plugin-src/src/project_steward/templates/codex-hooks.json.template
         shell: bash

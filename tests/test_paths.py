@@ -1,7 +1,11 @@
+import os
 import subprocess
 
+import pytest
+
 from project_steward.cli import main
-from project_steward.paths import find_project_root, state_dir
+from project_steward.paths import (UnsafePathError, assert_inside_root,
+                                   find_project_root, state_dir)
 
 
 def _git_init(path):
@@ -57,3 +61,23 @@ def test_discovery_from_managed_repository_subdirectory_finds_repository(
     child.mkdir(parents=True)
 
     assert find_project_root(child) == git_repo
+
+
+def test_assert_inside_root_accepts_normal_paths(tmp_path):
+    target = tmp_path / ".project-steward" / "HANDOFF.md"
+    assert assert_inside_root(tmp_path, target, "handoff") == target
+
+
+def test_assert_inside_root_rejects_escape(tmp_path):
+    with pytest.raises(UnsafePathError):
+        assert_inside_root(tmp_path, tmp_path.parent / "elsewhere.md", "x")
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlinks")
+def test_assert_inside_root_rejects_symlinked_ancestor(tmp_path):
+    outside = tmp_path.parent / "outside-steward-dir"
+    outside.mkdir(exist_ok=True)
+    link = tmp_path / ".project-steward"
+    link.symlink_to(outside, target_is_directory=True)
+    with pytest.raises(UnsafePathError):
+        assert_inside_root(tmp_path, link / "PROGRESS.md", "progress")

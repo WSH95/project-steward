@@ -12,9 +12,8 @@ import sys
 from pathlib import Path
 
 from . import __version__, gitutil
-from .managed_blocks import find_legacy_blocks, has_block
-from .paths import (DURABLE_FILES, has_legacy_state, is_steward_project,
-                    state_dir)
+from .managed_blocks import has_block
+from .paths import DURABLE_FILES, is_steward_project, state_dir
 from .security import scan_text_for_secrets
 from .sessions import handoff_meta
 from .state import (load_config, load_config_with_diagnostics,
@@ -25,6 +24,19 @@ OK, WARN, FAIL = "ok", "warn", "fail"
 
 def _check(results, status, name, detail=""):
     results.append({"status": status, "name": name, "detail": detail})
+
+
+def _read_text(path):
+    """Return (text, unreadable). ``unreadable`` is False for absent files.
+
+    A health check must never report OK because it could not look.
+    """
+    try:
+        return path.read_text(encoding="utf-8"), False
+    except FileNotFoundError:
+        return None, False
+    except (OSError, UnicodeDecodeError):
+        return None, True
 
 
 def run_checks(root, self_mode=False):
@@ -56,12 +68,8 @@ def run_checks(root, self_mode=False):
 
     # Project state ---------------------------------------------------------
     if not is_steward_project(root):
-        if has_legacy_state(root):
-            _check(results, WARN, "legacy state",
-                   ".projectforge/ found — run `project-steward migrate`")
-        else:
-            _check(results, WARN, "state dir",
-                   ".project-steward/ not found — run `project-steward init`")
+        _check(results, WARN, "state dir",
+               ".project-steward/ not found — run `project-steward init`")
         return results
 
     sdir = state_dir(root)
@@ -104,11 +112,14 @@ def run_checks(root, self_mode=False):
 
     # Top-level instruction files
     agents_path = root / "AGENTS.md"
-    if agents_path.is_file():
-        text = agents_path.read_text(encoding="utf-8")
+    agents_text, agents_unreadable = _read_text(agents_path)
+    if agents_unreadable:
+        _check(results, WARN, "AGENTS.md", "exists but could not be read")
+    elif agents_text is not None:
+        text = agents_text
         if ".project-steward/WORKFLOW.md" in text:
-            workflow = sdir / "WORKFLOW.md"
-            readable = workflow.is_file() and bool(workflow.read_text(encoding="utf-8").strip())
+            workflow_text, _unreadable = _read_text(sdir / "WORKFLOW.md")
+            readable = bool((workflow_text or "").strip())
             _check(results, OK if readable else FAIL, "AGENTS.md workflow reference",
                    "" if readable else "WORKFLOW.md is missing or empty")
         _check(results,
@@ -116,18 +127,17 @@ def run_checks(root, self_mode=False):
                "AGENTS.md session-protocol block",
                "" if has_block(text, "agent-session-protocol") else
                "managed block missing — re-run init scaffolding")
-        legacy = find_legacy_blocks(text)
-        _check(results, OK if not legacy else WARN,
-               "no legacy PROJECTFORGE blocks",
-               "" if not legacy else "found: %s" % ", ".join(legacy))
         lines = text.count("\n") + 1
         _check(results, OK if lines <= 300 else WARN, "AGENTS.md size",
                "%d lines" % lines + ("" if lines <= 300 else " (>300 — trim)"))
     else:
         _check(results, WARN, "AGENTS.md", "missing")
     claude_path = root / "CLAUDE.md"
-    if claude_path.is_file():
-        has_import = "@AGENTS.md" in claude_path.read_text(encoding="utf-8")
+    claude_text, claude_unreadable = _read_text(claude_path)
+    if claude_unreadable:
+        _check(results, WARN, "CLAUDE.md", "exists but could not be read")
+    elif claude_text is not None:
+        has_import = "@AGENTS.md" in claude_text
         _check(results, OK if has_import else WARN,
                "CLAUDE.md imports @AGENTS.md",
                "" if has_import else "no @AGENTS.md import found")
@@ -143,8 +153,7 @@ def run_checks(root, self_mode=False):
         results.extend(inspect_setup(root))
 
     # Gitignore for runtime state
-    gi = root / ".gitignore"
-    gi_text = gi.read_text(encoding="utf-8") if gi.is_file() else ""
+    gi_text = _read_text(root / ".gitignore")[0] or ""
     ignored = ".project-steward/runtime/" in gi_text
     _check(results, OK if ignored else FAIL, "runtime state gitignored",
            "" if ignored else ".project-steward/runtime/ missing from "
@@ -152,27 +161,29 @@ def run_checks(root, self_mode=False):
 
     # Secrets scan over committed steward files
     findings = []
+    unread = []
     for name in DURABLE_FILES:
         path = sdir / name
-        if path.is_file():
-            try:
-                findings += scan_text_for_secrets(
-                    path.read_text(encoding="utf-8", errors="replace"),
-                    origin=".project-steward/%s" % name)
-            except OSError:
-                pass
+        if not path.is_file():
+            continue
+        text, unreadable = _read_text(path)
+        if unreadable or text is None:
+            unread.append(name)
+            continue
+        findings += scan_text_for_secrets(
+            text, origin=".project-steward/%s" % name)
     hard = [f for f in findings if not f.get("placeholder")]
-    _check(results, OK if not findings else (FAIL if hard else WARN),
-           "no secrets in committed steward files",
-           "" if not findings else "; ".join(
-               "%s in %s%s" % (f["label"], f["origin"],
-                               " (placeholder?)" if f.get("placeholder")
-                               else "")
-               for f in findings[:5]))
-
-    if has_legacy_state(root):
-        _check(results, WARN, "legacy state",
-               ".projectforge/ still present — run `project-steward migrate`")
+    status = OK if not findings else (FAIL if hard else WARN)
+    if unread and status == OK:
+        status = WARN
+    detail = "" if not findings else "; ".join(
+        "%s in %s%s" % (f["label"], f["origin"],
+                        " (placeholder?)" if f.get("placeholder") else "")
+        for f in findings[:5])
+    if unread:
+        detail = "; ".join(filter(None, [
+            detail, "not scanned (unreadable): %s" % ", ".join(unread)]))
+    _check(results, status, "no secrets in committed steward files", detail)
 
     if self_mode:
         results += _self_checks(root)
@@ -210,6 +221,7 @@ def _self_checks(root):
             if hooks_file == "plugin-src/claude/hooks/hooks.json":
                 name = "self: %s schema" % hooks_file
                 allowed = ("type", "command", "timeout")
+                from .hooks import HANDLERS as hook_events
                 wrapper_ref = "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd"
                 problems = []
                 handlers = []
@@ -238,6 +250,18 @@ def _self_checks(root):
                             "has no per-OS command variants (ADR 0019)"
                             % ", ".join(unknown))
                     command = handler.get("command", "")
+                    # An unrecognised event is a silent no-op at run time
+                    # (hooks never fail loudly), so a typo is only ever
+                    # catchable here.
+                    tokens = command.replace('"', " ").split()
+                    if "hook" in tokens:
+                        index = tokens.index("hook")
+                        event = (tokens[index + 1]
+                                 if index + 1 < len(tokens) else "")
+                        if event not in hook_events:
+                            problems.append(
+                                "unknown hook event %r — the dispatcher "
+                                "would silently ignore it" % event)
                     if wrapper_ref not in command:
                         problems.append(
                             "command must run the wrapper via %s"
@@ -273,30 +297,32 @@ def _self_checks(root):
     # Unresolved template placeholders in the repo's own generated state
     sdir = state_dir(root)
     unresolved = []
+    unread = []
     for name in ("PROJECT.md", "PLAN.md", "HANDOFF.md"):
-        path = sdir / name
-        try:
-            if "$project_name" in path.read_text(encoding="utf-8"):
-                unresolved.append(name)
-        except OSError:
-            pass
-    _check(results, OK if not unresolved else WARN,
+        text, unreadable = _read_text(sdir / name)
+        if unreadable:
+            unread.append(name)
+        elif text is not None and "$project_name" in text:
+            unresolved.append(name)
+    _check(results, OK if not (unresolved or unread) else WARN,
            "self: no unresolved placeholders",
-           "" if not unresolved else ", ".join(unresolved))
+           ", ".join(unresolved + ["%s (unreadable)" % n for n in unread]))
     stale_urls = []
+    unread_urls = []
     for rel in ("plugin-src/metadata.json",
                 "pyproject.toml"):
-        path = root / rel
-        try:
-            if "github.com/USER/" in path.read_text(encoding="utf-8"):
-                stale_urls.append(rel)
-        except OSError:
-            pass
-    _check(results, OK if not stale_urls else WARN,
+        text, unreadable = _read_text(root / rel)
+        if unreadable:
+            unread_urls.append(rel)
+        elif text is not None and "github.com/USER/" in text:
+            stale_urls.append(rel)
+    _check(results, OK if not (stale_urls or unread_urls) else WARN,
            "self: repo URLs set",
-           "" if not stale_urls else
-           "placeholder github.com/USER/ in %s — replace before publishing"
-           % ", ".join(stale_urls))
+           "; ".join(filter(None, [
+               "placeholder github.com/USER/ in %s — replace before "
+               "publishing" % ", ".join(stale_urls) if stale_urls else "",
+               "unreadable: %s" % ", ".join(unread_urls)
+               if unread_urls else ""])))
     from .paths import DURABLE_FILES
     from .scaffold import _templates_root
     troot = _templates_root()

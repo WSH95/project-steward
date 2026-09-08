@@ -2,9 +2,8 @@ Initialize this repository (or empty directory) as a Project Steward
 managed project. If the project-init skill is installed, follow it; the
 condensed protocol is below.
 
-1. Detect: existing .project-steward/ -> offer audit/re-init; legacy
-   .projectforge/ -> propose `project-steward migrate`; empty dir -> run
-   the discovery interview (purpose, users, non-goals, stack, deployment,
+1. Detect: existing .project-steward/ -> offer audit/re-init; empty dir
+   -> run the discovery interview (purpose, users, non-goals, stack, deployment,
    testing, license, security, first milestone, backend, git-init).
 2. Survey read-only (`project-steward survey --json` if installed;
    otherwise README, manifests, CI, git log/status, tree). Never execute

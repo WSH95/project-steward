@@ -13,13 +13,13 @@
   (AWS keys, GitHub tokens, Slack tokens, private key blocks, hard-coded
   credentials) and fails on hits.
 
-## Command risk classes (security.classify_command)
+## Command risk classes
 
-destructive deletion, pipe-remote-script-to-shell, raw disk writes,
+Destructive deletion, pipe-remote-script-to-shell, raw disk writes,
 world-writable chmod, shell-profile edits, package installation, cloud
-credential access, and any `git push` (force or not) are classified
-risky: agents must obtain explicit approval, and Project Steward itself
-never runs them. The CLI never pushes; commits happen only via
+credential access, and any `git push` (force or not) require explicit
+user approval. This is a rule the skills follow, not a runtime check:
+Project Steward has no command interceptor and never runs these itself. The CLI never pushes; commits happen only via
 `wrap --commit` under a permitting `commit_policy`. Agents use ordinary Git
 commands for coherent feature commits after checking scope and validation.
 New projects default to auto; existing preferences remain unchanged.
@@ -34,9 +34,10 @@ hooks: never install dependencies, never touch the network, never edit
 AGENTS.md/CLAUDE.md, never read secrets, always exit 0. The Claude
 payload's `bin/project-steward` is a small Python launcher into the
 plugin-local source tree, not a native binary or bundled runtime. Inspect
-it with `plugin-src/src/project_steward/hooks.py` (~250 lines) and the
-canonical JSON configs under `plugin-src/claude/hooks/` and
-`plugin-src/src/project_steward/templates/codex-hooks.json.template`.
+it in your installed plugin at `src/project_steward/hooks.py` (~280
+lines) and `hooks/hooks.json`. In a development checkout those are
+`plugin-src/src/project_steward/hooks.py`, `plugin-src/claude/hooks/`,
+and `plugin-src/src/project_steward/templates/codex-hooks.json.template`.
 
 ## Repo-local instructions
 

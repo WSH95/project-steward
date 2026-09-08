@@ -1,6 +1,6 @@
 """Session lifecycle: resume recap, crash detection, checkpoint, wrap.
 
-Design rule (fixes a v0.1 Projectforge flaw): starting or resuming a session
+Design rule: starting or resuming a session
 must NOT dirty the git working tree. Active-session claims, heartbeats, and
 activity logs live in `.project-steward/runtime/` (gitignored). Committed
 files (HANDOFF.md, PROGRESS.md, ...) change only at semantic checkpoints
@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import calendar
 import os
+import re
 import socket
 import time
 from pathlib import Path
 
-from . import gitutil
+from . import StewardError, gitutil
 from .paths import runtime_dir, state_dir
-from .state import (load_config, load_state, parse_front_matter, read_json,
+from .state import (detect_newline, load_config, load_state,
+                    parse_front_matter, read_json,
                     save_state, update_front_matter, utcnow_iso,
                     write_json_atomic, write_text_atomic)
 
@@ -69,6 +71,7 @@ READ_ONLY_COMMAND_PREFIXES = (
     "rg ",
     "sed -n ",
     "tail ",
+    "wc ",
     "which ",
 )
 READ_ONLY_COMMAND_EXACT = (
@@ -197,6 +200,8 @@ def write_snapshot(root, reason):
     """Forensic snapshot (runtime): git status + recent activity."""
     runtime_dir(root, create=True)
     dirty = gitutil.dirty_files(root)
+    dirty_label = ("(git state unavailable)" if dirty is None
+                   else "\n".join(dirty) or "(clean)")
     recent = gitutil.recent_log(root, 5)
     activity_tail = []
     try:
@@ -210,8 +215,8 @@ def write_snapshot(root, reason):
         "## Recent activity\n%s\n"
         % (
             reason, utcnow_iso(), gitutil.current_branch(root),
-            gitutil.head_sha(root), len(dirty),
-            "\n".join(dirty) or "(clean)",
+            gitutil.head_sha(root), len(dirty or []),
+            dirty_label,
             "\n".join(recent) or "(none)",
             "\n".join(activity_tail) or "(none)",
         )
@@ -290,51 +295,105 @@ def _strip_env_assignments(command):
     return " ".join(tokens)
 
 
-def _has_shell_control_operator(command):
+# `2>&1` merges descriptors; it is not a write to a file.
+_FD_DUP_RE = re.compile(r">&\d")
+
+
+def _shell_segments(command):
+    """Split raw shell text on unquoted control operators.
+
+    Returns ``(segments, writes_to_file)``. Quoted operators are literal, so
+    ``rg -n 'todo|fixme'`` stays one segment. Splitting happens on the RAW
+    text because ``_normalized_command`` folds newlines into spaces.
+    """
+    text = command or ""
+    segments = []
+    current = []
     quote = ""
     escaped = False
-    for char in command or "":
+    writes = False
+    index = 0
+    while index < len(text):
+        char = text[index]
         if escaped:
+            current.append(char)
             escaped = False
+            index += 1
             continue
         if char == "\\" and quote != "'":
+            current.append(char)
             escaped = True
+            index += 1
             continue
         if quote:
+            current.append(char)
             if char == quote:
                 quote = ""
+            index += 1
             continue
         if char in ("'", '"'):
             quote = char
+            current.append(char)
+            index += 1
             continue
-        if char in "&|;<>":
-            return True
-        if char in "\r\n":
+        if char == ">":
+            duplication = _FD_DUP_RE.match(text, index)
+            if duplication:
+                if current and current[-1].isdigit():
+                    current.pop()
+                index = duplication.end()
+                continue
+            writes = True
+            index += 1
+            continue
+        if char == "<":
+            index += 1          # input redirection reads; it does not write
+            continue
+        if char in "&|;\r\n":
+            segments.append("".join(current))
+            current = []
+            index += 1
+            continue
+        current.append(char)
+        index += 1
+    segments.append("".join(current))
+    return [s for s in (seg.strip() for seg in segments) if s], writes
+
+
+def _segment_is_read_only(segment):
+    command = _strip_env_assignments(_normalized_command(segment))
+    if not command:
+        return True
+    if command in READ_ONLY_COMMAND_EXACT:
+        return True
+    for prefix in READ_ONLY_COMMAND_PREFIXES:
+        if command == prefix.rstrip() or command.startswith(prefix):
             return True
     return False
 
 
 def activity_is_handoff_relevant(tool, detail=""):
-    """Return True for activity that should pressure a handoff update."""
+    """Return True for activity that should pressure a handoff update.
+
+    The read-only allowlist is consulted BEFORE any shell-operator
+    heuristic, so `git status | head` stays read-only. Every segment of a
+    pipeline or list must be allowlisted: `ls && rm -rf /` is not read-only
+    just because its first command is.
+    """
     tool_name = (tool or "").strip().lower()
     detail_text = detail or ""
-    if tool_name in SHELL_TOOLS and _has_shell_control_operator(detail_text):
-        return True
     if STEWARD_STATE_MARKER in detail_text.replace("\\", "/"):
         return False
     if tool_name in MUTATING_TOOLS:
         return True
     if tool_name not in SHELL_TOOLS:
         return False
-    command = _strip_env_assignments(_normalized_command(detail_text))
-    if not command:
+    segments, writes_to_file = _shell_segments(detail_text)
+    if writes_to_file:
+        return True
+    if not segments:
         return False
-    if command in READ_ONLY_COMMAND_EXACT:
-        return False
-    for prefix in READ_ONLY_COMMAND_PREFIXES:
-        if command == prefix.rstrip() or command.startswith(prefix):
-            return False
-    return True
+    return not all(_segment_is_read_only(seg) for seg in segments)
 
 
 def handoff_relevant_activity_count_since(root, epoch):
@@ -351,7 +410,12 @@ def handoff_meta(root):
     path = state_dir(root) / "HANDOFF.md"
     if not path.is_file():
         return {}, "", 0.0
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        # Unreadable or non-UTF-8. Callers include the SessionStart and Stop
+        # hooks, which must never raise; report it as absent instead.
+        return {}, "", 0.0
     meta, body = parse_front_matter(text)
     try:
         mtime = path.stat().st_mtime
@@ -389,7 +453,11 @@ def detect_crash_signals(root, runtime_record=None):
         )
 
     dirty = gitutil.dirty_files(root)
-    if dirty:
+    if dirty is None:
+        signals.append(
+            "Git could not report working-tree state (timed out or "
+            "unavailable); dirty-file and commit signals are unchecked.")
+    elif dirty:
         unmentioned = [
             d for d in dirty
             if d.split()[-1].split("/")[-1] not in body
@@ -428,6 +496,12 @@ def _runtime_notes(runtime_record):
         % (runtime_record.get("agent", "?"),
            runtime_record.get("updated_at", "?"))
     ]
+
+
+def _dirty_count(root):
+    """Number of dirty files, or None when git could not answer."""
+    dirty = gitutil.dirty_files(root)
+    return None if dirty is None else len(dirty)
 
 
 def _plan_current(root):
@@ -497,7 +571,7 @@ def build_recap(root, runtime_record=None):
             "is_repo": gitutil.is_repo(root),
             "branch": gitutil.current_branch(root),
             "head": gitutil.head_sha(root),
-            "dirty_count": len(gitutil.dirty_files(root)),
+            "dirty_count": _dirty_count(root),
             "in_progress": gitutil.in_progress_operation(root),
         },
         "current_milestone": milestone,
@@ -537,10 +611,13 @@ def format_recap(recap):
            handoff["session_status"])
     )
     if git["is_repo"]:
+        dirty_count = git["dirty_count"]
+        dirty_label = ("dirty state unavailable" if dirty_count is None
+                       else "%d dirty file(s)" % dirty_count)
         lines.append(
-            "Git: branch %s @ %s, %d dirty file(s)%s"
+            "Git: branch %s @ %s, %s%s"
             % (git["branch"] or "(unborn)", git["head"] or "(no commits)",
-               git["dirty_count"],
+               dirty_label,
                ", %s IN PROGRESS" % git["in_progress"] if git["in_progress"] else "")
         )
     else:
@@ -582,19 +659,26 @@ def format_recap(recap):
 
 def append_progress(root, note, agent, prefix=""):
     path = state_dir(root) / "PROGRESS.md"
+    newline = detect_newline(path)
     header = "### %s — %s\n" % (utcnow_iso(), agent or "agent")
     entry = header + ("%s%s\n" % (prefix, note.strip())) + "\n"
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError:
+    except FileNotFoundError:
         text = "# Progress log\n\nNewest first.\n\n"
+    except OSError as exc:
+        # The log exists but cannot be read. Writing the fresh template here
+        # would silently destroy the whole history.
+        raise StewardError(
+            "cannot read %s (%s). Refusing to replace the progress log with "
+            "a new one. Fix the file, then retry." % (path, exc))
     marker = "\n### "
     idx = text.find(marker)
     if idx == -1:
         new_text = text.rstrip("\n") + "\n\n" + entry
     else:
         new_text = text[: idx + 1] + entry + text[idx + 1:]
-    write_text_atomic(path, new_text)
+    write_text_atomic(path, new_text, newline=newline)
 
 
 def checkpoint(root, note, agent, auto=False):
@@ -635,7 +719,12 @@ def wrap(root, summary, agent):
     else:
         warnings.append(".project-steward/HANDOFF.md does not exist.")
 
-    for dirty in gitutil.dirty_files(root):
+    tracked_dirty = gitutil.dirty_files(root)
+    if tracked_dirty is None:
+        warnings.append(
+            "Git could not report working-tree state; unmentioned dirty "
+            "files were not checked.")
+    for dirty in tracked_dirty or []:
         name = dirty.split()[-1].split("/")[-1]
         if name and name not in body and ".project-steward" not in dirty:
             warnings.append(

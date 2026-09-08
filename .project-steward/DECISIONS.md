@@ -620,3 +620,37 @@ original bytes. Tests supply explicit LF and CRLF fixtures for this contract.
 **Consequences**: The matrix has 11 requested pairs and no Windows 3.7 or 3.8
 job. Windows and macOS users need Python 3.10 or later. Ubuntu retains the
 Python 3.7 compatibility promise without runtime checks or migration changes.
+
+## 0031 — 2026-09-08 — Remove the Projectforge migration path
+
+**Context**: A review scoped to the shipped plugin found the migration
+subsystem was the largest single component — `migrate.py` at 993 lines plus a
+751-line test file, roughly a quarter of the repository's Python — serving a
+predecessor renamed on 2026-07-04, never published, and never used by anyone.
+`AGENTS.md` rule 3 made preserving it binding on every future agent. It also
+held a second managed-marker engine that disagreed with `managed_blocks.py` on
+trailing whitespace, duplicate blocks, and newline choice, and the only
+symlink-ancestor containment check in the codebase.
+
+**Decision**: Remove it in 0.5.0. Delete `migrate.py`, `legacy_alias.py`,
+`tests/test_migrate.py`, and `references/migration-from-projectforge.md`; drop
+the `migrate` subcommand, the deprecated `projectforge` console script,
+`.projectforge/` detection, and `PROJECTFORGE` marker conversion. Port the
+strict marker validator into `managed_blocks.validate_blocks` and the
+containment walk into `paths.assert_inside_root` **before** deleting the
+module, so neither guarantee is lost. Historical `CHANGELOG.md` and
+`docs/plans/` entries stay as written.
+
+The user approved editing the user-owned prose in `AGENTS.md` for this change.
+The diff was shown before writing: rule 3 removed, the remaining rules
+renumbered, and the support sentence corrected to Ubuntu (Python 3.7+) and
+Windows/macOS (Python 3.10+) to match ADR 0030. The `commands` managed block's
+Build line became `python -m pip install -e ".[dev]"` so the documented Test
+command can run.
+
+**Consequences**: About 1,800 lines leave the repository. `project-steward
+migrate` and the `projectforge` alias no longer exist — a breaking CLI change,
+hence 0.5.0. `doctor` reports 39 checks instead of 40. Projects already managed
+by Project Steward are unaffected. `managed_blocks` is now the single marker
+implementation, and it validates rather than silently appending a duplicate
+block.

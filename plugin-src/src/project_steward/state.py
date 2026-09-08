@@ -6,11 +6,12 @@ import copy
 import datetime
 import json
 import os
+import shutil
 import tempfile
 import time
 from pathlib import Path
 
-from . import __version__
+from . import StewardError, __version__
 from .paths import state_dir
 from .tomlmini import load_toml_text
 
@@ -37,15 +38,52 @@ def utcnow_iso():
     )
 
 
-def write_text_atomic(path, text):
+def detect_newline(path, default="\n"):
+    """The file's own line ending, taken from its first terminated line.
+
+    Read from raw bytes: text mode would have translated it away.
+    """
+    try:
+        with open(str(path), "rb") as fh:
+            chunk = fh.read(8192)
+    except OSError:
+        return default
+    index = chunk.find(b"\n")
+    if index == -1:
+        return default
+    return "\r\n" if index and chunk[index - 1:index] == b"\r" else "\n"
+
+
+def write_text_atomic(path, text, newline="\n"):
+    """Atomically replace *path*.
+
+    ``text`` must use LF internally; ``newline`` is what lands on disk, so
+    callers can preserve a CRLF file's convention. A symlinked destination
+    is written THROUGH — os.replace would otherwise swap the link itself
+    for a regular file and sever it.
+    """
     path = Path(path)
+    if path.is_symlink():
+        path = Path(os.path.realpath(str(path)))
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".steward-tmp-")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8", newline=newline) as fh:
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())
+        # os.replace transfers the temp file's inode, so the destination
+        # would inherit mkstemp's owner-only 0600. Carry the existing mode
+        # across, and give new files the usual 0644 instead of 0600.
+        # Windows has no POSIX modes worth copying here.
+        if os.name != "nt":
+            try:
+                if path.exists():
+                    shutil.copymode(str(path), tmp)
+                else:
+                    os.chmod(tmp, 0o644)
+            except OSError:
+                pass
         for attempt in range(3):
             try:
                 os.replace(tmp, str(path))
@@ -195,7 +233,18 @@ def default_state(project_name=""):
 
 
 def load_state(root):
-    return read_json(state_dir(root) / "state.json", default_state())
+    """Durable project state. Never silently replaces an unreadable file."""
+    path = state_dir(root) / "state.json"
+    if not path.exists():
+        return default_state()
+    data = read_json(path, None)
+    if not isinstance(data, dict):
+        raise StewardError(
+            "%s exists but is not valid JSON. Refusing to overwrite it — "
+            "created_at and project_name would be lost. Fix or remove the "
+            "file, then retry (`project-steward doctor` reports the same "
+            "problem)." % path)
+    return data
 
 
 def save_state(root, state):
@@ -251,11 +300,16 @@ def render_front_matter(meta, body):
 
 
 def update_front_matter(path, updates, remove_keys=()):
-    """Merge updates and remove obsolete keys from Markdown front matter."""
+    """Merge updates and remove obsolete keys from Markdown front matter.
+
+    Keeps the file's existing line endings: a one-line timestamp change must
+    not rewrite every line of a CRLF checkout.
+    """
     path = Path(path)
+    newline = detect_newline(path)
     meta, body = parse_front_matter(path.read_text(encoding="utf-8"))
     meta.update(updates)
     for key in remove_keys:
         meta.pop(key, None)
-    write_text_atomic(path, render_front_matter(meta, body))
+    write_text_atomic(path, render_front_matter(meta, body), newline=newline)
     return meta

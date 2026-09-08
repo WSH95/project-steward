@@ -226,6 +226,8 @@ def _prepare_checkout(target_repo, args, supplied_checkout=None):
 
     temp_dir = tempfile.mkdtemp(prefix="agent-artifact-pr-")
     checkout = Path(temp_dir) / "target"
+    # Say so: without --target-checkout even a dry run reaches the network.
+    sys.stdout.write("Cloning %s (network)...\n" % target_repo)
     _run(["git", "clone", target_repo, str(checkout)], Path.cwd())
     return checkout, temp_dir
 
@@ -385,13 +387,26 @@ def publish(args):
     build_command = artifact.get("build_command", "")
 
     if build_command:
-        sys.stdout.write("Running build command: %s\n" % build_command)
-        _run(build_command, project_root)
+        if args.dry_run and not args.build:
+            # A dry run should not execute a shell command in the user's
+            # project. Preview the existing source_path instead.
+            sys.stdout.write(
+                "DRY RUN: not running the build command (%s); "
+                "pass --build to run it.\n" % build_command)
+        else:
+            sys.stdout.write("Running build command: %s\n" % build_command)
+            _run(build_command, project_root)
 
     source = _source_path(project_root, source_rel)
     checkout, temp_dir = _prepare_checkout(
         target_repo, args, supplied_checkout=supplied_checkout
     )
+    # Publishing into the user's own checkout switches branches; remember
+    # where they were so the finally block can put them back.
+    original_branch = ""
+    if temp_dir is None and not args.dry_run:
+        original_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                               checkout, capture=True, read_only=True)
     try:
         base_branch = args.base or artifact.get("base_branch", "main")
         if args.dry_run:
@@ -464,6 +479,13 @@ def publish(args):
     finally:
         if temp_dir and not args.keep_temp:
             shutil.rmtree(temp_dir, ignore_errors=True)
+        elif original_branch:
+            try:
+                _run(["git", "checkout", original_branch], checkout)
+            except Exception as exc:          # never mask the real outcome
+                sys.stdout.write(
+                    "warning: could not restore branch %s in %s (%s)\n"
+                    % (original_branch, checkout, exc))
 
 
 def main(argv=None):
@@ -495,6 +517,9 @@ def main(argv=None):
             "preview, and print its diff without changing the target checkout"
         ),
     )
+    parser.add_argument(
+        "--build", action="store_true",
+        help="run the artifact's build_command even under --dry-run")
     parser.add_argument("--keep-temp", action="store_true")
     parser.add_argument("--non-interactive", action="store_true")
     args = parser.parse_args(argv)

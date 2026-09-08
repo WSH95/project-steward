@@ -7,9 +7,6 @@ any device can initialize, track, hand off, and resume work — even after
 a crash. Agents are execution surfaces; native session histories are
 never the source of truth.
 
-Formerly **Projectforge** (v0.1). See
-[plugin-src/references/migration-from-projectforge.md](plugin-src/references/migration-from-projectforge.md).
-
 ## What problem this solves
 
 Multi-session agent work fails in predictable ways: the next session
@@ -172,7 +169,6 @@ project-steward checkpoint --note "..."      # semantic boundaries
 project-steward wrap --summary "..."         # session end (+ --commit)
 project-steward doctor        # health checks
 project-steward backend recommend            # task-backend broker
-project-steward migrate       # upgrade legacy .projectforge/
 ```
 
 `survey`, `status`, `close`, and `hook` (internal dispatcher) complete
@@ -191,8 +187,8 @@ the surface; `--json` and `--dry-run` are available where they matter.
 3. **Crash-resilient cross-tool resume** — wrap writes a
    stranger-executable `HANDOFF.md`; resume recaps in ≤15 lines and
    detects abnormal termination from five independent signals (front
-   matter, runtime claim, post-handoff activity, unexplained
-   dirty/commits, in-progress git ops), then reconstructs from git
+   matter, post-handoff activity, unexplained dirty files, commits after
+   the handoff, in-progress git ops), then reconstructs from git
    evidence with every claim labeled *(inferred)*. Hooks add automatic
    recap injection, a wrap-language detector, and a Stop guard that
    requests one brief auto-checkpoint when the handoff goes stale and leaves
@@ -294,7 +290,6 @@ standard is the canonical instruction carrier.
 - **"Not a Project Steward project"** → run `init` in the current Git
   repository, or pass an intentional `--root`. Implicit discovery stops at the
   nearest Git boundary, so a nested repository does not inherit parent state.
-- **Legacy `.projectforge/` warnings** → `project-steward migrate`.
 - **Windows hooks do nothing** → the `run-hook.cmd` wrapper needs the
   Python Launcher (`py -3`) or `python` on PATH, or the CLI installed
   from a checkout with `pipx install .` (not yet on PyPI); it exits
