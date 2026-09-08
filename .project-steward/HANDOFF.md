@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-09-08T19:16:20Z
+updated_at: 2026-09-08T19:36:38Z
 updated_by: claude
 session_status: closed
 branch: main
@@ -8,74 +8,66 @@ branch: main
 
 ## Now
 
-The approved 0.4.2 Windows CI correction is complete, independently reviewed,
-merged into `main`, and pushed to GitHub. Implementation commit `d911d32`
-passed all 11 requested OS/Python jobs plus `packaged-install` in
-[CI run 34241821486](https://github.com/WSH95/project-steward/actions/runs/34241821486).
-The source checkout is `/home/wsh/Documents/project-steward`.
+Project Steward 0.5.0 is committed as `cbf3514` and pushed to `origin/main`.
+CI run 34269572496 passed all 12 jobs (Ubuntu 3.7/3.8/3.10/3.12/3.13,
+Windows and macOS 3.10/3.12/3.13, plus `packaged-install`). The local suite
+passes 284 tests and `doctor --self` reports 39 checks, 3 known setup
+warnings, 0 failures.
 
-The migration regression uses explicit LF and CRLF byte fixtures and checks
-that backups preserve their original bytes. Production migration behavior is
-unchanged. Windows/macOS support starts at Python 3.10; Ubuntu and package
-metadata retain Python 3.7. CI covers Windows/macOS 3.10, 3.12, and 3.13, and
-Ubuntu 3.7, 3.8, 3.10, 3.12, and 3.13. Ubuntu 3.7 uses ubuntu-22.04.
+The release closes a review of the shipped plugin (M6 in PLAN.md) and removes
+Projectforge (ADR 0031). `git.commit_policy` is now `auto`.
+
+## In flight
+
+Nothing. The working tree is clean and matches `origin/main`.
 
 ## Next steps
 
-No approved implementation work remains. The older unchecked backlog in
-PLAN.md is outside this task. Read VERIFY.md for validation and artifact
-evidence, then follow the user's next request.
+1. Reinstall the Claude plugin from a freshly built payload if you want this
+   machine to run 0.5.0 — the CLI on PATH is still the 0.3.4 plugin cache, so
+   the Stop guard and recap you see locally are pre-fix. Development-time
+   version skew is expected and synced manually.
+2. Review the two publish-script tests changed in `cbf3514`
+   (`tests/test_agent_artifact_maintainer.py`, `literal_magic_target` and
+   `commits_only_the_artifact`). They asserted the target checkout is left on
+   the publish branch; restoring the user's branch moves the commit to the
+   branch while HEAD returns to `main`. That is a behaviour change, not just
+   a test fix.
+3. Optional: bump `actions/checkout@v4` and `actions/setup-python@v5` in
+   `.github/workflows/ci.yml`. CI warns that Node.js 20 is deprecated. This is
+   pre-existing and unrelated to 0.5.0.
 
 ## Blockers
 
 None.
 
-## Validation
+## Warnings
 
-- Implementation used gpt-5.6-sol at max effort. Independent spec and quality
-  review found no Critical, Important, or Minor defects.
-- Required RED: LF passed and CRLF failed against the old LF-only assertion.
-  Corrected newline slice: 3 passed. Migration suite: 35 passed.
-- Full local suite: 278 passed in 11.98s on Linux/Python 3.12.3 using the
-  isolated test interpreter and absolute source PYTHONPATH.
-- Native GitHub CI: all 12 jobs passed on `d911d32`, covering the exact matrix
-  and the separate non-editable installation job.
-- Fresh 0.4.2 wheel build/install, installed CLI smoke, packaged templates,
-  payload generation, and source/generated version consistency passed.
-- Self doctor before/after implementation and after source integration:
-  40 checks, 3 existing setup warnings, 0 failures.
-
-## Working tree and artifacts
-
-All 108 saved tracked-file modes and the exact 97 pre-existing permission-only
-Git differences were preserved. Content and index are clean when mode changes
-are ignored. Root AGENTS.md and CLAUDE.md are unchanged. Do not mistake those
-existing permission differences for uncommitted implementation work.
-
-The isolated implementation branch is `fix/windows-ci-0.4.2` in
-`/tmp/project-steward-reliability`. Wheel and fresh installation artifacts are
-in `/tmp/project-steward-windows-ci-wheels` and
-`/tmp/project-steward-windows-ci-wheel-venv`. Generated payloads are under
-`/tmp/project-steward-reliability/dist/project-steward`. These temporary
-artifacts may be rebuilt; the committed source is authoritative.
+- `python3 -m pytest -q` does not work with the system interpreter: pytest is
+  not installed anywhere on this machine. The suite was run with
+  `/tmp/project-steward-venv/bin/python -m pytest -q`, which a reboot
+  destroys. `AGENTS.md` now documents `pip install -e ".[dev]"` as Build.
+- `migrate.py` held the only strict marker validator and the only
+  symlink-ancestor containment walk. Both were ported to
+  `managed_blocks.validate_blocks` and `paths.assert_inside_root` before the
+  deletion. Do not reintroduce a second marker engine.
+- Hooks must stay silent: unknown events are a no-op returning 0, and no hook
+  may add stdout. Config diagnostics reach the agent through the SessionStart
+  `additionalContext`, which is already JSON.
 
 ## Key files
 
-- `docs/plans/2026-09-08-windows-ci-fix.md`: approved plan.
-- `.github/workflows/ci.yml`: supported CI matrix.
-- `tests/test_migrate.py`: LF/CRLF backup regression.
-- `README.md`, `plugin-src/references/cross-platform.md`, and PROJECT.md:
-  platform support and newline contract.
-- PLAN.md, PROGRESS.md, DECISIONS.md, and VERIFY.md: status, decisions, and
-  validation evidence.
+- `plugin-src/src/project_steward/state.py`: atomic writes preserve mode and
+  newline, and write through symlinks.
+- `plugin-src/src/project_steward/managed_blocks.py`: the single marker
+  engine, now validating.
+- `plugin-src/claude/hooks/run-hook.cmd`: probe, then launch exactly once.
+- `.project-steward/DECISIONS.md` ADR 0031; `PLAN.md` M6; `CHANGELOG.md` 0.5.0.
 
-## Relevant limits
+## Validation
 
-The three existing doctor warnings concern missing local WORKFLOW.md,
-absent local Codex hooks, and activation being unavailable until hooks are
-installed. No repository initialization is required for this fix.
-
-The old Windows Python 3.7 resolver failure is outside supported
-configurations and the approved scope. No runtime blocking checks, migration
-changes, public API/schema changes, dependency installs, global plugin
-reinstalls, or marketplace publication were part of this task.
+284 tests; `compileall` clean; `doctor --self` 39/3/0; payload build at 0.5.0;
+`init` in a fresh repo writes real state at mode 644; a symlinked
+`.project-steward/` is refused with exit 1 and writes nothing outside the
+repo; a CRLF HANDOFF.md survives a checkpoint; the hook wrapper emits exactly
+one JSON document.
