@@ -2,6 +2,29 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T14:50:39Z — codex
+Prepared Project Steward 0.4.2 Windows CI correction for controller review.
+
+### 2026-09-08T14:48:27Z — codex
+Completed the local 0.4.2 implementation and validation. The newline slice
+passed 3 tests, all migration tests passed 35 tests, and the full suite passed
+278 tests in 11.98s on Linux/Python 3.12.3 with the required absolute source
+path. The matrix expands to the exact 11 requested pairs with no excludes.
+Payload generation passed, and all source and generated versions report 0.4.2
+while `requires-python` remains `>=3.7`. Post-change doctor reported 40 checks,
+3 known setup warnings, and 0 failures. Native Windows/macOS, installed-wheel
+smoke, independent review, integration, push, and GitHub CI remain with the
+controller.
+
+### 2026-09-08T14:41:58Z — codex
+Started the approved 0.4.2 Windows CI correction on `fix/windows-ci-0.4.2` at
+`df6a7cc`. Pre-change doctor reported 40 checks, 3 known setup warnings, and 0
+failures. The parameterized LF/CRLF migration test first passed LF and failed
+CRLF against its old LF-only assertion, with the copied CRLF bytes intact. The
+assertion now compares the backup with bytes captured before migration, and
+both cases pass. Production migration code remains unchanged. Matrix,
+documentation, version, and final local validation are in progress.
+
 ### 2026-09-08T13:49:23Z — codex
 Merged the completed workflow and 0.4.1 reliability work into local main at
 the user's request. GitHub main was fetched and matched `351c797`; the merge

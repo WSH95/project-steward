@@ -417,9 +417,19 @@ def test_partial_backup_is_self_ignored_before_raw_copy(git_repo, monkeypatch):
     assert "migration-backup-projectforge" not in status
 
 
+@pytest.mark.parametrize(
+    "gitignore_bytes",
+    [
+        pytest.param(b".projectforge/journal/\n", id="lf"),
+        pytest.param(b".projectforge/journal/\r\n", id="crlf"),
+    ],
+)
 def test_backup_stays_ignored_after_original_instructions_are_copied(
-        git_repo, monkeypatch):
+        git_repo, monkeypatch, gitignore_bytes):
     _make_legacy(git_repo)
+    gitignore = git_repo / ".gitignore"
+    gitignore.write_bytes(gitignore_bytes)
+    original_gitignore = gitignore.read_bytes()
     real_write = migrate_module.write_text_atomic
     first_destination = state_dir(git_repo) / "PLAN.md"
 
@@ -434,11 +444,12 @@ def test_backup_stays_ignored_after_original_instructions_are_copied(
     report = migrate(git_repo)
 
     assert not report["ok"]
+    assert "simulated destination write failure" in report["error"]
     assert (git_repo / ".projectforge").is_dir()
     backup = _backup_attempts(git_repo)[0]
     assert (backup / ".gitignore").read_bytes() == b"*\n"
     assert (backup / "original-instructions/.gitignore").read_bytes() == \
-        b".projectforge/journal/\n"
+        original_gitignore
     status = subprocess.run(
         ["git", "status", "--short", "--untracked-files=all"],
         cwd=str(git_repo), check=True, text=True, stdout=subprocess.PIPE,

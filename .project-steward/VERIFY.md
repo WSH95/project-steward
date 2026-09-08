@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 277 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 278 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -17,6 +17,25 @@
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+
+0.4.2 implementation verification: 2026-09-08T14:48:27Z. The CRLF case first
+failed against the old LF-only assertion while the copied bytes remained
+unchanged: 1 failed and 1 passed. After the assertion compared the copied file
+with bytes captured before migration, both parameter cases passed. The combined
+newline regression slice passed 3 tests, all 35 migration tests passed, and the
+full suite passed 278 tests in 11.98s on Linux/Python 3.12.3. Every test command
+used `PYTHONPATH=/tmp/project-steward-reliability/plugin-src/src` and the
+isolated test interpreter.
+
+The workflow expands to exactly 11 requested OS/Python pairs with no excludes.
+Payload generation completed, all authoritative source and generated manifest
+versions report 0.4.2, and `requires-python` remains `>=3.7`. Self doctor before
+and after the change reported 40 checks, 3 known local setup warnings, and 0
+failures; the final doctor imported version 0.4.2. Production migration,
+`gitutil.py`, shared fallback/parser code, AGENTS.md, and CLAUDE.md did not
+change. Native Windows/macOS runs, the fresh wheel/install smoke, independent
+review, source integration, push, and all 12 GitHub jobs remain with the
+controller.
 
 Main integration verification: 2026-09-08T13:49:23Z — after fetching GitHub main,
 local main fast-forwarded from `351c797` through `600dc24` without conflicts.

@@ -226,18 +226,22 @@ never silent. Linear/Jira are honest stubs. Details:
 
 ## Cross-platform
 
-Ubuntu, Windows, and macOS are first-class: the core is Python 3.7+
-standard library only (pathlib/subprocess/json; `tomllib` on 3.11+ with a
-bundled flat-TOML fallback below that decodes strings identically). Claude
-Code plugin hooks run one polyglot `hooks/run-hook.cmd` wrapper (a valid
-shell script and cmd.exe batch file at once — Claude Code hooks have no
-per-OS command field) that prefers the bundled pure-Python
-`bin/project-steward` launcher, then falls back to an installed
-`project-steward` console script; Codex hooks still use the
-console script because Codex does not install the Claude payload. Writes
-are atomic, fsynced, and UTF-8/`\n`-normalized, and CI runs a 3-OS matrix
-including Python 3.7 jobs. Details and the deliberate 3.7-floor
-compromises:
+Ubuntu supports Python 3.7 and later. Windows and macOS require Python 3.10
+or later. The core and package keep their Python 3.7+ standard-library floor
+(pathlib/subprocess/json; `tomllib` on 3.11+ with a bundled flat-TOML fallback
+below that decodes strings identically). Claude Code plugin hooks run one
+polyglot `hooks/run-hook.cmd` wrapper (a valid shell script and cmd.exe batch
+file at once; Claude Code hooks have no per-OS command field) that prefers the
+bundled pure-Python `bin/project-steward` launcher, then falls back to an
+installed `project-steward` console script. Codex hooks use the console script
+because Codex does not install the Claude payload. Generated UTF-8 text is
+written atomically with LF newlines; raw migration backups retain the original
+bytes, including CRLF.
+
+CI tests exactly 11 OS/Python combinations: `ubuntu-latest` with 3.8, 3.10,
+3.12, and 3.13; `ubuntu-22.04` with 3.7; and both `windows-latest` and
+`macos-latest` with 3.10, 3.12, and 3.13. Details and the deliberate Python
+3.7 compatibility choices:
 [plugin-src/references/cross-platform.md](plugin-src/references/cross-platform.md).
 
 ## Security, git policy, hook trust

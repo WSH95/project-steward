@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.2 — 2026-09-08
+
+- Parameterize the migration backup regression with explicit LF and CRLF
+  `.gitignore` bytes and compare copied originals byte-for-byte. The generated
+  backup ignore file remains LF. Runtime migration behavior is unchanged.
+- Set the supported Windows and macOS minimum to Python 3.10. CI now requests
+  Python 3.10, 3.12, and 3.13 on Ubuntu, Windows, and macOS, plus Python 3.8 on
+  `ubuntu-latest` and Python 3.7 on `ubuntu-22.04`, for 11 matrix jobs. The
+  package and shared core retain their Python 3.7 floor; supported use below
+  Python 3.10 is on Ubuntu.
+
 ## 0.4.1 — 2026-09-08
 
 - Make Projectforge migration preflight complete and retries lossless. Migration

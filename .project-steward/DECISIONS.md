@@ -602,3 +602,21 @@ guard, and doctor reports the same fallbacks runtime uses. Native TOML semantics
 handle multiline prose and escaped keys without a second parser. Backend
 adoption leaves config and PLAN.md bytes alone while status reports one
 consistent backend identity.
+
+## 0030 — 2026-09-08 — Set platform minimums and preserve raw backup bytes
+
+**Context**: The CI cross product requested old Windows Python combinations
+outside the supported platform policy. On Windows, `Path.write_text()` also
+gave one migration fixture CRLF bytes while its assertion expected LF. The
+migration backup already copied those bytes unchanged.
+
+**Decision**: Support Ubuntu on Python 3.7 and later, and Windows and macOS on
+Python 3.10 and later. Keep the package metadata, shared source, fallback
+parser, and syntax floor at Python 3.7. CI requests Python 3.10, 3.12, and 3.13
+on all three latest runners, plus Python 3.8 on `ubuntu-latest` and Python 3.7
+on `ubuntu-22.04`. Generated text uses LF; raw migration backups preserve the
+original bytes. Tests supply explicit LF and CRLF fixtures for this contract.
+
+**Consequences**: The matrix has 11 requested pairs and no Windows 3.7 or 3.8
+job. Windows and macOS users need Python 3.10 or later. Ubuntu retains the
+Python 3.7 compatibility promise without runtime checks or migration changes.

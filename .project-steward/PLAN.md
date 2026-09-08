@@ -2,6 +2,16 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M5: 0.4.2 Windows CI correction
+
+Local implementation and validation are complete on `fix/windows-ci-0.4.2`.
+The controller owns independent review, package installation checks,
+integration, push, and remote CI verification.
+
+- [x] Correct the newline regression test without changing migration behavior.
+- [x] Apply the supported-platform CI matrix, documentation, and 0.4.2 version.
+- [x] Complete the scoped local validation and implementation commit.
+
 ## M4: 0.4.1 reliability fixes
 
 All five approved milestones are complete, reviewed, and delivered locally to
