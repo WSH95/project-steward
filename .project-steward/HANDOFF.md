@@ -1,8 +1,8 @@
 ---
-updated_at: 2026-09-08T13:32:35Z
+updated_at: 2026-09-08T13:49:23Z
 updated_by: codex
 session_status: closed
-branch: feat/workflow-improvements
+branch: main
 ---
 # Handoff
 
@@ -10,7 +10,8 @@ branch: feat/workflow-improvements
 
 The approved 0.4.1 reliability plan is complete. All five milestones and their
 review corrections are committed and delivered to the original checkout at
-`/home/wsh/Documents/project-steward` on `feat/workflow-improvements`.
+`/home/wsh/Documents/project-steward` on `main`. The local merge fast-forwarded
+main from `351c797` through `600dc24` without conflicts.
 The final code commit is `a5f2260`; milestone 2 is `904f239`.
 Package, plugin metadata, and source versions are 0.4.1.
 
@@ -24,12 +25,14 @@ corrections used gpt-5.6-sol at max effort.
 
 - No work remains from the approved five-milestone plan.
 - Broader project backlog entries remain in PLAN.md; they were not started.
-- No push or publication occurred.
+- The user authorized pushing main to `origin`
+  (`git@github.com:WSH95/project-steward.git`). Git refs are authoritative for
+  local/remote synchronization. No marketplace release is part of this task.
 
 ## Next steps
 
-1. Resume from the original checkout and its current Git history. PLAN.md maps
-   the five completed milestones to their visible commits.
+1. Resume from the original checkout on main and its current Git history.
+   PLAN.md maps the five completed milestones to their visible commits.
 2. Use VERIFY.md for the release evidence and local artifact paths. Select
    further work from the existing backlog when requested by the user.
 
@@ -39,7 +42,7 @@ corrections used gpt-5.6-sol at max effort.
 
 ## Validation
 
-- Actual source at `a5f2260`: 277 tests passed in 12.08s on Linux/Python 3.12.3.
+- Merged main at `600dc24`: 277 tests passed in 13.60s on Linux/Python 3.12.3.
 - Self doctor: 40 checks, 3 existing setup warnings, 0 failures.
 - Corrected wheel and payload builds, fresh installed CLI smoke, and artifact
   source identity checks passed. Available plugin validators passed for the
@@ -66,4 +69,4 @@ corrections used gpt-5.6-sol at max effort.
   stage them as part of this work. Content and index are clean when file-mode
   differences are ignored.
 - The isolated implementation checkout and release artifacts remain under
-  `/tmp`; they are local working copies, not a published release.
+  `/tmp` as local working copies.

@@ -5,7 +5,7 @@ Milestones and tasks. Built-in Markdown backend owns tasks.
 ## M4: 0.4.1 reliability fixes
 
 All five approved milestones are complete, reviewed, and delivered locally to
-`feat/workflow-improvements`. Version: 0.4.1. Validation: VERIFY.md.
+`main`. Version: 0.4.1. Validation: VERIFY.md. GitHub push authorized by the user.
 
 - [x] 1. Preserve migration data and partial init settings.
       Commits: `1f3cde6`, `4977a9d`; final preservation correction `a5f2260`.
@@ -19,7 +19,7 @@ All five approved milestones are complete, reviewed, and delivered locally to
 - [x] 5. Validate configuration and prepare version 0.4.1.
       Commit: `81a612f`. Final review, package checks, installed smoke, and
       actual-source validation passed after `a5f2260`: 277 tests, doctor
-      40 checks / 3 existing setup warnings / 0 failures. No publication.
+      40 checks / 3 existing setup warnings / 0 failures.
 
 ## M3: 0.4.0 workflow improvements
 

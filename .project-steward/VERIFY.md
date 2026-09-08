@@ -18,6 +18,16 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
 
+Main integration verification: 2026-09-08T13:49:23Z — after fetching GitHub main,
+local main fast-forwarded from `351c797` through `600dc24` without conflicts.
+The actual checkout on main passed **277 tests in 13.60s** on Linux/Python
+3.12.3 using the same absolute source import path and test venv recorded below.
+Self doctor reported **40 checks, 3 existing setup warnings, 0 failures**.
+All 108 current tracked-file modes, the exact 97 original mode-only differences,
+and root AGENTS.md/CLAUDE.md were verified unchanged. Content and index remain
+clean when file-mode differences are ignored. The following integration commit
+changes only project records; no production code changed after that test run.
+
 Final 0.4.1 delivery verification: 2026-09-08T13:32:35Z — all five approved milestones
 and the final correction are committed on the original
 `feat/workflow-improvements` branch. Final code: `a5f2260`; milestone 2:

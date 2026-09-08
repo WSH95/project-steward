@@ -2,6 +2,17 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-09-08T13:49:23Z — codex
+Merged the completed workflow and 0.4.1 reliability work into local main at
+the user's request. GitHub main was fetched and matched `351c797`; the merge
+fast-forwarded through `600dc24` without conflicts. The original checkout is
+now on main and passed 277 tests in 13.60s; doctor reported 40 checks, 3
+existing setup warnings, and 0 failures. All 108 current file modes, the exact
+97 original mode-only differences, and root AGENTS.md/CLAUDE.md were preserved.
+The user explicitly authorized pushing main to WSH95/project-steward on GitHub.
+This checkpoint records the merge and validation; the feature branch remains
+available locally. No production code changed during integration.
+
 ### 2026-09-08T13:32:35Z — codex
 Completed and locally delivered all five approved 0.4.1 reliability milestones
 and the final review correction `a5f2260` to `feat/workflow-improvements`.
