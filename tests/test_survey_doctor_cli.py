@@ -40,6 +40,47 @@ def test_doctor_ok_after_init_and_fails_on_secret(git_repo):
     assert any("secrets" in r["name"] for r in fails)
 
 
+@pytest.mark.parametrize(("content", "check_name", "status"), [
+    (None, "CLAUDE.md", doctor.WARN),
+    ("@AGENTS.md\n", "CLAUDE.md imports @AGENTS.md", doctor.OK),
+    ("# Claude preferences\n", "CLAUDE.md imports @AGENTS.md", doctor.WARN),
+])
+def test_doctor_claude_adapter_states(git_repo, content, check_name, status):
+    plan, mapping = plan_files(git_repo, {"project_name": "Demo"})
+    apply_plan(git_repo, plan, mapping)
+    claude_path = git_repo / "CLAUDE.md"
+    if content is None:
+        claude_path.unlink()
+    else:
+        claude_path.write_text(content, encoding="utf-8")
+
+    results = doctor.run_checks(git_repo)
+    hits = [result for result in results if result["name"] == check_name]
+    assert len(hits) == 1
+    check = hits[0]
+    assert set(check) == {"status", "name", "detail"}
+    assert check["status"] == status
+    if content is None:
+        detail = check["detail"].lower()
+        assert "native" in detail and "agents.md" in detail
+        assert "version" in detail and "settings" in detail
+        assert "@AGENTS.md" in check["detail"]
+    assert not [result for result in results if result["status"] == doctor.FAIL]
+
+
+@pytest.mark.parametrize("filename", ["AGENTS.md", "CLAUDE.md"])
+def test_doctor_warns_on_non_utf8_instruction_files(git_repo, filename):
+    plan, mapping = plan_files(git_repo, {"project_name": "Demo"})
+    apply_plan(git_repo, plan, mapping)
+    (git_repo / filename).write_bytes(b"\xff")
+
+    results = doctor.run_checks(git_repo)
+    hits = [result for result in results if result["name"] == filename]
+    assert len(hits) == 1
+    assert hits[0]["status"] == doctor.WARN
+    assert "could not be read" in hits[0]["detail"]
+
+
 def test_self_doctor_rejects_codex_hook_metadata(tmp_path):
     (tmp_path / "plugin-src" / "src" / "project_steward").mkdir(parents=True)
     (tmp_path / "plugin-src" / "claude" / "hooks").mkdir(parents=True)

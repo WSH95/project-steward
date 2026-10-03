@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-10-03T11:35:47Z — codex
+Completed Project Steward 0.5.1 Claude compatibility guidance and six approved skill descriptions. All 289 tests, compileall, doctor 39/3/0, skill schemas, payload/version parity, Python 3.7 grammar, and installed CLI smoke passed. Independent review found no functional issues; release-note wording was clarified. Description selection retained 19 intended matches and removed 3 unwanted matches in the supplied 28 scenarios. Prepared scoped local delivery with current project records; remote publication is outside scope.
+
+### 2026-10-03T11:31:21Z — codex
+Implemented approved 0.5.1 Claude compatibility guidance and six skill descriptions. Baseline: 284 tests and doctor 39/3/0 in the isolated dev environment. The missing-adapter regression failed before the change; six focused checks now pass. Description-only selection comparison retains all 19 intended matches and reduces unwanted matches from 3 to 0 across 9 near misses. Full validation and review are next.
+
 ### 2026-09-08T19:36:38Z — claude
 [auto-checkpoint] Shipped 0.5.0 as cbf3514 and pushed to origin/main; CI run 34269572496 passed all 12 jobs. Refreshed HANDOFF.md, which still described the 0.4.2 session.
 

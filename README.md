@@ -42,14 +42,24 @@ tests/  .github/workflows/ci.yml   unit tests; Ubuntu/Windows/macOS CI
 ```
 
 Inside a managed project it creates `AGENTS.md` (canonical), `CLAUDE.md`
-(thin `@AGENTS.md` adapter — Claude Code does not read AGENTS.md
-natively), and `.project-steward/` with `WORKFLOW.md`, `PROJECT.md`, `PLAN.md`,
+(thin `@AGENTS.md` compatibility adapter), and `.project-steward/` with
+`WORKFLOW.md`, `PROJECT.md`, `PLAN.md`,
 `PROGRESS.md`, `HANDOFF.md`, `DECISIONS.md`, `QUESTIONS.md`, `RISKS.md`,
 `VERIFY.md`, `config.toml`, `state.json`, `backend.json`, plus a
 gitignored `runtime/` for device-local session claims and forensics.
 AGENTS.md keeps project identity, commands, and an instruction to read WORKFLOW.md;
 the detailed stewardship protocol lives there. Init also prepares `.codex/`
 configuration and hooks unless `--no-codex-hooks` is selected.
+
+Claude Code 2.1.277+ can load `AGENTS.md` directly when its built-in support
+is enabled and the Project instructions setting permits it. With the default
+setting, a `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` in the
+working directory or an ancestor takes precedence. Project Steward keeps the
+explicit import so shared instructions also load on older versions and in
+sessions without native support. Anthropic supports retaining this adapter
+and deduplicates imported `AGENTS.md` content when both instruction types are
+enabled. See [Claude Code's instruction-loading documentation](https://code.claude.com/docs/en/memory#agentsmd).
+Re-initialization preserves existing adapters that already import `AGENTS.md`.
 
 Runtime commands and doctor share one config validator. Known sections, types,
 enums, and nonnegative integer settings fall back safely when invalid, while

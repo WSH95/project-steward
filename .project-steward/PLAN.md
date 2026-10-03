@@ -2,6 +2,24 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M7: 0.5.1 Claude compatibility and skill descriptions
+
+Approved on 2026-10-03. Keep the default CLAUDE.md import adapter, document
+conditional native AGENTS.md support, and narrow ambiguous skill triggers
+while retaining automatic stewardship in managed projects. Local delivery only.
+Implementation and independent review are complete. Validation: 289 tests,
+doctor 39/3/0, six valid skill schemas, payload/version checks, and the bounded
+selection comparison in VERIFY.md.
+
+- [x] Correct compatibility documentation, the generated adapter comment,
+      and doctor's missing-adapter warning; retain its severity and schema.
+- [x] Apply the six approved descriptions; retain operational guidance in
+      skill bodies and move the Grok resume invocation note there.
+- [x] Complete tests, description selection checks, payload/version checks,
+      syntax sweep, and before/after doctor evidence.
+- [x] Independently review the final changes and commit the 0.5.1 release
+      with current stewardship records.
+
 ## M6: 0.5.0 review remediation
 
 Review of the shipped plugin found data-loss paths in the write layer, a hook

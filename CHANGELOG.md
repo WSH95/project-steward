@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.1 — 2026-10-03
+
+- Document Claude Code's native AGENTS.md support from 2.1.277 and its
+  instruction-setting and file-precedence conditions. Keep the default
+  CLAUDE.md import adapter for compatibility and update doctor's
+  missing-adapter warning to explain conditional native support.
+- Shorten all six skill descriptions and clarify their activation scope.
+  Exclude generic package initialization, incidental tracker mentions,
+  and runtime-only plugin fixes from the specialized workflows' documented scope.
+  Automatic stewardship triggers remain; Grok resume invocation guidance
+  moves into the skill body.
+
 ## 0.5.0 — 2026-09-08
 
 - Remove the Projectforge migration path. The `migrate` subcommand, the

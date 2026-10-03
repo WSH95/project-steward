@@ -654,3 +654,31 @@ hence 0.5.0. `doctor` reports 39 checks instead of 40. Projects already managed
 by Project Steward are unaffected. `managed_blocks` is now the single marker
 implementation, and it validates rather than silently appending a duplicate
 block.
+
+## 0032 — 2026-10-03 — Retain the Claude adapter and narrow skill selection
+
+**Context**: Claude Code added native AGENTS.md support in 2.1.277. The plugin
+still described it as unsupported. Five of the six skill descriptions mixed
+selection triggers with procedural details; artifact maintenance also matched
+generic plugin development beyond its layout/build/publication purpose.
+
+**Decision**: Release 0.5.1 with accurate compatibility guidance and the six
+descriptions approved in conversation. Keep generating the thin @AGENTS.md
+adapter for older versions and sessions without native loading. Keep the
+missing-adapter doctor check at WARN with the existing check name and JSON
+fields; explain that native loading depends on version and settings.
+Document the default directory-hierarchy precedence and supported deduplication
+from [Anthropic's instruction-loading documentation](https://code.claude.com/docs/en/memory#agentsmd),
+checked on 2026-10-03.
+
+Narrow generic package initialization, incidental backend-tool mentions, and
+runtime-only plugin fixes out of the specialized workflows. Preserve session
+start, substantial-work initialization, meaningful progress checkpoints,
+handoff/risky-operation, and stale-handoff hook triggers. Keep operational,
+approval, and commit instructions in skill bodies; move the Grok resume
+invocation note from metadata into the body.
+
+**Consequences**: Package and plugin metadata move together to 0.5.1. Existing
+project instruction files are preserved; no migration, new flags, schema,
+native-support detector, or runtime dependency is introduced. Local commit
+delivery is authorized; pushing and marketplace publication are outside scope.

@@ -3,7 +3,7 @@
 | Check | Command | Expected |
 | --- | --- | --- |
 | Install | `python -m pip install -e ".[dev]"` | exits 0 |
-| Tests | `python3 -m pytest -q` (with pytest installed) | 278 passed |
+| Tests | `python3 -m pytest -q` (with pytest installed) | 289 passed |
 | Grok plugin manifest | `grok plugin validate dist/project-steward/claude/plugins/project-steward` | valid (optional; skip if `grok` is not on PATH) |
 | Syntax sweep | `python3 -m compileall -q plugin-src/src tools` | exits 0 |
 | Self health | `PYTHONPATH=plugin-src/src python3 -m project_steward doctor --self` | 0 failures |
@@ -16,7 +16,56 @@
 | Codex plugin schema | `python3 /home/wsh/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py dist/project-steward/codex/plugins/project-steward` | exits 0 |
 | Codex plugin smoke | isolated `CODEX_HOME=/tmp/project-steward-codex-impl.*` marketplace add/list/plugin add + `codex debug prompt-input` | plugin listed/installed; `project-steward:` skills visible; no `hooks/hooks.json` in prompt input |
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
-| E2E smoke | init + resume + checkpoint + wrap + migrate in a scratch repo | see PROGRESS.md |
+| E2E smoke | init + resume + checkpoint + wrap in a scratch repo | see PROGRESS.md |
+
+0.5.1 implementation verification: 2026-10-03. Base `3101a2d`, branch
+`codex/claude-compatibility-0.5.1`. Development interpreter:
+`/tmp/project-steward-0.5.1-dev/bin/python` (Python 3.12.14, editable install).
+
+- Baseline: 284 tests passed in 11.40s. Doctor with the isolated CLI on PATH
+  reported 39 checks, 3 existing warnings, 0 failures. The system PATH adds
+  warnings for the absent CLI and its Codex hook launcher.
+- The focused adapter regression reproduced the old categorical warning
+  (1 failed, 5 passed). After the change, all 6 focused checks passed. They
+  cover missing/valid/missing-import adapters, non-UTF-8 AGENTS.md/CLAUDE.md,
+  and byte preservation of existing custom Claude instructions on re-init.
+- The full suite passed 289 tests in 11.53s. Compileall, payload generation,
+  and git diff whitespace checks passed. Runtime and tool files parse with
+  Python 3.7 grammar. Native Windows/macOS and Python 3.7 execution were not
+  available in this session.
+- Package metadata, installed distribution, module version, plugin metadata,
+  recorded steward version, and both generated manifests report 0.5.1.
+  Both payloads contain byte-identical copies of all six canonical skills and
+  the Claude adapter template. The bundled launcher reports 0.5.1.
+- All six skill schemas validate. Descriptions decreased from 2,903 to 1,106
+  characters. Names and invocation policies are preserved. Root AGENTS.md,
+  CLAUDE.md, and tracked file permissions match the pre-change snapshots.
+- Post-change doctor reports 39 checks, the same 3 setup warnings, and
+  0 failures. These warnings concern the legacy repo's missing WORKFLOW.md
+  and unconfigured local Codex hooks/activation.
+
+Description selection used one fresh-context evaluator for the original
+catalog and another for the revised catalog. They received only descriptions
+and 28 independent scenarios with repository state, session phase, and user
+intent. Expected labels were withheld. Both catalogs retained all 19 required
+matches, including session start, substantial-work setup, sustained-work
+checkpointing, risky-operation handoff, and the stale-handoff Stop hook.
+
+| Near miss | Original | Revised |
+| --- | --- | --- |
+| Generic npm init | project-init selected | no match |
+| Incidental beads mention | backend-broker selected | no match |
+| Runtime-only plugin fix | artifact-maintainer selected | no match |
+| Six other near misses, including Claude capability questions | no unwanted match | no unwanted match |
+
+The revised catalog had 0 unwanted matches across the 9 near misses, compared
+with 3 for the original. This is one bounded comparison, not a measurement of
+every prompt, model, or host's actual skill-loading behavior. Independent
+review found no functional issues. A nonblocking release-note wording concern
+was corrected to describe documented selection scope without promising
+universal model behavior. Installed CLI smoke also passed fresh initialization,
+byte-preserving re-init, and the warning-only JSON diagnostic for a missing
+adapter, including its unchanged field names and exit code 0.
 
 0.4.2 delivery verification: 2026-09-08T15:05:41Z. Implementation commit
 `d911d32ff9aafca706fbcb771fa713f96ffe8261` was independently reviewed with no

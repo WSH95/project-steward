@@ -37,11 +37,18 @@ def test_reinit_preserves_user_content(git_repo):
     agents_path.write_text(
         agents_path.read_text(encoding="utf-8") + "\nUSER SENTINEL LINE\n",
         encoding="utf-8")
+    claude_path = git_repo / "CLAUDE.md"
+    claude_path.write_text(
+        claude_path.read_text(encoding="utf-8") + "\nCLAUDE USER SENTINEL\n",
+        encoding="utf-8")
+    original_claude = claude_path.read_bytes()
     handoff = state_dir(git_repo) / "HANDOFF.md"
     handoff.write_text("custom handoff", encoding="utf-8")
     plan2, mapping2 = plan_files(git_repo, {"project_name": "Demo"})
     apply_plan(git_repo, plan2, mapping2)
     assert "USER SENTINEL LINE" in agents_path.read_text(encoding="utf-8")
+    assert plan2["CLAUDE.md"][0] == "noop"
+    assert claude_path.read_bytes() == original_claude
     assert handoff.read_text(encoding="utf-8") == "custom handoff"  # skip
 
 
