@@ -18,6 +18,12 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap in a scratch repo | see PROGRESS.md |
 
+0.5.1 delivery verification (in progress): 2026-10-03. Source main was fetched
+and fast-forwarded to `9ee2ea4`. Fresh tests passed 289/289 on the feature
+branch (10.90s) and merged main (10.67s); compileall passed on main. The
+agent-plugins target is confirmed as WSH95/agent-plugins with base main.
+Payload publication and README verification remain pending.
+
 0.5.1 implementation verification: 2026-10-03. Base `3101a2d`, branch
 `codex/claude-compatibility-0.5.1`. Development interpreter:
 `/tmp/project-steward-0.5.1-dev/bin/python` (Python 3.12.14, editable install).

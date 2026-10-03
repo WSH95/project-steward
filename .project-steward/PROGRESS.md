@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-10-03T12:12:36Z — codex
+Started authorized 0.5.1 delivery. Fast-forwarded main to 9ee2ea4 after fetching origin; the merged tree passed 289 tests and compileall. Source push, clean dist build, and the agent-plugins PR with relevant README guidance are next (M8, ADR 0033).
+
 ### 2026-10-03T11:35:47Z — codex
 Completed Project Steward 0.5.1 Claude compatibility guidance and six approved skill descriptions. All 289 tests, compileall, doctor 39/3/0, skill schemas, payload/version parity, Python 3.7 grammar, and installed CLI smoke passed. Independent review found no functional issues; release-note wording was clarified. Description selection retained 19 intended matches and removed 3 unwanted matches in the supplied 28 scenarios. Prepared scoped local delivery with current project records; remote publication is outside scope.
 

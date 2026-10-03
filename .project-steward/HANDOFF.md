@@ -1,39 +1,34 @@
 ---
-updated_at: 2026-10-03T11:35:47Z
+updated_at: 2026-10-03T12:12:36Z
 updated_by: codex
-session_status: closed
-branch: codex/claude-compatibility-0.5.1
+session_status: active
+branch: main
 ---
 # Handoff
 
 ## Now
 
-Project Steward 0.5.1 is implemented on `codex/claude-compatibility-0.5.1`,
-based on `3101a2d`. The compatibility docs, default adapter comment,
-conditional doctor warning, and six approved skill descriptions are ready.
-The full suite passes 289 tests. Compilation, payload generation, source and
-installed version checks, generated skill/template comparisons, and Python
-3.7 grammar checks pass. Doctor reports 39 checks, 3 existing warnings,
-0 failures in the isolated development environment.
+Project Steward 0.5.1 is implemented as `9ee2ea4` and fast-forwarded into
+`main`. The user authorized source pushing and an agent-plugins distribution
+PR, including the relevant README update. The fresh merged-tree suite passed
+289 tests in 10.67s, and compileall passed. Implementation validation and the
+bounded skill-selection comparison are recorded in VERIFY.md.
 
 ## In flight
 
-No unfinished implementation remains. Independent review found no functional
-issues. Release-note wording was clarified to avoid promising universal
-skill-selection behavior. The scoped local delivery includes README.md,
-CHANGELOG.md, metadata.json, pyproject.toml, __init__.py, doctor.py,
-CLAUDE.md.template, six SKILL.md files, test_scaffold_init.py,
-test_survey_doctor_cli.py, and current .project-steward/ records.
-Root AGENTS.md and CLAUDE.md retain their original contents and permissions.
+Release publishing is in progress (M8). The source remote was fetched and
+main was current before the merge. A clean distribution checkout is available
+at `/tmp/project-steward-0.5.1-agent-plugins`. The publish manifest targets
+`git@github.com:WSH95/agent-plugins.git`, path `project-steward`, base `main`.
+No source runtime or skill changes are needed for this delivery.
 
 ## Next steps
 
-1. Inspect the delivered local commit with `git log -1` on
-   `codex/claude-compatibility-0.5.1`. No remote push or marketplace publication
-   is authorized for this task.
-2. For later validation, use `/tmp/project-steward-0.5.1-dev/bin/python` and
-   this checkout's source. The environment lives in /tmp and may disappear.
-3. Revisit older open items in PLAN.md only when requested; 0.5.1 M7 is complete.
+1. Push source main and run the clean dist build.
+2. Review the publish script's dry-run, verify payload/version parity, and
+   open the agent-plugins PR. Update its Project Steward README guidance.
+3. Record the PR URL and delivery evidence, close the handoff, and push the
+   source bookkeeping commit. Do not merge the distribution PR.
 
 ## Blockers
 
@@ -47,6 +42,8 @@ None.
 - `plugin-src/src/project_steward/templates/CLAUDE.md.template`: the default
   import adapter explains conditional native support and deduplication.
 - `.project-steward/DECISIONS.md`: ADR 0032 records the approved boundaries.
+- `agent-artifacts.json` and `tools/publish_agent_artifact_pr.py`: distribution
+  destination and publication workflow (ADR 0033).
 - `.project-steward/VERIFY.md`: validation evidence and selection-test limits.
 
 ## Tried and rejected

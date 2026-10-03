@@ -2,6 +2,19 @@
 
 Milestones and tasks. Built-in Markdown backend owns tasks.
 
+## M8: 0.5.1 source and marketplace delivery
+
+Authorized on 2026-10-03: merge the release into main, push the source,
+rebuild dist, and publish a review PR to WSH95/agent-plugins. Update that
+repository's Project Steward README guidance where needed. Do not merge the
+distribution PR or publish to PyPI.
+
+- [x] Fast-forward main to 9ee2ea4 and verify the merged tree (289 tests).
+- [ ] Push source main and rebuild the Claude/Codex distribution payloads.
+- [ ] Review the publish dry-run and validate generated versions and skills.
+- [ ] Open the agent-plugins PR with the relevant README update.
+- [ ] Record the delivery evidence and leave both checkouts clean.
+
 ## M7: 0.5.1 Claude compatibility and skill descriptions
 
 Approved on 2026-10-03. Keep the default CLAUDE.md import adapter, document

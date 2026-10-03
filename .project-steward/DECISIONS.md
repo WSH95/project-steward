@@ -682,3 +682,20 @@ invocation note from metadata into the body.
 project instruction files are preserved; no migration, new flags, schema,
 native-support detector, or runtime dependency is introduced. Local commit
 delivery is authorized; pushing and marketplace publication are outside scope.
+
+## 0033 — 2026-10-03 — Publish the 0.5.1 source and distribution PR
+
+**Context**: The user authorized merging the completed release into main,
+pushing the source repository, rebuilding dist, and opening a PR in
+WSH95/agent-plugins. The user also requested relevant README updates and
+confirmed gh authentication is configured.
+
+**Decision**: Fast-forward source main to the reviewed release, verify and
+push it, then publish the canonical generated Claude/Codex payloads. Update
+only the Project Steward guidance in the distribution repository's README.
+Use the existing publish script and inspect its dry-run before publication.
+
+**Consequences**: This extends the earlier local-only delivery scope. Ordinary
+source and distribution-branch pushes and PR creation are authorized. The
+distribution PR remains open for review; no force-push, PR merge, PyPI release,
+or instruction-file change is part of this task.
