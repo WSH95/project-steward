@@ -18,11 +18,37 @@
 | Packaged install | clean venv `pip install .`, then `init --yes` in a scratch repo | HANDOFF.md starts with `---` (CI job `packaged-install`) |
 | E2E smoke | init + resume + checkpoint + wrap in a scratch repo | see PROGRESS.md |
 
-0.5.1 delivery verification (in progress): 2026-10-03. Source main was fetched
+0.5.1 delivery verification: 2026-10-03. Source main was fetched
 and fast-forwarded to `9ee2ea4`. Fresh tests passed 289/289 on the feature
 branch (10.90s) and merged main (10.67s); compileall passed on main. The
 agent-plugins target is confirmed as WSH95/agent-plugins with base main.
-Payload publication and README verification remain pending.
+Source main was pushed through `ea3aac9`. The clean dist build and reviewed
+dry-run passed (19 expected payload files; the target checkout stayed clean).
+Source, installed, and generated versions match 0.5.1; both platforms match all
+six canonical skills and the adapter template. Claude plugin/marketplace and
+Grok manifest validation pass; the bundled launcher reports 0.5.1. Doctor with
+the isolated CLI on PATH reports 39 checks, 3 existing warnings, 0 failures.
+Publication completed through
+[agent-plugins PR #13](https://github.com/WSH95/agent-plugins/pull/13), base main,
+head `codex/project-steward-0.5.1` at `2fe4792`. Payload commit `49090c2`
+contains the 19 previewed files; README commit `2fe4792` adds only the
+Project Steward compatibility and skill-scope guidance. The PR has 20 changed
+files and two commits. Its only paths are README.md and project-steward/;
+Paperforge and root marketplace entries retain their contents.
+
+All 94 copied distribution files match the clean build byte for byte. Both
+root marketplaces resolve their plugin manifests, and the distribution root
+Claude marketplace validator passes. The publication checkout is clean and
+matches its pushed branch. A separate external Codex validator is not installed
+here; JSON/path checks, canonical byte comparisons, and repository tests cover
+the unchanged manifest structure and version update.
+
+[Source CI run 37122144297](https://github.com/WSH95/project-steward/actions/runs/37122144297)
+completed successfully for `ea3aac9`: all 12 jobs passed. These are Windows and
+macOS on Python 3.10, 3.12, and 3.13; Ubuntu on 3.7, 3.8, 3.10, 3.12, and
+3.13; plus packaged-install. Native support is now verified by CI in addition
+to the local Linux checks below. The distribution PR reports no CI checks
+and remains open; it was not merged.
 
 0.5.1 implementation verification: 2026-10-03. Base `3101a2d`, branch
 `codex/claude-compatibility-0.5.1`. Development interpreter:

@@ -9,11 +9,17 @@ rebuild dist, and publish a review PR to WSH95/agent-plugins. Update that
 repository's Project Steward README guidance where needed. Do not merge the
 distribution PR or publish to PyPI.
 
+Complete: release 9ee2ea4 is on source main (initial push ea3aac9).
+Distribution PR [agent-plugins #13](https://github.com/WSH95/agent-plugins/pull/13)
+contains payload commit 49090c2 and README commit 2fe4792. Validation:
+289 local tests, exact 94-file payload parity, manifest checks, doctor 39/3/0,
+and all 12 source CI jobs. The PR remains open for review.
+
 - [x] Fast-forward main to 9ee2ea4 and verify the merged tree (289 tests).
-- [ ] Push source main and rebuild the Claude/Codex distribution payloads.
-- [ ] Review the publish dry-run and validate generated versions and skills.
-- [ ] Open the agent-plugins PR with the relevant README update.
-- [ ] Record the delivery evidence and leave both checkouts clean.
+- [x] Push source main and rebuild the Claude/Codex distribution payloads.
+- [x] Review the publish dry-run and validate generated versions and skills.
+- [x] Open the agent-plugins PR with the relevant README update.
+- [x] Record the delivery evidence and leave both checkouts clean.
 
 ## M7: 0.5.1 Claude compatibility and skill descriptions
 

@@ -2,6 +2,12 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-10-03T12:19:30Z — codex
+Merged and pushed Project Steward 0.5.1 to source main, rebuilt dist, and published agent-plugins PR #13 with canonical payloads and the scoped README update (49090c2, 2fe4792). All 289 local tests, compileall, doctor 39/3/0, manifest checks, 94-file payload parity, and 12 source CI jobs passed. The PR remains open for review; no merge or PyPI publication was performed.
+
+### 2026-10-03T12:15:40Z — codex
+Pushed source main through ea3aac9 and rebuilt 0.5.1 dist. Reviewed the 19-file publication preview; target checkout stayed clean. Platform skills/templates and versions match canonical sources. Claude/Grok manifest checks and the bundled launcher pass. Prepared the marketplace README update; PR creation is next.
+
 ### 2026-10-03T12:12:36Z — codex
 Started authorized 0.5.1 delivery. Fast-forwarded main to 9ee2ea4 after fetching origin; the merged tree passed 289 tests and compileall. Source push, clean dist build, and the agent-plugins PR with relevant README guidance are next (M8, ADR 0033).
 
