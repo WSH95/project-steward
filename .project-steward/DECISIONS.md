@@ -699,3 +699,9 @@ Use the existing publish script and inspect its dry-run before publication.
 source and distribution-branch pushes and PR creation are authorized. The
 distribution PR remains open for review; no force-push, PR merge, PyPI release,
 or instruction-file change is part of this task.
+
+**User review, 2026-10-03**: Keep the agent-plugins README focused on helping
+users understand the tool and get started. Remove the added 0.5.1 compatibility
+details and skill summary; the existing quick-start content is sufficient.
+Detailed compatibility guidance remains in the source documentation and skills.
+Apply this correction directly to the open distribution PR.

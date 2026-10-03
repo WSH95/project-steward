@@ -30,11 +30,15 @@ Grok manifest validation pass; the bundled launcher reports 0.5.1. Doctor with
 the isolated CLI on PATH reports 39 checks, 3 existing warnings, 0 failures.
 Publication completed through
 [agent-plugins PR #13](https://github.com/WSH95/agent-plugins/pull/13), base main,
-head `codex/project-steward-0.5.1` at `2fe4792`. Payload commit `49090c2`
-contains the 19 previewed files; README commit `2fe4792` adds only the
-Project Steward compatibility and skill-scope guidance. The PR has 20 changed
-files and two commits. Its only paths are README.md and project-steward/;
-Paperforge and root marketplace entries retain their contents.
+head `codex/project-steward-0.5.1` initially at `2fe4792`. Payload commit
+`49090c2` contains the 19 previewed files. README commit `2fe4792` was reversed
+by user review correction `e7b5d29`: the marketplace README should focus on
+use and setup. The current PR has 19 changed files, all under project-steward/,
+and three commits. README.md matches base main byte for byte; the correction
+does not change any payload file. The PR description now reflects that scope.
+Whitespace and diff checks passed; no runtime tests were repeated for this
+documentation-only correction. Doctor remains at 39 checks, 3 existing warnings,
+0 failures. Paperforge and root marketplace entries retain their contents.
 
 All 94 copied distribution files match the clean build byte for byte. Both
 root marketplaces resolve their plugin manifests, and the distribution root

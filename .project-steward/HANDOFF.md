@@ -1,5 +1,5 @@
 ---
-updated_at: 2026-10-03T12:19:30Z
+updated_at: 2026-10-03T13:05:24Z
 updated_by: codex
 session_status: closed
 branch: main
@@ -9,9 +9,11 @@ branch: main
 ## Now
 
 Project Steward 0.5.1 release `9ee2ea4` is merged into source `main` and was
-pushed through `ea3aac9`. The clean distribution build is published in
-[agent-plugins PR #13](https://github.com/WSH95/agent-plugins/pull/13), with
-payload commit `49090c2` and README commit `2fe4792`. All 289 local tests and
+pushed through `eb5658b`. The clean distribution build is published in
+[agent-plugins PR #13](https://github.com/WSH95/agent-plugins/pull/13), at
+`e7b5d29`, with payload commit `49090c2`. User review removed the README
+addition: the final diff contains only 19 payload files, and the marketplace
+README matches base main. The PR description is updated. All 289 local tests and
 12 source CI jobs passed. Both platform payloads match canonical source and
 version 0.5.1. Doctor reports 39 checks, 3 existing warnings, 0 failures.
 
@@ -19,14 +21,14 @@ version 0.5.1. Doctor reports 39 checks, 3 existing warnings, 0 failures.
 
 No unfinished implementation or publication work remains. The distribution
 PR is open for review and has not been merged. The current changes to
-PLAN.md, PROGRESS.md, HANDOFF.md, VERIFY.md, and state.json record this
-completed delivery and belong in the final source bookkeeping commit.
+PLAN.md, PROGRESS.md, HANDOFF.md, DECISIONS.md, VERIFY.md, and state.json record
+the README review correction and belong in its source bookkeeping commit.
 
 ## Next steps
 
 1. Review [agent-plugins PR #13](https://github.com/WSH95/agent-plugins/pull/13).
-   It targets main from `codex/project-steward-0.5.1`; expect 20 changed files,
-   scoped to README.md and project-steward/. Merge only if the user asks.
+   It targets main from `codex/project-steward-0.5.1`; expect 19 changed files,
+   all under project-steward/. Merge only if the user asks.
 2. For a later release, use `/tmp/project-steward-0.5.1-dev/bin/python` while
    it exists, rebuild with `tools/build_plugin_payloads.py`, and preview with
    `tools/publish_agent_artifact_pr.py --dry-run` before publication.

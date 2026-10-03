@@ -11,7 +11,8 @@ distribution PR or publish to PyPI.
 
 Complete: release 9ee2ea4 is on source main (initial push ea3aac9).
 Distribution PR [agent-plugins #13](https://github.com/WSH95/agent-plugins/pull/13)
-contains payload commit 49090c2 and README commit 2fe4792. Validation:
+contains payload commit 49090c2. User review correction e7b5d29 removes the
+README addition from 2fe4792, leaving 19 payload files in the final diff. Validation:
 289 local tests, exact 94-file payload parity, manifest checks, doctor 39/3/0,
 and all 12 source CI jobs. The PR remains open for review.
 
@@ -20,6 +21,8 @@ and all 12 source CI jobs. The PR remains open for review.
 - [x] Review the publish dry-run and validate generated versions and skills.
 - [x] Open the agent-plugins PR with the relevant README update.
 - [x] Record the delivery evidence and leave both checkouts clean.
+- [x] Apply user review: keep the marketplace README focused on use and setup;
+      remove the release-specific addition and update the PR description.
 
 ## M7: 0.5.1 Claude compatibility and skill descriptions
 

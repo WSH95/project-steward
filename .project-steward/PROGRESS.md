@@ -2,6 +2,9 @@
 
 Newest first. One short entry per semantic checkpoint — not per edit.
 
+### 2026-10-03T13:05:24Z — codex
+Applied user review to agent-plugins PR #13: removed the 14-line README addition and pushed e7b5d29. The marketplace README now matches main; the PR contains only 19 payload files, and its description reflects that scope. Recorded the preference for a concise use-and-setup README. Payloads are unchanged; diff checks pass and doctor remains 39/3/0.
+
 ### 2026-10-03T12:19:30Z — codex
 Merged and pushed Project Steward 0.5.1 to source main, rebuilt dist, and published agent-plugins PR #13 with canonical payloads and the scoped README update (49090c2, 2fe4792). All 289 local tests, compileall, doctor 39/3/0, manifest checks, 94-file payload parity, and 12 source CI jobs passed. The PR remains open for review; no merge or PyPI publication was performed.
 
